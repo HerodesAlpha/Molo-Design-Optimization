@@ -1,0 +1,456 @@
+<html>
+<head>
+<title>model.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #0000ff;}
+.s3 { color: #008080; font-weight: bold;}
+.s4 { color: #808080; font-style: italic;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+model.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>numpy <span class="s0">as </span>np
+
+<span class="s0">from </span>tool_box <span class="s0">import </span>*
+
+
+<span class="s0">class </span>ModelClass(object):
+    <span class="s0">def </span>__init__(self, type=<span class="s0">None</span>, red_point=<span class="s0">None</span>):
+        self._inertias = TotalMassMatrixClass()
+        self.verbose = <span class="s2">1</span>
+        <span class="s0">if </span>type <span class="s0">is None</span>:
+            self._type = <span class="s3">''</span>
+        <span class="s0">else</span>:
+            self._type = type
+
+        <span class="s0">if </span>red_point <span class="s0">is None</span>:
+            self._red_point = [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>]
+        <span class="s0">else</span>:
+            <span class="s0">assert </span>(len(red_point) == <span class="s2">3</span>)
+            self._red_point = red_point
+
+    @property
+    <span class="s0">def </span>inertias(self):
+        <span class="s0">return </span>self._inertias
+
+    @property
+    <span class="s0">def </span>mass(self):
+        <span class="s0">return </span>self._inertias.mass
+
+    @property
+    <span class="s0">def </span>inertia_matrix(self):
+        <span class="s0">return </span>self._inertias.inertia_matrix_global
+
+    @property
+    <span class="s0">def </span>cog(self):
+        <span class="s0">return </span>self._inertias.cog
+
+    @cog.setter
+    <span class="s0">def </span>cog(self, val):
+        <span class="s0">assert </span>len(val) == <span class="s2">3</span>
+        self._inertias._cog = val
+
+    <span class="s4"># def __update_reference_point__(self):</span>
+    #    self._inertias.reduction_point = self._point
+    #
+    # def __set_cog_relative_to_point__(self):
+    #     pass
+    #     self._inertias._cog = self._inertias.cog - self._red_point
+
+    <span class="s0">def </span>print_vector_matrix_global(self):
+        <span class="s0">if not </span>self.verbose == <span class="s2">0</span>:
+            print(
+                <span class="s3">'{} {}</span><span class="s0">\n\t</span><span class="s3">Mass = {m:6.1f} t</span><span class="s0">\n\t</span><span class="s3">Reduction point is [{a[0]:6.2f}, {a[1]:6.2f}, {a[2]:6.2f}]</span><span class="s0">\n\n\t</span><span class="s3">Vector matrix'</span>.format(
+                    self.__class__.__name__, self._type, m=self.inertias.mass / <span class="s2">1000</span>,
+                    a=self.inertias.reduction_point))
+            m = self.inertias.mass_matrix_global / self.inertias.mass
+            s = <span class="s3">''</span>
+            <span class="s0">for </span>i <span class="s0">in </span>range(<span class="s2">6</span>):
+                <span class="s0">for </span>j <span class="s0">in </span>range(<span class="s2">6</span>):
+                    s = s + <span class="s3">'{: 10.3g}'</span>.format(np.round_(m[i, j], decimals=<span class="s2">0</span>))
+                s = s + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>
+            s = s + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>
+            print(s)
+
+
+<span class="s0">class </span>AssemblyClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, type=<span class="s0">None</span>, red_point=<span class="s0">None</span>):
+        ModelClass.__init__(self, type, red_point)
+
+    <span class="s0">def </span>aggregate_inertias_from_parts(self, parts_list):
+        <span class="s0">for </span>part <span class="s0">in </span>parts_list:
+            <span class="s4"># TODO: Revise mass and mass matrix</span>
+            self.inertias.add_mass_matrix_local(part.inertias.mass_matrix_global)
+
+        <span class="s0">for </span>part <span class="s0">in </span>parts_list:
+            self.inertias._point += part.inertias.reduction_point * part.inertias.mass / self.inertias.mass
+
+        <span class="s4"># self._inertias.update_vector_matrix_global()</span>
+        self._inertias.update_mass_matrix_global()
+        self.print_vector_matrix_global()
+
+
+<span class="s0">class </span>UnitClass(AssemblyClass, object):
+    <span class="s0">def </span>__init__(self, models):
+        ModelClass.__init__(self)
+        self.parts_list = []
+        self._models = models
+        self.__update_global__()
+        <span class="s4"># self.print_vector_matrix_global()</span>
+
+        # self._inertias.reduction_point = self._red_point
+        # self.__set_cog_relative_to_point__()
+
+    <span class="s0">def </span>__update_global__(self):
+        <span class="s0">for </span>model <span class="s0">in </span>self._models:
+            self.parts_list.append(model)
+        self.aggregate_inertias_from_parts(self.parts_list)
+
+
+<span class="s0">class </span>WtgClass(AssemblyClass, object):
+    <span class="s0">def </span>__init__(self, twr_data, rna_data, rho_st=<span class="s2">7850</span>):
+        ModelClass.__init__(self)
+        <span class="s4">#</span>
+        self._twr_data = twr_data
+        self._rna_data = rna_data
+        <span class="s4">#</span>
+        self._rho_st = rho_st
+        self.parts_list = []
+        self.__update_global__()
+
+        <span class="s4"># self.print_vector_matrix_global()</span>
+
+    <span class="s0">def </span>__update_global__(self):
+        self.parts_list.append(RNAClass(self._rna_data))
+        self.parts_list.append(TowerClass(self._twr_data, self._rho_st))
+        <span class="s4"># for part in self.parts_list:</span>
+        #     print(part._inertias.inertia_matrix_global)
+        self.aggregate_inertias_from_parts(self.parts_list)
+
+
+<span class="s0">class </span>FloaterClass(AssemblyClass, object):
+    <span class="s4"># CoGz will be set for BOS at z=0</span>
+    <span class="s0">def </span>__init__(self, floater_data, rho_st):
+        ModelClass.__init__(self)
+        self._nr = <span class="s2">3</span>
+        self._nc = floater_data.nc
+        self._gap = floater_data.gap
+        self._dia_rc = floater_data.dia_rc
+        self._thi_rc = floater_data.thi_rc
+        self._dia_hc = floater_data.dia_hc
+        self._thi_hc = floater_data.thi_hc
+        self._hgt = floater_data.hgt
+        self._t_lf = floater_data.t_lf
+        self._t_uf = floater_data.t_uf
+        self._ballast_filling = floater_data._ballast_filling
+        self._rho_st = rho_st
+        self._rho_bal = floater_data.rho_bal
+        self._l_radial = <span class="s2">0</span>
+        self._m_rc = <span class="s2">0</span>
+        self._m_hc = <span class="s2">0</span>
+        self._m_lf = <span class="s2">0</span>
+        self._m_uf = <span class="s2">0</span>
+        self._m_radial = <span class="s2">0</span>
+        self._m_hub = <span class="s2">0</span>
+        self._m_ballast = <span class="s2">0</span>
+        self._m_global = <span class="s2">0</span>
+        self._w_lf = <span class="s2">0</span>
+        self._w_uf = <span class="s2">0</span>
+        self.parts_list = []
+
+        self.__update_global__()
+
+        <span class="s4"># self.print_vector_matrix_global()</span>
+
+        # self._inertias.reduction_point = self._red_point
+        # self.__set_cog_relative_to_point__()
+
+    <span class="s0">def </span>__update_global__(self):
+        self._inertias.reset()
+
+        da = (<span class="s2">1 </span>+ self._gap) * self._dia_rc
+        dtheta = <span class="s2">2 </span>* pi / self._nr
+        theta = [i * dtheta <span class="s0">for </span>i <span class="s0">in </span>range(self._nr)]
+        zr = -(self._hgt / <span class="s2">2 </span>+ self._t_lf)
+        hf_hc = self._ballast_filling[<span class="s2">0</span>]
+        zhc_bal = -(hf_hc / <span class="s2">2 </span>+ self._t_lf)
+
+        self.parts_list.append(HubColumnClass(type=<span class="s3">'Hub column cylinder'</span>,
+                                              dia_hc=self._dia_hc,
+                                              thi_hc=self._thi_hc,
+                                              hgt=self._hgt,
+                                              rho_st=self._rho_st,
+                                              red_point=[<span class="s2">0</span>, <span class="s2">0</span>, zr]))
+        self.parts_list.append(BallastClass(type=<span class="s3">'Hub column ballast'</span>,
+                                            irow=-<span class="s2">1</span>,
+                                            icol=-<span class="s2">1</span>,
+                                            dia_bal=self._dia_rc - <span class="s2">2 </span>* self._thi_rc,
+                                            rc_internal_hgt=self._hgt,
+                                            filling=hf_hc,
+                                            rho_bal=self._rho_bal,
+                                            red_point=[<span class="s2">0</span>, <span class="s2">0</span>, zhc_bal]))
+        <span class="s0">for </span>ir <span class="s0">in </span>range(self._nr):
+            dxc = cos(theta[ir]) * da
+            dyc = sin(theta[ir]) * da
+            <span class="s4"># Reduction point is set at center bottom of steel for all parts.</span>
+            # Flanges
+            self.parts_list.append(FlangeClass(type=<span class="s3">'Upper flange'</span>,
+                                               irow=ir,
+                                               icol=<span class="s0">None</span>,
+                                               a=da * self._nc,
+                                               b=self._dia_rc,
+                                               h=self._t_lf,
+                                               density=self._rho_st,
+                                               theta=theta[ir],
+                                               red_point=[-dxc * self._nc / <span class="s2">2</span>, -dyc * self._nc / <span class="s2">2</span>,
+                                                          -(self._t_lf + self._hgt + self._t_uf / <span class="s2">2</span>)]))
+            self.parts_list.append(FlangeClass(type=<span class="s3">'Lower flange'</span>,
+                                               irow=ir,
+                                               icol=<span class="s0">None</span>,
+                                               a=da * self._nc,
+                                               b=self._dia_rc,
+                                               h=self._t_uf,
+                                               density=self._rho_st,
+                                               theta=theta[ir],
+                                               red_point=[-dxc * self._nc / <span class="s2">2</span>, -dyc * self._nc / <span class="s2">2</span>, -self._t_lf / <span class="s2">2</span>]))
+            <span class="s4"># Radial columns</span>
+            <span class="s0">for </span>ic <span class="s0">in </span>range(self._nc):
+                hf_rc = self._ballast_filling[<span class="s2">1</span>][ic]
+
+                xr = -(ic + <span class="s2">1</span>) * dxc
+                yr = -(ic + <span class="s2">1</span>) * dyc
+                zrc_bal = -(hf_rc / <span class="s2">2 </span>+ self._t_lf)
+
+                self.parts_list.append(RadialColumnClass(type=<span class="s3">'Radial column cylinder'</span>,
+                                                         irow=ir,
+                                                         icol=ic,
+                                                         dia_rc=self._dia_rc,
+                                                         thi_rc=self._thi_rc,
+                                                         hgt=self._hgt,
+                                                         rho_st=self._rho_st,
+                                                         red_point=[xr, yr, zr]))
+                self.parts_list.append(BallastClass(type=<span class="s3">'Radial column ballast'</span>,
+                                                    irow=ir,
+                                                    icol=ic,
+                                                    dia_bal=self._dia_rc - <span class="s2">2 </span>* self._thi_rc,
+                                                    rc_internal_hgt=self._hgt,
+                                                    filling=hf_rc,
+                                                    rho_bal=self._rho_bal,
+                                                    red_point=[xr, yr, zrc_bal]))
+
+        <span class="s4"># Set inertias and CoG relative to bottom of tower</span>
+        self.aggregate_inertias_from_parts(self.parts_list)
+
+    @property
+    <span class="s0">def </span>nc(self):
+        <span class="s0">return </span>self._nc
+
+    @property
+    <span class="s0">def </span>gap(self):
+        <span class="s0">return </span>self._gap
+
+    @property
+    <span class="s0">def </span>dia_rc(self):
+        <span class="s0">return </span>self._dia_rc
+
+    @property
+    <span class="s0">def </span>dia_hc(self):
+        <span class="s0">return </span>self._dia_hc
+
+    @property
+    <span class="s0">def </span>thi_hc(self):
+        <span class="s0">return </span>self._thi_rc
+
+    @property
+    <span class="s0">def </span>hgt(self):
+        <span class="s0">return </span>self._hgt
+
+    @property
+    <span class="s0">def </span>t_lf(self):
+        <span class="s0">return </span>self._t_lf
+
+    @property
+    <span class="s0">def </span>t_uf(self):
+        <span class="s0">return </span>self._t_uf
+
+
+<span class="s0">class </span>RadialColumnClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, type, irow, icol, dia_rc, thi_rc, hgt, rho_st, red_point=<span class="s0">None</span>):
+        ModelClass.__init__(self, type, red_point)
+
+        self._irow = irow
+        self._icol = icol
+        self._dia_rc = dia_rc
+        self._thi_rc = thi_rc
+        self._hgt = hgt
+        self._rho_st = rho_st
+        self.__update_inertias__()
+        self._inertias.reduction_point = self._red_point
+        <span class="s4"># print(self._red_point)</span>
+        # self.__set_cog_relative_to_point__()
+        # self.print_vector_matrix_global()
+
+    <span class="s0">def </span>__update_inertias__(self):
+        hollow_right_circular_cylinder(self._inertias,
+                                       int_radius=self._dia_rc / <span class="s2">2 </span>- self._thi_rc,
+                                       ext_radius=self._dia_rc / <span class="s2">2</span>,
+                                       length=self._hgt,
+                                       density=self._rho_st)
+
+
+<span class="s0">class </span>HubColumnClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, type, dia_hc, thi_hc, hgt, rho_st, red_point=<span class="s0">None</span>):
+        ModelClass.__init__(self, type, red_point)
+
+        self._dia_rc = dia_hc
+        self._thi_rc = thi_hc
+        self._hgt = hgt
+        self._rho_st = rho_st
+        self.__update_inertias__()
+        self._inertias.reduction_point = self._red_point
+        <span class="s4"># print(self._red_point)</span>
+        # self.__set_cog_relative_to_point__()
+        # self.print_vector_matrix_global()
+
+    <span class="s0">def </span>__update_inertias__(self):
+        hollow_right_circular_cylinder(self._inertias,
+                                       int_radius=self._dia_rc / <span class="s2">2 </span>- self._thi_rc,
+                                       ext_radius=self._dia_rc / <span class="s2">2</span>,
+                                       length=self._hgt,
+                                       density=self._rho_st)
+
+
+<span class="s0">class </span>BallastClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, type, irow, icol, dia_bal, rc_internal_hgt, filling, rho_bal, red_point=<span class="s0">None</span>):
+        ModelClass.__init__(self, type, red_point)
+
+        self._irow = irow
+        self._icol = icol
+        self._dia_bal = dia_bal
+        self._rc_internal_hgt = rc_internal_hgt
+
+        self._filling = filling
+        self._rho_bal = rho_bal
+
+        self.__update_inertias__()
+        self._inertias.reduction_point = self._red_point
+        self.print_vector_matrix_global
+
+    <span class="s0">def </span>__update_inertias__(self):
+        d = self._dia_bal
+        h = self._rc_internal_hgt
+        vol = np.pi * d ** <span class="s2">2 </span>/ <span class="s2">4 </span>* h * self._filling
+        self.inertias.mass = vol * self._rho_bal
+
+
+<span class="s0">class </span>FlangeClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, type, irow, icol, a, b, h, density, theta, red_point=<span class="s0">None</span>):
+        ModelClass.__init__(self, type, red_point)
+
+        self._irow = irow
+        self._icol = icol
+        self._a = a
+        self._b = b
+        self._h = h
+        self._theta = theta
+        self._density = density
+
+        self.__update_inertias__()
+        self._inertias.reduction_point = self._red_point
+        <span class="s4"># self.__set_cog_relative_to_point__()</span>
+        # self.print_vector_matrix_global()
+
+    <span class="s0">def </span>__update_inertias__(self):
+        rectangular_prism(self._inertias, a=self._a, b=self._b, h=self._h, density=self._density)
+        self.inertias.rotate_z_inertia_mass_matrix_local(self._theta)
+
+
+<span class="s0">class </span>RNAClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, rna_data):
+        ModelClass.__init__(self, rna_data.type, rna_data.p)
+        self._rna_data = rna_data
+
+        self.__update_inertias__()
+        self._inertias.reduction_point = self._rna_data.p
+        <span class="s4"># self.__set_cog_relative_to_point__()</span>
+        # self.print_vector_matrix_global()
+
+    <span class="s0">def </span>__update_inertias__(self):
+        self.inertias.reset()
+        self.inertias.mass = self._rna_data.m
+        self.inertias.ixx = self._rna_data.ixx
+        self.inertias.iyy = self._rna_data.iyy
+        self.inertias.izz = self._rna_data.izz
+        self.inertias.iyz = self._rna_data.iyz
+        self.inertias.ixz = self._rna_data.ixz
+        self.inertias.ixy = self._rna_data.ixy
+
+
+<span class="s0">class </span>RNADataClass():
+    <span class="s0">def </span>__init__(self, rdi):
+        self.type = rdi[<span class="s3">'Type'</span>]
+        self.m = rdi[<span class="s3">'Mass'</span>]
+        self.d_rot = rdi[<span class="s3">'Rotor diameter'</span>]
+        self.ixx = rdi[<span class="s3">'Ixx'</span>]
+        self.iyy = rdi[<span class="s3">'Iyy'</span>]
+        self.izz = rdi[<span class="s3">'Izz'</span>]
+        self.iyz = rdi[<span class="s3">'Iyz'</span>]
+        self.ixz = rdi[<span class="s3">'Iyz'</span>]
+        self.ixy = rdi[<span class="s3">'Ixy'</span>]
+        self.p = [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>]
+
+
+<span class="s0">class </span>TowerClass(ModelClass, object):
+    <span class="s0">def </span>__init__(self, twr_data, rho_st):
+        ModelClass.__init__(self, twr_data.type, twr_data.p)
+        self._twr_data = twr_data
+        self._rho_st = rho_st
+
+        self.__update_inertias__()
+        <span class="s4"># print(self._inertias._3d_rotational_inertia)</span>
+
+        self._inertias.reduction_point = self._twr_data.p
+        <span class="s4"># print(self._inertias._3d_rotational_inertia)</span>
+        # self.__set_cog_relative_to_point__()
+        # self.print_vector_matrix_global()
+
+    <span class="s0">def </span>__update_inertias__(self):
+        hollow_right_circular_cylinder(self._inertias, int_radius=self._twr_data.d / <span class="s2">2 </span>- self._twr_data.t,
+                                       ext_radius=self._twr_data.d / <span class="s2">2</span>,
+                                       length=self._twr_data.h,
+                                       density=self._rho_st)
+
+
+<span class="s0">class </span>TowerDataClass():
+    <span class="s0">def </span>__init__(self, tdi):
+        self.type = tdi[<span class="s3">'Type'</span>]
+        self.h = tdi[<span class="s3">'Height'</span>]
+        self.t = tdi[<span class="s3">'Thickness'</span>]
+        self.d = tdi[<span class="s3">'Diameter'</span>]
+        self.p = [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>]
+
+
+<span class="s0">class </span>FloaterDataClass():
+    <span class="s0">def </span>__init__(self, fdi):
+        self.type = fdi[<span class="s3">'Type'</span>]
+        self.nc = fdi[<span class="s3">'Number of radial columns'</span>]  <span class="s4"># 2, 3 or 4</span>
+        self.gap = fdi[<span class="s3">'Gap factor'</span>]
+        self.dia_rc = fdi[<span class="s3">'Radial column diameter'</span>]
+        self.thi_rc = fdi[<span class="s3">'Radial column thickness'</span>]
+        self.dia_hc = fdi[<span class="s3">'Central column diameter'</span>]
+        self.thi_hc = fdi[<span class="s3">'Central column thickness'</span>]
+        self.hgt = fdi[<span class="s3">'Radial height'</span>]
+        self.t_lf = fdi[<span class="s3">'Lower flange thickness'</span>]
+        self.t_uf = fdi[<span class="s3">'Upper flange thickness'</span>]
+        self._ballast_filling = fdi[<span class="s3">'Ballast filling ratio'</span>]
+        self.rho_bal = fdi[<span class="s3">'Ballast density'</span>]
+</pre>
+</body>
+</html>

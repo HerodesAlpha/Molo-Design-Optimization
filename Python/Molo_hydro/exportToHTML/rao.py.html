@@ -1,0 +1,94 @@
+<html>
+<head>
+<title>rao.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #808080; font-style: italic;}
+.s3 { color: #0000ff;}
+.s4 { color: #008080; font-weight: bold;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+rao.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>json
+<span class="s0">from </span>pathlib <span class="s0">import </span>Path
+
+<span class="s0">import </span>numpy <span class="s0">as </span>np
+
+<span class="s0">import </span>hydro
+<span class="s2"># import print_plot pp</span>
+<span class="s0">import </span>model_set_up <span class="s0">as </span>ms
+<span class="s0">import </span>nemoh
+<span class="s0">from </span>report <span class="s0">import </span>write_report
+
+step1 = <span class="s0">False</span>
+step2 = <span class="s0">False</span>
+step3 = <span class="s0">True</span>
+
+<span class="s2"># Give the analysed DOFs</span>
+dof = [<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">1</span>, <span class="s3">0</span>, <span class="s3">1</span>, <span class="s3">0</span>]
+rho_sw = <span class="s3">1025</span>
+water_depth = <span class="s3">100</span>
+omega_calc = [<span class="s3">41</span>, <span class="s3">0.2</span>, <span class="s3">20</span>]
+
+root = Path(<span class="s4">r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\MOLO_Analyses'</span>)
+
+<span class="s0">if </span>step1:
+    i = <span class="s3">0</span>
+    <span class="s0">while </span><span class="s3">1</span>:
+        i += <span class="s3">1</span>
+        <span class="s0">if not </span>root.joinpath(<span class="s4">'case{:04d}'</span>.format(i)).exists():
+            <span class="s0">break</span>
+    case_label = <span class="s4">'case{:04d}'</span>.format(i)
+
+    root = root.joinpath(case_label)
+
+    nemoh_path = root.joinpath(<span class="s4">'nemoh'</span>)
+    nemoh_path.mkdir(parents=<span class="s0">True</span>, exist_ok=<span class="s0">False</span>)
+
+    model_template = Path(<span class="s4">r'.\templates'</span>).joinpath(<span class="s4">'model_template.json'</span>)
+    <span class="s0">with </span>open(model_template, <span class="s4">'r'</span>) <span class="s0">as </span>f:
+        data = json.loads(f.read())
+
+    model_input = root.joinpath(<span class="s4">'model.json'</span>)
+    <span class="s0">with </span>open(model_input, <span class="s4">'w'</span>) <span class="s0">as </span>f:
+        f.write(json.dumps(data, indent=<span class="s3">4</span>, sort_keys=<span class="s0">True</span>))
+
+    unit_model, hs_floater = ms.launch(root, model_input)
+
+    K33 = hs_floater.hs_data[<span class="s4">'stiffness_matrix'</span>][<span class="s3">0</span>, <span class="s3">0</span>]
+    K44 = hs_floater.hs_data[<span class="s4">'stiffness_matrix'</span>][<span class="s3">1</span>, <span class="s3">1</span>]
+    M33 = unit_model.inertias.mass_matrix_global[<span class="s3">2</span>][<span class="s3">2</span>]
+    M44 = unit_model.inertias.mass_matrix_global[<span class="s3">3</span>][<span class="s3">3</span>]
+    T33 = <span class="s3">2 </span>* np.pi / (np.sqrt(K33 / M33))
+    T44 = <span class="s3">2 </span>* np.pi / (np.sqrt(K44 / M44))
+    print(<span class="s4">'</span><span class="s0">\n\n</span><span class="s4">T33 = {:&gt;4.1f} s'</span>.format(T33))
+    print(<span class="s4">'T44 = {:&gt;4.1f} s'</span>.format(T44))
+
+    hydro_mesh_symmetri, mesh_file = nemoh.mesh(nemoh_path, hs_floater)
+
+    <span class="s0">if </span>step2:
+        nemoh.runNemoh(nemoh_path, hydro_mesh_symmetri, mesh_file, rho_sw, water_depth, omega_calc, dof)
+
+<span class="s0">else</span>:
+    case_select = <span class="s3">16</span>
+    case_label = <span class="s4">'case{:04d}'</span>.format(case_select)
+    root = root.joinpath(case_label)
+    nemoh_path = root.joinpath(<span class="s4">'nemoh'</span>)
+
+<span class="s0">if </span>step3:
+    <span class="s2"># Read results, perform postprocessing and write pdf</span>
+    w = nemoh.getOmega(nemoh_path)
+    dir = nemoh.getDirections(nemoh_path)
+    print(w)
+    hdp = hydro.hydro_dynamic_properties(dof, w, dir, root, nemoh_path)
+    write_report(root, hdp, case_label)
+</pre>
+</body>
+</html>

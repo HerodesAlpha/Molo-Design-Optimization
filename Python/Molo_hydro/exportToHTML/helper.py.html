@@ -1,0 +1,100 @@
+<html>
+<head>
+<title>helper.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #808080; font-style: italic;}
+.s3 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+helper.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>numpy <span class="s0">as </span>np
+
+<span class="s0">import </span>helper
+<span class="s0">import </span>nemoh
+<span class="s0">from </span>meshmagick.MMviewer <span class="s0">import </span>MMViewer
+<span class="s0">from </span>meshmagick.mesh <span class="s0">import </span>Mesh
+
+
+<span class="s0">class </span>Force(object):
+    <span class="s2">&quot;&quot;&quot;Class to handle a linear force (resultant). 
+ 
+    Parameters 
+    ---------- 
+    point : array_like, optional 
+        The force application point. Default is (0, 0, 0) 
+    value : array_like, optional 
+        The value of the force. Default is (0, 0, 0) 
+    name : str, optional 
+        The name of the force 
+    mode : str, ['relative', 'absolute'] 
+        The mode of the force whether its direction follows the body motion ('relative') or remains fixed with 
+        respect to the reference frame ('absolute'). Default is 'relative'. 
+ 
+    &quot;&quot;&quot;</span>
+
+    <span class="s0">def </span>__init__(self, point=(<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>), value=(<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>)):
+        <span class="s0">assert </span>len(point) == <span class="s3">3</span>
+        <span class="s0">assert </span>len(value) == <span class="s3">3</span>
+        <span class="s2"># assert mode in ('relative', 'absolute')</span>
+
+        self._point = point
+        self._value = value
+        <span class="s2"># self.name = str(name)</span>
+        # self.mode = mode
+
+
+<span class="s0">class </span>show_force(object):
+
+    <span class="s0">def </span>__init__(self, working_mesh, points, forces):
+        self._points = points
+        self._forces = forces
+        self.backup = dict()
+        self.mesh = working_mesh.copy()
+
+    <span class="s0">def </span>show(self):
+
+        vtk_polydata = self.mesh._vtk_polydata()
+        self.viewer = MMViewer()
+        self.viewer.add_polydata(vtk_polydata)
+
+        self._forces = np.true_divide(self._forces, np.max(np.linalg.norm(self._forces, axis=<span class="s3">1</span>)[:, np.newaxis]))
+
+        <span class="s0">if </span>self._points.shape[<span class="s3">0</span>] == self._forces.shape[<span class="s3">0</span>]:
+            <span class="s0">for </span>i, p <span class="s0">in </span>enumerate(self._points):
+                <span class="s2"># self.viewer.add_point(p, color=[0, 0, 1])</span>
+                self.viewer.add_vector(p, self._forces[i] * <span class="s3">20</span>, scale=<span class="s3">3</span>, color=[<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">1</span>])
+                <span class="s2"># print(self._forces[i])</span>
+        <span class="s0">else</span>:
+            print(self._points.shape[<span class="s3">0</span>], self._forces.shape[<span class="s3">0</span>])
+            exit()
+
+        <span class="s2"># Showing the viewer</span>
+        self.viewer.show()
+        self.viewer.finalize()
+
+        <span class="s0">return</span>
+
+
+def show_pressure(fio, problem, select_axis, sym):
+    pressure_points, ppanels = nemoh.get_pressure(fio.nemoh_results, problem=<span class="s3">4</span>)
+    ppoints = pressure_points[:, <span class="s3">0</span>:<span class="s3">3</span>]
+    xyz = np.zeros([ppanels.shape[<span class="s3">0</span>], <span class="s3">3</span>])
+    xyz[:, select_axis] = <span class="s3">1</span>
+    ppanel_normals, ppanel_areas, ppanel_centers = nemoh.get_panel_data(ppoints, ppanels, sym)
+    pforce, f_norm, p_avg = nemoh.get_force(pressure_points, ppanels, sym)
+    nemoh_mesh = Mesh(ppoints, ppanels)
+    <span class="s2"># h=helper.show_force(nemoh_mesh,ppanel_centers, np.abs(pforce[:,0:3]))</span>
+    vec = (ppanel_normals * np.real(p_avg)[:, np.newaxis]) * xyz
+    h = helper.show_force(nemoh_mesh, ppanel_centers, vec)
+    h.show()
+</pre>
+</body>
+</html>

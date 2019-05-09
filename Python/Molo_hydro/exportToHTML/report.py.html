@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>report.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080; font-style: italic;}
+.s1 { color: #000000;}
+.s2 { color: #000080; font-weight: bold;}
+.s3 { color: #008080; font-weight: bold;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+report.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># matplotlib.use('Agg')  # Not to use X server. For TravisCI.</span>
+<span class="s2">import </span>matplotlib.pyplot <span class="s2">as </span>plt  <span class="s0"># noqa</span>
+<span class="s2">import </span>numpy <span class="s2">as </span>np
+<span class="s2">from </span>pylatex <span class="s2">import </span>Document, Figure, NoEscape
+
+
+<span class="s2">def </span>write_report(root, hdp, case_label):
+    dof_label = [<span class="s3">'Surge'</span>, <span class="s3">'Sway'</span>, <span class="s3">'Heave'</span>, <span class="s3">'Roll'</span>, <span class="s3">'Pitch'</span>, <span class="s3">'Yaw'</span>]
+
+    width = <span class="s3">r'1\textwidth'</span>
+    geometry_options = {<span class="s3">&quot;right&quot;</span>: <span class="s3">&quot;2cm&quot;</span>, <span class="s3">&quot;left&quot;</span>: <span class="s3">&quot;2cm&quot;</span>}
+    doc = Document(root.joinpath(<span class="s3">'report_{}'</span>.format(case_label)), geometry_options=geometry_options)
+    <span class="s0"># print( hdp.available_dofs)</span>
+    # print(hdp.available_dirs)
+    <span class="s2">for </span>sel_dof <span class="s2">in </span>hdp.available_dofs:
+        <span class="s2">with </span>doc.create(Figure(position=<span class="s3">'htbp'</span>)) <span class="s2">as </span>plot:
+            <span class="s2">for </span>sel_dir <span class="s2">in </span>hdp.available_dirs:
+                plt.plot((<span class="s4">2 </span>* np.pi) / hdp.w, hdp.getRAO(sel_dof, sel_dir))
+            plt.ylabel(dof_label[sel_dof - <span class="s4">1</span>])
+
+            plot.add_plot(width=NoEscape(width))
+            plot.add_caption(<span class="s3">'RAO {}'</span>.format(dof_label[sel_dof - <span class="s4">1</span>]))
+            plt.close()
+    doc.generate_pdf(clean_tex=<span class="s2">False</span>)
+</pre>
+</body>
+</html>

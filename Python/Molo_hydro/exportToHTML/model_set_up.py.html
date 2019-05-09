@@ -1,0 +1,231 @@
+<html>
+<head>
+<title>model_set_up.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #808080; font-style: italic;}
+.s3 { color: #0000ff;}
+.s4 { color: #008080; font-weight: bold;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+model_set_up.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>json
+<span class="s0">import </span>os
+
+<span class="s0">import </span>numpy <span class="s0">as </span>np
+<span class="s0">import </span>pandas <span class="s0">as </span>pd
+
+<span class="s0">import </span>meshmagick.hydrostatics <span class="s0">as </span>hs
+<span class="s0">import </span>meshmagick.mmio <span class="s0">as </span>mmio
+<span class="s0">import </span>model
+<span class="s0">import </span>tool_box <span class="s0">as </span>tb
+<span class="s0">from </span>meshmagick.mesh <span class="s0">import </span>Mesh
+
+
+<span class="s0">def </span>rem_list(df):
+    <span class="s2"># Dirty :-(</span>
+    <span class="s0">for </span>item <span class="s0">in </span>df:
+        <span class="s0">try</span>:
+            df[item] = df[item][<span class="s3">0</span>]
+        <span class="s0">except</span>:
+            <span class="s0">pass</span>
+    return df
+
+
+<span class="s0">def </span>read_excel_model(excel_file, floater_id, tower_id, rna_id):
+    fdst = <span class="s4">'tmp.xlsx'</span>
+    <span class="s2"># shutil.copy(excel_file,fdst)</span>
+    cmd = <span class="s4">'xcopy /r /y {} {}'</span>.format(excel_file, fdst)
+    <span class="s0">try</span>:
+        os.system(cmd)
+    <span class="s0">except </span>OSError:
+        <span class="s2"># File most likely does not exist</span>
+        print(<span class="s4">&quot;File most likely does not exist&quot;</span>)
+        exit()
+
+    df_floater = pd.read_excel(fdst, sheet_name=<span class="s4">'Floater'</span>, index=<span class="s0">False</span>)
+    df_rna = pd.read_excel(fdst, sheet_name=<span class="s4">'RNA'</span>, index=<span class="s0">False</span>)
+    df_tower = pd.read_excel(fdst, sheet_name=<span class="s4">'Tower'</span>, index=<span class="s0">False</span>)
+    df_b2c = pd.read_excel(fdst, sheet_name=<span class="s4">'Ballast_2C'</span>, index=<span class="s0">False</span>)
+    df_b3c = pd.read_excel(fdst, sheet_name=<span class="s4">'Ballast_3C'</span>, index=<span class="s0">False</span>)
+    df_b4c = pd.read_excel(fdst, sheet_name=<span class="s4">'Ballast_4C'</span>, index=<span class="s0">False</span>)
+
+    a = df_floater[df_floater.ID == floater_id].to_dict(orient=<span class="s4">'list'</span>)
+
+    dict_tower_data = rem_list(df_tower[df_tower.ID == tower_id].to_dict(orient=<span class="s4">'list'</span>))
+    dict_floater_data = rem_list(df_floater[df_floater.ID == floater_id].to_dict(orient=<span class="s4">'list'</span>))
+    dict_rna_data = rem_list(rem_list(df_rna[df_rna.ID == rna_id].to_dict(orient=<span class="s4">'list'</span>)))
+
+    twr_data = model.TowerDataClass(dict_tower_data)
+    floater_data = model.FloaterDataClass(dict_floater_data)
+    rna_data = model.RNADataClass(dict_rna_data)
+
+    <span class="s2"># Set global z</span>
+    interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf
+    twr_data.p = [<span class="s3">0</span>, <span class="s3">0</span>, -(interface_point + twr_data.h / <span class="s3">2</span>)]
+    rna_data.p = [<span class="s3">0</span>, <span class="s3">0</span>, -(interface_point + twr_data.h)]
+    <span class="s2"># Write json</span>
+    # with open('model_template.json', 'w') as f:
+    #     f.write(json.dumps({'twr': dict_tower_data, 'rna': dict_rna_data, 'floater': dict_floater_data,'test':[[1,0,1],[1,0,1]]}, indent=4,
+    #                        sort_keys=True))
+
+    rho_st = <span class="s3">7850</span>
+    <span class="s2">#</span>
+    # Build floater
+    floater_model = model.FloaterClass(floater_data, rho_st)  <span class="s2"># CoGz will be set for BOS at z=0</span>
+
+    # Build tower and RNA
+    wtg_model = model.WtgClass(twr_data, rna_data, rho_st)  <span class="s2"># CoGz will be controlled by p</span>
+
+    # Assemble parts into complete unit
+    unit_model = model.UnitClass([wtg_model, floater_model])
+    <span class="s0">return </span>unit_model, floater_model, wtg_model
+
+
+<span class="s0">def </span>model01():
+    rna_mass = <span class="s3">500000</span>
+    turbine_diameter = <span class="s3">167</span>
+    hub_height_above_interface_point = turbine_diameter / <span class="s3">2 </span>+ <span class="s3">30</span>
+
+    fdi = dict()
+    fdi[<span class="s4">'type'</span>] = <span class="s4">'MOLO'</span>
+    fdi[<span class="s4">'nc'</span>] = <span class="s3">4  </span><span class="s2"># 2, 3 or 4</span>
+    fdi[<span class="s4">'gap'</span>] = <span class="s3">0.8</span>
+    fdi[<span class="s4">'dia_rc'</span>] = <span class="s3">7</span>
+    fdi[<span class="s4">'thi_rc'</span>] = <span class="s3">0.05</span>
+    fdi[<span class="s4">'dia_hc'</span>] = <span class="s3">6</span>
+    fdi[<span class="s4">'thi_hc'</span>] = <span class="s3">0.04</span>
+    fdi[<span class="s4">'hgt'</span>] = <span class="s3">14</span>
+    fdi[<span class="s4">'t_lf'</span>] = <span class="s3">0.04</span>
+    fdi[<span class="s4">'t_uf'</span>] = <span class="s3">0.04</span>
+    fdi[<span class="s4">'ballast'</span>] = [[<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>], [<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>], [<span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>, <span class="s3">0</span>]]
+    fdi[<span class="s4">'rho_bal'</span>] = <span class="s3">1025</span>
+    floater_data = model.FloaterDataClass(fdi)
+
+    interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf
+
+    tdi = dict()
+    tdi[<span class="s4">'type'</span>] = <span class="s4">'Tower'</span>
+    tdi[<span class="s4">'h'</span>] = (hub_height_above_interface_point / <span class="s3">2 </span>+ <span class="s3">35</span>)
+    tdi[<span class="s4">'t'</span>] = <span class="s3">0.05</span>
+    tdi[<span class="s4">'d'</span>] = <span class="s3">6</span>
+    tdi[<span class="s4">'p'</span>] = [<span class="s3">0</span>, <span class="s3">0</span>, - (interface_point + hub_height_above_interface_point / <span class="s3">2</span>)]
+
+    rdi = dict()
+    rdi[<span class="s4">'type'</span>] = <span class="s4">'Vestas 9.5MW'</span>
+    rdi[<span class="s4">'d_rot'</span>] = turbine_diameter
+    rdi[<span class="s4">'m'</span>] = rna_mass
+    rdi[<span class="s4">'ixx'</span>] = <span class="s3">5 </span>** <span class="s3">2 </span>* rna_mass
+    rdi[<span class="s4">'iyy'</span>] = <span class="s3">10 </span>** <span class="s3">2 </span>* rna_mass
+    rdi[<span class="s4">'izz'</span>] = <span class="s3">10 </span>** <span class="s3">2 </span>* rna_mass
+    rdi[<span class="s4">'iyz'</span>] = <span class="s3">0</span>
+    rdi[<span class="s4">'ixz'</span>] = <span class="s3">0</span>
+    rdi[<span class="s4">'ixy'</span>] = <span class="s3">0</span>
+    rdi[<span class="s4">'p'</span>] = [<span class="s3">0</span>, <span class="s3">0</span>, - (interface_point + hub_height_above_interface_point)]
+
+    rho_st = <span class="s3">7850</span>
+    <span class="s2">#</span>
+    # Build floater
+    floater_data = model.FloaterDataClass(fdi)
+    floater_model = model.FloaterClass(floater_data, rho_st)  <span class="s2"># CoGz will be set for BOS at z=0</span>
+
+    # Build tower and RNA
+    twr_data = model.TowerDataClass(tdi)
+    rna_data = model.RNADataClass(rdi)
+    wtg_model = model.WtgClass(twr_data, rna_data, rho_st)  <span class="s2"># CoGz will be controlled by p</span>
+
+    # Assemble parts into complete unit
+    unit_model = model.UnitClass([wtg_model, floater_model])
+    <span class="s0">return </span>unit_model, floater_model, wtg_model
+
+
+<span class="s0">def </span>read_json(json_file):
+    twr_data_found = <span class="s0">False</span>
+    rna_data_found = <span class="s0">False</span>
+    floater_data_found = <span class="s0">False</span>
+    with open(json_file, <span class="s4">'r'</span>) <span class="s0">as </span>f:
+        data = json.loads(f.read())
+        <span class="s0">for </span>key <span class="s0">in </span>data:
+            <span class="s0">if </span>key == <span class="s4">'Tower'</span>:
+                <span class="s0">if </span>twr_data_found == <span class="s0">True</span>:
+                    print(<span class="s4">'Tower data given more than once!'</span>)
+                    exit()
+                <span class="s0">else</span>:
+                    dict_tower_data = data[key]
+                    twr_data_found = <span class="s0">True</span>
+            if key == <span class="s4">'Rotor-Nacelle-Assembly'</span>:
+                <span class="s0">if </span>twr_data_found == <span class="s0">True</span>:
+                    print(<span class="s4">'RNA data given more than once!'</span>)
+                    exit()
+                <span class="s0">else</span>:
+                    dict_rna_data = data[key]
+                    rna_data_found = <span class="s0">True</span>
+            if key == <span class="s4">'Floater'</span>:
+                <span class="s0">if </span>floater_data_found == <span class="s0">True</span>:
+                    print(<span class="s4">'Floater data given more than once!'</span>)
+                    exit()
+                <span class="s0">else</span>:
+                    dict_floater_data = data[key]
+                    floater_data_found = <span class="s0">True</span>
+
+    rho_st = <span class="s3">7850</span>
+    <span class="s2">#</span>
+    twr_data = model.TowerDataClass(dict_tower_data)
+    floater_data = model.FloaterDataClass(dict_floater_data)
+    rna_data = model.RNADataClass(dict_rna_data)
+
+    <span class="s2"># Set global z</span>
+    interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf
+    twr_data.p = [<span class="s3">0</span>, <span class="s3">0</span>, -(interface_point + twr_data.h / <span class="s3">2</span>)]
+    rna_data.p = [<span class="s3">0</span>, <span class="s3">0</span>, -(interface_point + twr_data.h)]
+
+    <span class="s2"># Build floater</span>
+    floater_model = model.FloaterClass(floater_data, rho_st)  <span class="s2"># CoGz will be set for BOS at z=0</span>
+
+    # Build tower and RNA
+    wtg_model = model.WtgClass(twr_data, rna_data, rho_st)  <span class="s2"># CoGz will be controlled by p</span>
+
+    # Assemble parts into complete unit
+    unit_model = model.UnitClass([wtg_model, floater_model])
+    <span class="s0">return </span>unit_model, floater_model, wtg_model
+
+
+<span class="s0">def </span>launch(fio, model_input):
+    unit_model, floater_model, wtg_model = read_json(model_input)
+
+    tb.write_gmsh(fio, floater_model)
+    vertices, faces = mmio.load_MSH(fio.gmsh_dir.joinpath(<span class="s4">'MOLO_{}c.msh'</span>.format(floater_model.nc)))
+    start_mesh = Mesh(vertices, faces)
+    start_mesh.merge_duplicates()
+    start_mesh.heal_normals()
+    start_mesh.heal_mesh()
+    start_mesh.rotate_z(-np.pi / <span class="s3">2</span>)  <span class="s2"># IMPORTANT</span>
+    print(<span class="s4">'Before equilibrium calc'</span>)
+    unit_model.print_vector_matrix_global()
+    hs_floater = hs.Hydrostatics(start_mesh, verbose=<span class="s0">True</span>)
+    hs_floater.gravity = <span class="s3">9.81</span>
+    hs_floater.rho_water = <span class="s3">1025.</span>
+    hs_floater.mass = unit_model.mass / <span class="s3">1000  </span><span class="s2"># Give mass in tons</span>
+    print(<span class="s4">'Mass given to hydro is {:5.2f} t'</span>.format(hs_floater.mass))
+    hs_floater.gravity_center = -unit_model.inertias.reduction_point
+    hs_floater.equilibrate()
+    <span class="s2">#</span>
+    tb.save_M_and_K(fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
+                    MMK=hs_floater.hs_data[<span class="s4">'stiffness_matrix'</span>])
+    <span class="s2"># Update model with calculated draft</span>
+    unit_model.inertias.reduction_point = [<span class="s3">0</span>, <span class="s3">0</span>, unit_model.inertias.reduction_point[<span class="s3">2</span>] + hs_floater.hs_data[<span class="s4">'draught'</span>]]
+    print(<span class="s4">'</span><span class="s0">\n\n</span><span class="s4">After equilibrium calc giving {:5.2f} m draught'</span>.format(hs_floater.hs_data[<span class="s4">'draught'</span>]))
+    <span class="s2"># hs_floater.show()</span>
+    # unit_model.print_vector_matrix_global()
+
+    <span class="s0">return </span>unit_model, hs_floater
+</pre>
+</body>
+</html>

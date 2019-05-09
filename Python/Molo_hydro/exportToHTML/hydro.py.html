@@ -1,0 +1,185 @@
+<html>
+<head>
+<title>hydro.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #008080; font-weight: bold;}
+.s3 { color: #808080; font-style: italic;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+hydro.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>pickle
+
+<span class="s0">from </span>pylab <span class="s0">import </span>*
+
+<span class="s0">import </span>nemoh
+<span class="s0">import </span>tool_box <span class="s0">as </span>tb
+
+
+<span class="s0">class </span>hydro_dynamic_properties(object):
+    <span class="s0">def </span>__init__(self, dof, w, dir, fio, sym):
+        self._sym = sym
+        self._idof = np.array([i <span class="s0">for </span>i, x <span class="s0">in </span>enumerate(dof) <span class="s0">if </span>x])
+        sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\n</span><span class="s2">Init hydro:</span><span class="s0">\n</span><span class="s2">&quot;</span>)
+        <span class="s3"># -------------------------------------------------------</span>
+        sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\t</span><span class="s2">(1)Get forces</span><span class="s0">\n</span><span class="s2">&quot;</span>)
+        self._fe = nemoh.get_fe(fio.nemoh_results, dof, w, dir)
+        <span class="s3"># -------------------------------------------------------</span>
+        sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\t</span><span class="s2">(2)Get static mass and waterplane stiffness</span><span class="s0">\n</span><span class="s2">&quot;</span>)
+        self._m6x6, self._k6x6 = tb.load_M_and_K(fio.data_io_dir)
+        self._m = self._m6x6[self._idof[:, <span class="s0">None</span>], self._idof[<span class="s0">None</span>, :]]
+        self._k = self._k6x6[self._idof[:, <span class="s0">None</span>], self._idof[<span class="s0">None</span>, :]]
+        <span class="s3"># -------------------------------------------------------</span>
+        sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\t</span><span class="s2">(3)Get added mass and damping</span><span class="s0">\n</span><span class="s2">&quot;</span>)
+        self._ma, self._c_hyd = nemoh.get_ab(fio.nemoh_results, dof, w, dir)
+        <span class="s3"># -------------------------------------------------------</span>
+        nproblems = (len(dir) + sum(dof)) * len(w)
+        <span class="s0">with </span>open(fio.nemoh_root.joinpath(<span class="s2">'Normalvelocities.dat'</span>)) <span class="s0">as </span>f:
+            <span class="s0">if not </span>int(f.readline()) == nproblems:
+                print(<span class="s2">'nproblems mismatch'</span>)
+                exit()
+        <span class="s3"># -------------------------------------------------------</span>
+        print(<span class="s2">'</span><span class="s0">\n</span><span class="s2">'</span>)
+        f_sec_file = fio.data_io_dir.joinpath(<span class="s2">'f_sec.pkl'</span>)
+        <span class="s0">if </span>f_sec_file.is_file() <span class="s0">and </span><span class="s4">1</span>:
+            self._fsec = pickle.load(open(f_sec_file, <span class="s2">'rb'</span>))
+            sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\t</span><span class="s2">(4)Get pressures</span><span class="s0">\n</span><span class="s2">&quot;</span>)
+
+        <span class="s0">else</span>:
+            self._fsec = np.zeros((nproblems, <span class="s4">6</span>), dtype=np.complex)
+            <span class="s0">for </span>i <span class="s0">in </span>range(nproblems):
+                c = int(((i + <span class="s4">1</span>) * <span class="s4">100</span>) / nproblems)
+                sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\r\t</span><span class="s2">(4)Processing pressures [ %d&quot; </span>% c + <span class="s2">&quot;% ]&quot;</span>)
+                sys.stdout.flush()
+
+                self._fsec[i, :] = nemoh.get_f_yz(fio.nemoh_results, i + <span class="s4">1</span>, self._sym)
+
+            pickle.dump(self._fsec, open(f_sec_file, <span class="s2">&quot;wb&quot;</span>))
+            sys.stdout.write(<span class="s2">&quot;</span><span class="s0">\n</span><span class="s2">&quot;</span>)
+        <span class="s3"># -------------------------------------------------------</span>
+
+        self._w = w
+        self._dof = dof
+        self._dir = dir
+
+        print(<span class="s2">'</span><span class="s0">\n</span><span class="s2">Nproblems = {}'</span>.format(nproblems))
+
+    @property
+    <span class="s0">def </span>w(self):
+        <span class="s0">return </span>self._w
+
+    <span class="s0">def </span>sdof_val(self, m, dir_index, dof_index):
+        <span class="s0">return </span>m[dir_index, :, dof_index]
+
+    <span class="s0">def </span>calcRAO(self, fe, m, ma, c, k, w):
+        rao = np.absolute(fe / (-w ** <span class="s4">2 </span>* (m + ma) + <span class="s4">1j </span>* w * (c) + k))
+        <span class="s0">return </span>rao
+
+        <span class="s3"># rao = np.zeros(w.shape[0], dtype='complex')</span>
+        # for i, omega in enumerate(w):
+        #     rao[i] = fe[i] / (-omega ** 2 * (m + ma[i]) + 1j * omega * c[i] + k)
+        # return rao
+
+
+    <span class="s0">def </span>getRAO(self, sel_dof, sel_dir):
+        idir = self.get_dir_index(sel_dir)
+        idof = self.get_dof_index(sel_dof)
+        fe = self._fe[idir, :, idof]
+        m = self._m[idof][idof]
+        ma = self._ma[idir, :,idof, idof]
+        c = self._c_hyd[idir, :,idof, idof]
+        k = self._k[idof][idof]
+        <span class="s0">return </span>self.calcRAO(fe, m, ma, c, k, self._w)
+
+    @property
+    <span class="s0">def </span>available_dofs(self):
+        <span class="s0">return </span>[i + <span class="s4">1 </span><span class="s0">for </span>i, e <span class="s0">in </span>enumerate(self._dof) <span class="s0">if </span>e != <span class="s4">0</span>]
+
+    @property
+    <span class="s0">def </span>available_dirs(self):
+        <span class="s0">return </span>[e <span class="s0">for </span>i, e <span class="s0">in </span>enumerate(self._dir)]
+
+    <span class="s0">def </span>get_dof_index(self, sel_dof):
+        dof_index = <span class="s4">0</span>
+        <span class="s0">if </span>self._dof[sel_dof - <span class="s4">1</span>] == <span class="s4">1</span>:
+            <span class="s0">return </span>(sum(self._dof[:sel_dof]) - <span class="s4">1</span>)
+        <span class="s0">else</span>:
+            print(<span class="s2">'No such DOF'</span>)
+
+    <span class="s3">#</span>
+    <span class="s0">def </span>get_dir_index(self, sel_dir):
+        <span class="s0">return </span>int(sel_dir)
+
+    @property
+    <span class="s0">def </span>f_sec(self):
+        <span class="s0">return </span>self._fsec
+
+    @property
+    <span class="s0">def </span>ma(self):
+        <span class="s0">return </span>self._ma
+
+    @property
+    <span class="s0">def </span>m(self):
+        <span class="s0">return </span>self._m
+
+    @property
+    <span class="s0">def </span>k(self):
+        <span class="s0">return </span>self._k
+
+
+    @property
+    <span class="s0">def </span>fe(self):
+        <span class="s0">return </span>self._fe
+
+
+<span class="s0">def </span>spec_wave(hs, wp, w, gamma=<span class="s0">None</span>):
+    sig_a = <span class="s4">0.07</span>
+    sig_b = <span class="s4">0.09</span>
+    delta_sig = sig_b - sig_a
+
+    tp = <span class="s4">2 </span>* np.pi / wp
+    x = tp / np.sqrt(hs)
+    <span class="s0">if </span>gamma == <span class="s0">None</span>:
+        <span class="s0">if </span>x &lt;= <span class="s4">3.6</span>:
+            gamma = <span class="s4">5</span>
+        <span class="s0">elif </span>x &lt; <span class="s4">5</span>:
+            gamma = np.exp(<span class="s4">5.75 </span>- <span class="s4">1.15 </span>* x)
+        <span class="s0">else</span>:
+            gamma = <span class="s4">1</span>
+        <span class="s3"># print('Gamma {}'.format(gamma))</span>
+
+    a_gamma = <span class="s4">1 </span>- <span class="s4">0.287 </span>* np.log(gamma)
+
+    <span class="s0">def </span>spec_pm(w):
+        <span class="s0">return </span>(<span class="s4">5 </span>/ <span class="s4">16</span>) * (hs ** <span class="s4">2</span>) * (wp ** <span class="s4">4</span>) * (w ** (-<span class="s4">5</span>)) * np.exp(-(<span class="s4">5 </span>/ <span class="s4">4</span>) * ((w / wp) ** (-<span class="s4">4</span>)))
+
+    <span class="s0">def </span>spec_jonswap(w):
+        <span class="s0">def </span>sig(w):
+            <span class="s0">return </span>sig_a <span class="s0">if </span>w &lt;= wp <span class="s0">else </span>sig_b
+
+        sig_ab = np.array(list(map(sig, w)))
+
+        <span class="s0">return </span>a_gamma * spec_pm(w) * gamma ** np.exp(-<span class="s4">0.5 </span>* ((w - wp) / sig_ab * wp))
+
+    <span class="s0">if not </span>gamma == <span class="s4">1</span>:
+        spec = spec_jonswap
+    <span class="s0">else</span>:
+        spec = spec_pm
+
+    <span class="s0">return </span>spec(w)
+
+
+<span class="s0">def </span>spec_response(h, w, hs, wp):
+    s = spec_wave(hs, wp, w)
+    <span class="s0">return </span>h ** <span class="s4">2 </span>* s
+</pre>
+</body>
+</html>

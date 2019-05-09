@@ -1,0 +1,383 @@
+<html>
+<head>
+<title>tool_box.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #0000ff;}
+.s3 { color: #008080; font-weight: bold;}
+.s4 { color: #808080; font-style: italic;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+tool_box.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>os
+<span class="s0">import </span>pickle
+<span class="s0">import </span>subprocess
+<span class="s0">from </span>copy <span class="s0">import </span>deepcopy
+<span class="s0">from </span>math <span class="s0">import </span>cos, sin
+
+<span class="s0">import </span>numpy <span class="s0">as </span>np
+<span class="s0">from </span>numpy <span class="s0">import </span>pi, sin, cos
+
+
+<span class="s0">class </span>TotalMassMatrixClass(object):
+    <span class="s0">def </span>__init__(self):
+        self._cog = np.zeros((<span class="s2">3</span>), dtype=<span class="s3">'float'</span>)
+        self._point = np.zeros((<span class="s2">3</span>), dtype=<span class="s3">'float'</span>)
+        self._mass_matrix_local = np.zeros((<span class="s2">6</span>, <span class="s2">6</span>), dtype=<span class="s3">'float'</span>)
+        self._mass_matrix_global = np.zeros((<span class="s2">6</span>, <span class="s2">6</span>), dtype=<span class="s3">'float'</span>)
+
+    @property
+    <span class="s0">def </span>cog(self):
+        <span class="s4">&quot;&quot;&quot;The position of the center of gravity&quot;&quot;&quot;</span>
+        <span class="s0">return </span>self._cog
+
+    <span class="s4"># @cog.setter</span>
+    # def cog(self, point):
+    #     &quot;&quot;&quot;The position of the center of gravity&quot;&quot;&quot;
+    #     self._cog = np.asarray(point, dtype=np.float)
+
+    @property
+    <span class="s0">def </span>mass(self):
+        <span class="s4">&quot;&quot;&quot;The mass of the body&quot;&quot;&quot;</span>
+        <span class="s0">return </span>self._mass_matrix_local[<span class="s2">0</span>, <span class="s2">0</span>]
+
+    @mass.setter
+    <span class="s0">def </span>mass(self, val):
+        self._mass_matrix_local[:<span class="s2">3</span>, :<span class="s2">3</span>] = np.eye(<span class="s2">3</span>) * val
+
+    @property
+    <span class="s0">def </span>mass_matrix_local(self):
+        <span class="s0">return </span>self._mass_matrix_local
+
+    @property
+    <span class="s0">def </span>ixx(self):
+        <span class="s0">return </span>self._mass_matrix_local[<span class="s2">3</span>][<span class="s2">3</span>]
+
+    @ixx.setter
+    <span class="s0">def </span>ixx(self, val):
+        self.assign_val_to_mass_matrix_local(<span class="s2">3</span>, <span class="s2">3</span>, val)
+
+    @property
+    <span class="s0">def </span>iyy(self):
+        <span class="s0">return </span>self._mass_matrix_local[<span class="s2">4</span>, <span class="s2">4</span>]
+
+    @iyy.setter
+    <span class="s0">def </span>iyy(self, val):
+        self.assign_val_to_mass_matrix_local(<span class="s2">4</span>, <span class="s2">4</span>, val)
+
+    @property
+    <span class="s0">def </span>izz(self):
+        <span class="s0">return </span>self._mass_matrix_local[<span class="s2">5</span>][<span class="s2">5</span>]
+
+    @izz.setter
+    <span class="s0">def </span>izz(self, val):
+        self.assign_val_to_mass_matrix_local(<span class="s2">5</span>, <span class="s2">5</span>, val)
+
+    @property
+    <span class="s0">def </span>inertia_matrix_global(self):
+        <span class="s0">return </span>self._mass_matrix_global[<span class="s2">3</span>:, <span class="s2">3</span>:]
+
+    @property
+    <span class="s0">def </span>mass_matrix_global(self):
+        self.update_mass_matrix_global()
+        <span class="s0">return </span>self._mass_matrix_global
+
+    <span class="s4"># Local matrix</span>
+    @property
+    <span class="s0">def </span>vector_matrix_local(self):
+        <span class="s0">return </span>self._mass_matrix_local / self.mass
+
+    <span class="s4">#</span>
+
+    <span class="s0">def </span>add_mass_matrix_local(self, mat):
+        self._mass_matrix_local += mat
+
+    <span class="s0">def </span>assign_val_to_mass_matrix_local(self, i, j, val):
+        self._mass_matrix_local[i, j] = val
+        self.update_mass_matrix_global()
+
+    <span class="s0">def </span>rotate_z_inertia_mass_matrix_local(self, angle):
+        rm = rotation_matrix([<span class="s2">0</span>, <span class="s2">0</span>, angle])
+        rm_t = np.transpose(rm)
+        self._mass_matrix_local[<span class="s2">3</span>:, :<span class="s2">3</span>] = rm * self._mass_matrix_local[<span class="s2">3</span>:, :<span class="s2">3</span>] * rm_t
+        self._mass_matrix_local[:<span class="s2">3</span>, <span class="s2">3</span>:] = rm * self._mass_matrix_local[:<span class="s2">3</span>, <span class="s2">3</span>:] * rm_t
+        self._mass_matrix_local[<span class="s2">3</span>:, <span class="s2">3</span>:] = rm * self._mass_matrix_local[<span class="s2">3</span>:, <span class="s2">3</span>:] * rm_t
+        self.update_mass_matrix_global()
+
+    <span class="s4"># Global matrix</span>
+    @property
+    <span class="s0">def </span>vector_matrix_global(self):
+        <span class="s0">return </span>self._mass_matrix_global / self.mass
+
+    <span class="s0">def </span>rotate_z_inertia_mass_matrix_global(self, angle):
+        rm = rotation_matrix([<span class="s2">0</span>, <span class="s2">0</span>, angle])
+        self._mass_matrix_global[<span class="s2">3</span>:, <span class="s2">3</span>:] = rm * self._mass_matrix_global[<span class="s2">3</span>:, <span class="s2">3</span>:] * np.transpose(rm)
+
+    <span class="s0">def </span>reset(self):
+        self.__init__()
+
+    @property
+    <span class="s0">def </span>reduction_point(self):
+        <span class="s4">&quot;&quot;&quot; 
+        The reduction point of the inertia matrix 
+ 
+        Returns 
+        ------- 
+        ndarray 
+        &quot;&quot;&quot;</span>
+        <span class="s0">return </span>self._point
+
+    @reduction_point.setter
+    <span class="s0">def </span>reduction_point(self, point):
+        <span class="s4">&quot;&quot;&quot;Set the reduction point&quot;&quot;&quot;</span>
+        <span class="s0">assert </span>len(point) == <span class="s2">3</span>
+        self._point = np.asarray(point, dtype=np.float)
+        self.update_mass_matrix_global()
+
+    <span class="s0">def </span>update_mass_matrix_global(self):
+        self._mass_matrix_global = self._mass_matrix_local + self._huygens_transport() * self.mass
+
+    @property
+    <span class="s0">def </span>at_cog(self):
+        <span class="s4">&quot;&quot;&quot;Returns a new inertia object that is expressed at cog. 
+ 
+        It makes a copy of itself. 
+ 
+        Returns 
+        ------- 
+        ndarray 
+        &quot;&quot;&quot;</span>
+        inertia = deepcopy(self)
+        inertia.shift_at_cog()
+        <span class="s0">return </span>inertia
+
+    <span class="s0">def </span>shift_at_cog(self):
+        <span class="s4">&quot;&quot;&quot;Shift the inertia matrix internally at cog. 
+ 
+        The reduction point is then cog. 
+        &quot;&quot;&quot;</span>
+        self._mass_matrix_local -= self._huygens_transport() * self.mass
+        self._point = self._cog
+
+    <span class="s0">def </span>is_at_cog(self):
+        <span class="s4">&quot;&quot;&quot;Returns whether the object is expressed at cog 
+ 
+        Returns 
+        ------- 
+        bool 
+        &quot;&quot;&quot;</span>
+        <span class="s0">return </span>np.all(self._point == self._cog)
+
+    <span class="s0">def </span>_huygens_transport(self):
+        p_g = self._cog - self._point
+        x = p_g[<span class="s2">0</span>];
+        y = p_g[<span class="s2">1</span>];
+        z = p_g[<span class="s2">2</span>]
+        <span class="s4"># print('x={} y={} z={}'.format(x,y,z))</span>
+        A = np.asarray([[<span class="s2">0</span>, -z, y],
+                        [z, <span class="s2">0</span>, -x],
+                        [-y, x, <span class="s2">0</span>]], dtype=np.float)
+        AT = np.transpose(A)
+        m = np.zeros((<span class="s2">6</span>, <span class="s2">6</span>), dtype=np.float)
+        m[<span class="s2">3</span>:, :<span class="s2">3</span>] = A
+        m[:<span class="s2">3</span>, <span class="s2">3</span>:] = AT
+        m[<span class="s2">3</span>:, <span class="s2">3</span>:] = np.matmul(A, AT)
+        <span class="s4"># print(m[3:,3:])</span>
+        <span class="s0">return </span>m
+
+
+<span class="s0">def </span>hollow_right_circular_cylinder(tmm, int_radius, ext_radius, length, density=<span class="s2">1.</span>):
+    <span class="s4">&quot;&quot;&quot;Get the inertia of a hollow right circular cylinder 
+ 
+    Returns 
+    ------- 
+    TotalMassMatrixClass instance 
+    &quot;&quot;&quot;</span>
+
+    vol = pi * length * (ext_radius ** <span class="s2">2 </span>- int_radius ** <span class="s2">2</span>)
+    tmm.mass = density * vol
+
+    R2r2 = (ext_radius ** <span class="s2">2 </span>+ int_radius ** <span class="s2">2</span>)
+    tmm.ixx = tmm.iyy = ((<span class="s2">3 </span>* R2r2 + length ** <span class="s2">2</span>) / <span class="s2">12.</span>) * tmm.mass
+    tmm.izz = (R2r2 / <span class="s2">2.</span>) * tmm.mass
+
+
+<span class="s0">def </span>rectangular_prism(tmm, a, b, h, density=<span class="s2">1.</span>):
+    <span class="s4">&quot;&quot;&quot;Get the inertia of a rectangular prism 
+ 
+    Returns 
+    ------- 
+    TotalMassMatrixClass instance 
+ 
+    Note 
+    ---- 
+    * a is along x 
+    * b is along y 
+    * h is along z 
+    &quot;&quot;&quot;</span>
+    vol = a * b * h
+    tmm.mass = density * vol
+
+    tmm.ixx = tmm.mass * (b ** <span class="s2">2 </span>+ h ** <span class="s2">2</span>) / <span class="s2">12.</span>
+    tmm.iyy = tmm.mass * (a ** <span class="s2">2 </span>+ h ** <span class="s2">2</span>) / <span class="s2">12.</span>
+    tmm.izz = tmm.mass * (a ** <span class="s2">2 </span>+ b ** <span class="s2">2</span>) / <span class="s2">12.</span>
+
+
+<span class="s0">def </span>trig(angle):
+    <span class="s4"># r = radians(angle)</span>
+    r = angle
+    <span class="s0">return </span>cos(r), sin(r)
+
+
+<span class="s0">def </span>transformation_matrix(rotation, translation=<span class="s0">None</span>, scale=<span class="s0">None</span>):
+    <span class="s0">if </span>translation <span class="s0">is None</span>:
+        translation = [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>]
+    <span class="s0">if </span>scale <span class="s0">is None</span>:
+        scale = [<span class="s2">1</span>, <span class="s2">1</span>, <span class="s2">1</span>]
+    xC, xS = trig(rotation[<span class="s2">0</span>])
+    yC, yS = trig(rotation[<span class="s2">1</span>])
+    zC, zS = trig(rotation[<span class="s2">2</span>])
+    dX = translation[<span class="s2">0</span>]
+    dY = translation[<span class="s2">1</span>]
+    dZ = translation[<span class="s2">2</span>]
+    sX = scale[<span class="s2">0</span>]
+    sY = scale[<span class="s2">1</span>]
+    sZ = scale[<span class="s2">2</span>]
+    Scale_matrix = np.array([[sX, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>],
+                             [<span class="s2">0</span>, sY, <span class="s2">0</span>, <span class="s2">0</span>],
+                             [<span class="s2">0</span>, <span class="s2">0</span>, sZ, <span class="s2">0</span>],
+                             [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>]])
+    Translate_matrix = np.array([[<span class="s2">1</span>, <span class="s2">0</span>, <span class="s2">0</span>, dX],
+                                 [<span class="s2">0</span>, <span class="s2">1</span>, <span class="s2">0</span>, dY],
+                                 [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>, dZ],
+                                 [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>]])
+    Rotate_X_matrix = np.array([[<span class="s2">1</span>, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, xC, -xS, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, xS, xC, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>]])
+    Rotate_Y_matrix = np.array([[yC, <span class="s2">0</span>, yS, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, <span class="s2">1</span>, <span class="s2">0</span>, <span class="s2">0</span>],
+                                [-yS, <span class="s2">0</span>, yC, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>]])
+    Rotate_Z_matrix = np.array([[zC, -zS, <span class="s2">0</span>, <span class="s2">0</span>],
+                                [zS, zC, <span class="s2">0</span>, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>]])
+    <span class="s0">return </span>np.dot(Rotate_Z_matrix,
+                  np.dot(Rotate_Y_matrix, np.dot(Rotate_X_matrix, np.dot(Translate_matrix, Scale_matrix))))
+
+
+<span class="s0">def </span>rotation_matrix(rotation):
+    xC, xS = trig(rotation[<span class="s2">0</span>])
+    yC, yS = trig(rotation[<span class="s2">1</span>])
+    zC, zS = trig(rotation[<span class="s2">2</span>])
+    Rotate_X_matrix = np.array([[<span class="s2">1</span>, <span class="s2">0</span>, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, xC, -xS],
+                                [<span class="s2">0</span>, xS, xC]])
+    Rotate_Y_matrix = np.array([[yC, <span class="s2">0</span>, yS],
+                                [<span class="s2">0</span>, <span class="s2">1</span>, <span class="s2">0</span>],
+                                [-yS, <span class="s2">0</span>, yC], ])
+    Rotate_Z_matrix = np.array([[zC, -zS, <span class="s2">0</span>],
+                                [zS, zC, <span class="s2">0</span>],
+                                [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>]])
+    <span class="s0">return </span>np.dot(Rotate_Z_matrix, np.dot(Rotate_Y_matrix, Rotate_X_matrix))
+
+
+<span class="s0">def </span>write_gmsh(fio, floater_model, dens_t=<span class="s2">1</span>, dens_quarter_cirlce=<span class="s2">4</span>, dens_cylinder_height=<span class="s2">14</span>):
+    <span class="s0">with </span>open(<span class="s3">r'.\templates\MOLO_{}c.geo.template'</span>.format(floater_model.nc), <span class="s3">'r'</span>) <span class="s0">as </span>file:
+        filedata = file.read()
+
+    <span class="s4"># Replace the target string</span>
+    filedata = filedata.replace(<span class="s3">'#dia_rc#'</span>, <span class="s3">'{}'</span>.format(floater_model.dia_rc))
+    filedata = filedata.replace(<span class="s3">'#dia_hc#'</span>, <span class="s3">'{}'</span>.format(floater_model.dia_hc))
+    filedata = filedata.replace(<span class="s3">'#gap#'</span>, <span class="s3">'{}'</span>.format(floater_model.gap))
+    filedata = filedata.replace(<span class="s3">'#hgt#'</span>, <span class="s3">'{}'</span>.format(floater_model.hgt))
+    filedata = filedata.replace(<span class="s3">'#t_lf#'</span>, <span class="s3">'{}'</span>.format(floater_model.t_lf))
+
+    <span class="s4"># Set mesh density</span>
+    dens2 = dens_t + <span class="s2">1  </span><span class="s4"># Thickness</span>
+    dens5 = dens_quarter_cirlce + <span class="s2">1  </span><span class="s4">#</span>
+    dens9 = <span class="s2">2 </span>* dens_quarter_cirlce + <span class="s2">1  </span><span class="s4">#</span>
+    dens15 = dens_cylinder_height + <span class="s2">1  </span><span class="s4"># Column height</span>
+    filedata = filedata.replace(<span class="s3">'#dens2#'</span>, <span class="s3">'{}'</span>.format(dens2))
+    filedata = filedata.replace(<span class="s3">'#dens5#'</span>, <span class="s3">'{}'</span>.format(dens5))
+    filedata = filedata.replace(<span class="s3">'#dens9#'</span>, <span class="s3">'{}'</span>.format(dens9))
+    filedata = filedata.replace(<span class="s3">'#dens15#'</span>, <span class="s3">'{}'</span>.format(dens15))
+
+    gmsh_geo_file = fio.gmsh_dir.joinpath(<span class="s3">'MOLO_{}c.geo'</span>.format(floater_model.nc))
+    gmsh_msh_file = fio.gmsh_dir.joinpath(<span class="s3">'MOLO_{}c.msh'</span>.format(floater_model.nc))
+
+    <span class="s0">with </span>open(gmsh_geo_file, <span class="s3">'w'</span>) <span class="s0">as </span>file:
+        file.write(filedata)
+    print(<span class="s3">'{}'</span>.format(gmsh_geo_file))
+    <span class="s0">try</span>:
+        a = subprocess.check_output(
+            [<span class="s3">'gmsh'</span>, <span class="s3">'-2'</span>, <span class="s3">'{}'</span>.format(gmsh_geo_file), <span class="s3">'-save_all'</span>, <span class="s3">'-format'</span>, <span class="s3">'msh2'</span>, <span class="s3">'-o'</span>,
+             <span class="s3">'{}'</span>.format(gmsh_msh_file)])
+    <span class="s0">except</span>:
+        print(<span class="s3">'gmsh failed</span><span class="s0">\n</span><span class="s3">'</span>)
+    <span class="s0">finally</span>:
+        <span class="s0">return </span>gmsh_msh_file
+
+
+<span class="s0">def </span>save_M_and_K(wdir, M, MMK):
+    <span class="s4"># From meshmagic 3x3 to 6x6</span>
+    K = np.zeros((<span class="s2">6</span>, <span class="s2">6</span>), dtype=<span class="s3">'float'</span>)
+    K[<span class="s2">2</span>, <span class="s2">2</span>] = MMK[<span class="s2">0</span>, <span class="s2">0</span>]
+    K[<span class="s2">2</span>, <span class="s2">3</span>] = MMK[<span class="s2">0</span>, <span class="s2">1</span>]
+    K[<span class="s2">3</span>, <span class="s2">2</span>] = MMK[<span class="s2">0</span>, <span class="s2">1</span>]
+    K[<span class="s2">2</span>, <span class="s2">4</span>] = MMK[<span class="s2">0</span>, <span class="s2">2</span>]
+    K[<span class="s2">4</span>, <span class="s2">2</span>] = MMK[<span class="s2">0</span>, <span class="s2">2</span>]
+    K[<span class="s2">3</span>, <span class="s2">3</span>] = MMK[<span class="s2">1</span>, <span class="s2">1</span>]
+    K[<span class="s2">3</span>, <span class="s2">4</span>] = MMK[<span class="s2">1</span>, <span class="s2">2</span>]
+    K[<span class="s2">4</span>, <span class="s2">3</span>] = MMK[<span class="s2">1</span>, <span class="s2">2</span>]
+    K[<span class="s2">4</span>, <span class="s2">4</span>] = MMK[<span class="s2">2</span>, <span class="s2">2</span>]
+
+    pickle.dump(M, open(os.path.join(wdir, <span class="s3">'M.pkl'</span>), <span class="s3">&quot;wb&quot;</span>))
+    pickle.dump(K, open(os.path.join(wdir, <span class="s3">'K.pkl'</span>), <span class="s3">&quot;wb&quot;</span>))
+
+
+<span class="s0">def </span>load_M_and_K(wdir):
+    M = pickle.load(open(os.path.join(wdir, <span class="s3">'M.pkl'</span>), <span class="s3">'rb'</span>))
+    K = pickle.load(open(os.path.join(wdir, <span class="s3">'K.pkl'</span>), <span class="s3">'rb'</span>))
+
+    <span class="s0">return </span>M, K
+
+
+<span class="s0">def </span>get_dof_index(sel_dof, dof):
+    dof_index = <span class="s2">0</span>
+    <span class="s0">if </span>dof[sel_dof - <span class="s2">1</span>]:
+        <span class="s0">for </span>i <span class="s0">in </span>dof:
+            <span class="s0">if </span>i:
+                dof_index += <span class="s2">1</span>
+                <span class="s0">if </span>dof_index == sel_dof:
+                    <span class="s0">break</span>
+
+
+    else:
+        print(<span class="s3">'No such DOF'</span>)
+
+    <span class="s0">return </span>dof_index - <span class="s2">1</span>
+
+
+<span class="s4">#</span>
+<span class="s0">def </span>get_dir_index(sel_dir, dir):
+    <span class="s0">return </span>sel_dir
+
+
+<span class="s0">def </span>P2R(radii, angles):
+    <span class="s0">return </span>radii * np.exp(<span class="s2">1j </span>* angles)
+
+
+<span class="s0">def </span>R2P(x):
+    <span class="s0">return </span>abs(x), np.angle(x)
+</pre>
+</body>
+</html>

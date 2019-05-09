@@ -1,0 +1,127 @@
+<html>
+<head>
+<title>test_bench3.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #0000ff;}
+.s3 { color: #808080; font-style: italic;}
+.s4 { color: #008080; font-weight: bold;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+test_bench3.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>json
+<span class="s0">from </span>pathlib <span class="s0">import </span>Path
+
+<span class="s0">import </span>matplotlib.pyplot <span class="s0">as </span>plt
+<span class="s0">import </span>numpy <span class="s0">as </span>np
+
+<span class="s0">import </span>helper
+<span class="s0">import </span>hydro
+<span class="s0">import </span>model_set_up <span class="s0">as </span>ms
+<span class="s0">import </span>nemoh
+<span class="s0">from </span>common <span class="s0">import </span>file_io
+
+np.set_printoptions(precision=<span class="s2">3</span>)
+step1 = <span class="s0">False</span>
+step2 = <span class="s0">False</span>
+step3 = <span class="s0">True</span>
+
+<span class="s3"># Give the analysed DOFs</span>
+NEMOH_DOF = [<span class="s2">0</span>, <span class="s2">0</span>, <span class="s2">1</span>, <span class="s2">0</span>, <span class="s2">1</span>, <span class="s2">0</span>]
+RHO_SW = <span class="s2">1025</span>
+WATER_DEPTH = <span class="s2">100</span>
+OMEGA_NEMOH_INP = [<span class="s2">81</span>, np.pi/<span class="s2">20</span>, np.pi]
+SYM = <span class="s2">1</span>
+
+ROOT = Path(<span class="s4">r'C:\Users\EDUX\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\MOLO_Analyses'</span>)
+ROOT = Path(<span class="s4">r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\MOLO_Analyses'</span>)
+
+<span class="s0">if </span>step1:
+    fio = file_io(ROOT)
+
+    model_template = fio.templates_dir.joinpath(<span class="s4">'model_template.json'</span>)
+
+    <span class="s0">with </span>open(model_template, <span class="s4">'r'</span>) <span class="s0">as </span>f:
+        data = json.loads(f.read())
+
+    model_input = fio.data_io_dir.joinpath(<span class="s4">'model.json'</span>)
+    <span class="s0">with </span>open(model_input, <span class="s4">'w'</span>) <span class="s0">as </span>f:
+        f.write(json.dumps(data, indent=<span class="s2">4</span>, sort_keys=<span class="s0">True</span>))
+
+    unit_model, hs_floater = ms.launch(fio, model_input)
+
+    <span class="s3"># yz_section = (unit_model.parts_list[1].gap + 1) * unit_model.parts_list[1].dia_rc / 2</span>
+
+    K33 = hs_floater.hs_data[<span class="s4">'stiffness_matrix'</span>][<span class="s2">0</span>, <span class="s2">0</span>]
+    K44 = hs_floater.hs_data[<span class="s4">'stiffness_matrix'</span>][<span class="s2">1</span>, <span class="s2">1</span>]
+    M33 = unit_model.inertias.mass_matrix_global[<span class="s2">2</span>][<span class="s2">2</span>]
+    M44 = unit_model.inertias.mass_matrix_global[<span class="s2">3</span>][<span class="s2">3</span>]
+    T33 = <span class="s2">2 </span>* np.pi / (np.sqrt(K33 / M33))
+    T44 = <span class="s2">2 </span>* np.pi / (np.sqrt(K44 / M44))
+    print(<span class="s4">'</span><span class="s0">\n\n</span><span class="s4">T33 = {:&gt;4.1f} s'</span>.format(T33))
+    print(<span class="s4">'T44 = {:&gt;4.1f} s'</span>.format(T44))
+
+    hydro_mesh_symmetri, mesh_file = nemoh.mesh(fio.nemoh_dir, hs_floater, SYM)
+
+    hydro_mesh_symmetri.show()
+
+    <span class="s0">if </span>step2:
+        nemoh.runNemoh(fio.nemoh_dir, hydro_mesh_symmetri, mesh_file, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP, NEMOH_DOF)
+
+<span class="s0">else</span>:
+    CASE_NUMBER = <span class="s2">4</span>
+    SYM = <span class="s2">1</span>
+
+    fio = file_io(ROOT, CASE_NUMBER)
+
+<span class="s0">if </span>step3:
+    <span class="s3"># Read results, perform postprocessing and write pdf</span>
+    w = nemoh.getOmega(fio.nemoh_results)
+    dir = nemoh.getDirections(fio.nemoh_results)
+
+    hdp = hydro.hydro_dynamic_properties(NEMOH_DOF, w, dir, fio, SYM)
+    SELECT_DOF = <span class="s2">1</span>
+    SELECT_AXIS = <span class="s2">2</span>
+    SELECT_FREC = <span class="s2">1</span>
+
+    <span class="s3"># print('\nSection forces')</span>
+    # for i in range(6):
+    #     print('\tDOF{}: {:8.1f}'.format(i + 1, np.sqrt(
+    #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
+    # write_report(root, hdp, case_label)
+
+    ifrec = <span class="s2">0</span>
+
+    <span class="s0">if </span><span class="s2">0</span>:
+        helper.show_pressure(fio, problem=<span class="s2">1</span>, select_axis=SELECT_AXIS, sym=SYM)
+
+    <span class="s3"># print(hdp.ma[0,:,0,0])</span>
+    # print(hdp._fe_amp[0,:,dof])
+
+    print(<span class="s4">'</span><span class="s0">\n</span><span class="s4">Radiation damping:</span><span class="s0">\n</span><span class="s4">{}'</span>.format(hdp._c_hyd[<span class="s2">0</span>, :, ifrec, :]))
+    print(<span class="s4">'</span><span class="s0">\n</span><span class="s4">Water plane stiffness:</span><span class="s0">\n</span><span class="s4">{}'</span>.format(hdp.k))
+    print(<span class="s4">'</span><span class="s0">\n</span><span class="s4">Static mass:</span><span class="s0">\n</span><span class="s4">{}'</span>.format(hdp.m))
+    print(<span class="s4">'</span><span class="s0">\n</span><span class="s4">Added mass:</span><span class="s0">\n</span><span class="s4">{}'</span>.format(hdp._ma[<span class="s2">0</span>, :, ifrec, :]))
+
+    idof = np.array([i <span class="s0">for </span>i, x <span class="s0">in </span>enumerate(NEMOH_DOF) <span class="s0">if </span>x])
+    print(<span class="s4">'</span><span class="s0">\n</span><span class="s4">'</span>)
+    <span class="s0">for </span>i, x <span class="s0">in </span>enumerate(idof):
+        w2 = hdp.k[i, i] / (hdp.m[i, i] + hdp.ma[<span class="s2">0</span>, i, ifrec, i])
+        print(<span class="s4">'T{}:</span><span class="s0">\t</span><span class="s4">{:5.1f} s'</span>.format(x + <span class="s2">1</span>, <span class="s2">2 </span>* np.pi / np.sqrt(w2)))
+
+    <span class="s3"># print(hdp._m[0,0])</span>
+    #plt.plot(2 * np.pi / w, hdp._c_hyd[0, :,SELECT_DOF, SELECT_DOF])
+    #plt.plot(2*np.pi/w,abs(hdp._fe[0,:,0]))
+    plt.plot(<span class="s2">2</span>*np.pi/w,hdp.getRAO(<span class="s2">3</span>,<span class="s2">0</span>))
+    plt.show()
+
+</pre>
+</body>
+</html>

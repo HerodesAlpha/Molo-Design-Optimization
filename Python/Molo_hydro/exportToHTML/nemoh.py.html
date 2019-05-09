@@ -1,0 +1,598 @@
+<html>
+<head>
+<title>nemoh.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #808080; font-style: italic;}
+.s3 { color: #008080; font-weight: bold;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+nemoh.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span>os
+<span class="s0">import </span>subprocess
+<span class="s0">from </span>pathlib <span class="s0">import </span>Path
+
+<span class="s0">import </span>numpy <span class="s0">as </span>np
+
+<span class="s0">import </span>meshmagick.mesh_clipper <span class="s0">as </span>mc
+<span class="s0">import </span>meshmagick.mmio <span class="s0">as </span>mmio
+<span class="s0">import </span>tool_box <span class="s0">as </span>tb
+<span class="s0">from </span>meshmagick.mesh <span class="s0">import </span>Mesh
+
+
+<span class="s0">def </span>writeCalFile(rho_sw, water_depth, omega, dof, aO, mesh_file, nrNode, nrPanel):
+    <span class="s2"># In case of array simulation, do stuff</span>
+    dirCheck = aO[<span class="s3">'dirCheck'</span>]
+    irfCheck = aO[<span class="s3">'irfCheck'</span>]
+    kochCheck = aO[<span class="s3">'kochCheck'</span>]
+    fsCheck = aO[<span class="s3">'fsCheck'</span>]
+
+    <span class="s2"># Create the Nemoh calibration file</span>
+    <span class="s0">with </span>open(<span class="s3">'Nemoh.cal'</span>, <span class="s3">'w'</span>) <span class="s0">as </span>fid:
+        fid.write(<span class="s3">'--- Environment ---</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(str(rho_sw) + <span class="s3">'             ! RHO           ! KG/M**3   ! Fluid specific volume</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'9.81             ! G         ! M/S**2    ! Gravity</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(str(water_depth) + <span class="s3">'                ! DEPTH         ! M     ! Water depth</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'0.   0.          ! XEFF YEFF     ! M     ! Wave measurement point</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'--- Description of floating bodies ---</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'{:d}             ! Number of bodies</span><span class="s0">\n</span><span class="s3">'</span>.format(<span class="s4">1</span>))
+        fid.write(<span class="s3">'--- Body 1 ---------------------------</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'{}</span><span class="s0">\t			</span><span class="s3">! Name of mesh file</span><span class="s0">\n</span><span class="s3">'</span>.format(mesh_file))
+        fid.write(str(nrNode) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(nrPanel) + <span class="s3">'           ! Number of points and number of panels</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'{:d}             ! Number of degrees of freedom</span><span class="s0">\n</span><span class="s3">'</span>.format(sum(dof)))
+        <span class="s0">for </span>iDof <span class="s0">in </span>range(len(dof)):
+            <span class="s0">if </span>(iDof == <span class="s4">0 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'1 1. 0.  0. 0. 0. 0.     ! Surge</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">1 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'1 0. 1.  0. 0. 0. 0.     ! Sway</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">2 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'1 0. 0. 1. 0. 0. 0.      ! Heave</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">3 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'2 1. 0. 0. 0. 0. 0.      ! Roll about waterline</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">4 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'2 0. 1. 0. 0. 0. 0.      ! Pitch about waterline</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">5 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'2 0. 0. 1. 0. 0. 0.      ! Yaw about waterline</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'{:d}             ! Number of resulting generalised forces</span><span class="s0">\n</span><span class="s3">'</span>.format(sum(dof)))
+        <span class="s0">for </span>iDof <span class="s0">in </span>range(len(dof)):
+            <span class="s0">if </span>(iDof == <span class="s4">0 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'1 1. 0.  0. 0. 0. 0.     ! Force in X direction</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">1 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'1 0. 1.  0. 0. 0. 0.     ! Force in Y direction</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">2 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'1 0. 0. 1. 0. 0. 0.      ! Force in Z direction</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">3 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'2 1. 0. 0. 0. 0. 0.}     ! Roll moment about waterline</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">4 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'2 0. 1. 0. 0. 0. 0.      ! Pitch moment about waterline</span><span class="s0">\n</span><span class="s3">'</span>)
+            <span class="s0">elif </span>(iDof == <span class="s4">5 </span><span class="s0">and </span>dof[iDof] == <span class="s4">1</span>):
+                fid.write(<span class="s3">'2 0. 0. 1. 0. 0. 0.      ! Yaw moment about waterline</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'0                ! Number of lines of additional information</span><span class="s0">\n</span><span class="s3">'</span>)
+
+        fid.write(<span class="s3">'--- Load cases to be solved ---</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(str(omega[<span class="s4">0</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(omega[<span class="s4">1</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(
+            omega[<span class="s4">2</span>]) + <span class="s3">'     ! Number of wave frequencies, Min, and Max (rad/s)</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">if </span>dirCheck:
+            fid.write(str(aO[<span class="s3">'dirStep'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[<span class="s3">'dirStart'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(
+                aO[<span class="s3">'dirStop'</span>]) + <span class="s3">'        ! Number of wave directions, Min and Max (degrees)</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">else</span>:
+            fid.write(<span class="s3">'1    0.  0.      ! Number of wave directions, Min and Max (degrees)</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'--- Post processing ---</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">if </span>irfCheck:
+            fid.write(<span class="s3">'1' </span>+ <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[<span class="s3">'irfStep'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[
+                                                                       <span class="s3">'irfDur'</span>]) + <span class="s3">'</span><span class="s0">\t\t</span><span class="s3">! IRF               ! IRF calculation (0 for no calculation), time step and duration</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">else</span>:
+            fid.write(
+                <span class="s3">'0' </span>+ <span class="s3">'</span><span class="s0">\t</span><span class="s3">0.01</span><span class="s0">\t</span><span class="s3">20.</span><span class="s0">\t\t</span><span class="s3">! IRF               ! IRF calculation (0 for no calculation), time step and duration</span><span class="s0">\n</span><span class="s3">'</span>)
+        fid.write(<span class="s3">'1                ! Show pressure</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">if </span>kochCheck:
+            fid.write(str(aO[<span class="s3">'kochStep'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[<span class="s3">'kochStart'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[
+                                                                                         <span class="s3">'kochStop'</span>]) + <span class="s3">'      ! Kochin function       ! Number of directions of calculation (0 for no calculations), Min and Max (degrees)</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">else</span>:
+            fid.write(
+                <span class="s3">'0  0.  180.        ! Kochin function       ! Number of directions of calculation (0 for no calculations), Min and Max (degrees)</span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">if </span>fsCheck:
+            fid.write(str(aO[<span class="s3">'fsDeltaX'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[<span class="s3">'fsDeltaY'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[<span class="s3">'fsLengthX'</span>]) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(aO[
+                                                                                                                      <span class="s3">'fsLengthY'</span>]) + <span class="s3">' ! Free surface elevation    ! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction   </span><span class="s0">\n</span><span class="s3">'</span>)
+        <span class="s0">else</span>:
+            fid.write(
+                <span class="s3">'0  2   1000.   2.  ! Free surface elevation    ! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction   </span><span class="s0">\n</span><span class="s3">'</span>)
+
+
+<span class="s0">def </span>runNemoh(nemoh_path, hydromodel, mesh_file, rho_sw, water_depth, omega_calc, dof):
+    nemoh_path.joinpath(<span class="s3">'mesh'</span>).mkdir()
+    nemoh_path.joinpath(<span class="s3">'results'</span>).mkdir()
+    curDir = os.getcwd()
+    os.chdir(nemoh_path)
+    <span class="s0">with </span>open(<span class="s3">'ID.dat'</span>, <span class="s3">'w'</span>) <span class="s0">as </span>f:
+        f.write(<span class="s3">'1</span><span class="s0">\n</span><span class="s3">.</span><span class="s0">\n</span><span class="s3">'</span>)
+    <span class="s0">with </span>open(<span class="s3">'input.txt'</span>, <span class="s3">'w'</span>) <span class="s0">as </span>f:
+        f.write(<span class="s3">'Calculation parameters</span><span class="s0">\n</span><span class="s3">0</span><span class="s0">\n</span><span class="s3">'</span>)
+
+    aO = {<span class="s3">'dirCheck'</span>: <span class="s0">False</span>, <span class="s3">'irfCheck'</span>: <span class="s0">False</span>, <span class="s3">'kochCheck'</span>: <span class="s0">False</span>, <span class="s3">'fsCheck'</span>: <span class="s0">False</span>}
+    nrNode = hydromodel.nb_vertices
+    nrPanel = hydromodel.nb_faces
+
+    writeCalFile(rho_sw, water_depth, omega_calc, dof, aO, mesh_file, nrNode, nrPanel)
+    nemoh_exe_path = Path(<span class="s3">r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Nemoh v2.03'</span>)
+    subprocess.call(str(nemoh_exe_path.joinpath(<span class="s3">'preProcessor.exe'</span>)))
+    subprocess.call(str(nemoh_exe_path.joinpath(<span class="s3">'Solver.exe'</span>)))
+    subprocess.call(str(nemoh_exe_path.joinpath(<span class="s3">'postProcessor.exe'</span>)))
+    os.chdir(curDir)
+
+
+<span class="s0">def </span>calcAlphaBeta(wdir, nSel, rho, dof):
+    <span class="s2"># ---------------------------------------------------------------------------</span>
+    # INPUT
+    # ---------------------------------------------------------------------------
+
+    # Open IRF file
+    # rho = 1025.0
+    # nSel = 10
+    # dof = 'all'
+    pathFile = os.path.join(wdir, <span class="s3">'Nemoh'</span>, <span class="s3">'IRF.tec'</span>)
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        irfRaw = f.readlines()
+    <span class="s0">if </span>sum(dof) &lt; <span class="s4">2</span>:
+        strPat = <span class="s3">'DoF    1'</span>
+        irfInd = <span class="s4">2</span>
+    <span class="s0">elif </span>dof[<span class="s4">2</span>] == <span class="s4">1</span>:
+        strPat = <span class="s3">'DoF    {:d}'</span>.format(sum(dof[<span class="s4">0</span>::<span class="s4">2</span>]))
+        irfInd = sum(dof[<span class="s4">0</span>::<span class="s4">2</span>]) * <span class="s4">2</span>
+    <span class="s0">else</span>:
+        strPat = <span class="s3">'DoF    1'</span>
+        irfInd = <span class="s4">2</span>
+    <span class="s0">for </span>iL <span class="s0">in </span>range(<span class="s4">0</span>, len(irfRaw)):
+        irfInfo = irfRaw[iL]
+        test = irfInfo.find(strPat)
+        <span class="s0">if </span>test != -<span class="s4">1</span>:
+            indStart = iL
+            irfInfo = irfInfo.split()
+            irfNrlong = irfInfo[<span class="s4">3</span>]
+            indComma = irfNrlong.index(<span class="s3">','</span>)
+            irfNr = int(irfNrlong[<span class="s4">0</span>:indComma])
+    <span class="s2"># Arrange data in IRF file</span>
+    time = [<span class="s4">0</span>] * irfNr
+    IRF = [<span class="s4">0</span>] * irfNr
+    <span class="s0">for </span>iL <span class="s0">in </span>range(indStart + <span class="s4">1</span>, irfNr + indStart + <span class="s4">1</span>):
+        irfLine = irfRaw[iL].split()
+        time[iL - indStart - <span class="s4">1</span>] = float(irfLine[<span class="s4">0</span>])
+        IRF[iL - indStart - <span class="s4">1</span>] = float(irfLine[irfInd])
+    aInf = float(irfLine[irfInd - <span class="s4">1</span>])
+
+    <span class="s2"># ---------------------------------------------------------------------------</span>
+    # CALCULATION
+    # ---------------------------------------------------------------------------
+
+    IRF = np.array(IRF)
+    dt = time[<span class="s4">2</span>] - time[<span class="s4">1</span>]
+    m = <span class="s4">200</span>
+    n = len(IRF) - m - <span class="s4">1</span>
+
+    <span class="s2"># STEP1: make polynome R with values s_k</span>
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    A = np.zeros((n + <span class="s4">1</span>, m))
+    <span class="s0">for </span>i <span class="s0">in </span>range(<span class="s4">0</span>, n + <span class="s4">1</span>):
+        A[i, :] = IRF[i:i + m]
+    C = -IRF[m:n + m + <span class="s4">2</span>]
+    R, res, ran, sing = np.linalg.lstsq(A, C)
+    <span class="s0">del </span>res, ran, sing
+    R = np.append(R, <span class="s4">1</span>)
+    R = np.flipud(R)
+
+    <span class="s2"># STEP2: find roots of polynomial R</span>
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    Q = np.roots(R)
+
+    <span class="s2"># STEP3: Calculate Beta</span>
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    beta = np.log(Q) / dt
+    <span class="s0">del </span>A, C, R
+
+    <span class="s2"># STEP3: Calculate Alpha</span>
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    Q2 = np.zeros((n + <span class="s4">1</span>, m));
+    Q2 = np.array(Q2, dtype=complex)
+    <span class="s0">for </span>i <span class="s0">in </span>range(<span class="s4">0</span>, n + <span class="s4">1</span>):
+        Q2[i, :] = np.transpose(Q) ** i
+    F = IRF[<span class="s4">0</span>:n + <span class="s4">1</span>]
+    C, res, ran, sing = np.linalg.lstsq(Q2, F)
+    <span class="s0">del </span>res, ran, sing
+    alpha = C * np.exp(-beta * time[<span class="s4">1</span>])
+    <span class="s0">del </span>F, Q, Q2, C
+
+    <span class="s2"># STEP5: only consider beta-values with a negative real part, so function goes</span>
+    # to zero
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    mask = np.real(beta) &lt; <span class="s4">0</span>
+    alpha = alpha[mask]
+    beta = beta[mask]
+    m = len(alpha)
+
+    <span class="s2"># ---------------------------------------------------------------------------</span>
+    # SELECTION of alpha en beta components
+    # ---------------------------------------------------------------------------
+
+    # STEP1: Sorting of values
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+    absVal = -np.abs(np.divide(alpha, beta))
+    indSort = np.flipud(np.argsort(absVal))
+    alpha = np.flipud(alpha[indSort])
+    beta = np.flipud(beta[indSort])
+
+    <span class="s2"># STEP2: Complex conjugate checking</span>
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    test1 = np.abs(np.imag(alpha[nSel - <span class="s4">1</span>]))
+    test2 = np.abs(np.imag(alpha[nSel]))
+    <span class="s0">if </span>np.abs(test1 - test2) &lt; <span class="s4">0.001</span>:
+        nSel = nSel + <span class="s4">1</span>
+    alphaSel = alpha[<span class="s4">0</span>:nSel]
+    betaSel = beta[<span class="s4">0</span>:nSel]
+
+    <span class="s2"># ---------------------------------------------------------------------------</span>
+    # CALCULATE Error
+    # ---------------------------------------------------------------------------
+
+    # STEP1: Reconstruction of the IRF
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    mat1 = np.matrix(np.ones((len(IRF), <span class="s4">1</span>)))
+    mat2 = np.matrix(alphaSel)
+    mat3 = np.transpose(np.matrix(time)) * np.matrix(betaSel)
+    fMatrix = np.multiply(mat1 * mat2, np.exp(mat3))
+    fRecons = np.sum(fMatrix, axis=<span class="s4">1</span>)
+
+    <span class="s2"># STEP2: Calculation of the error</span>
+    # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+    diff1 = fRecons[<span class="s4">1</span>:len(IRF) / <span class="s4">2</span>]
+    diff2 = np.transpose(np.matrix(IRF[<span class="s4">1</span>:len(IRF) / <span class="s4">2</span>]))
+    diff3 = np.matrix(IRF)
+    relDiffE = np.abs(diff1 - diff2) / np.max(np.abs(diff3))
+    error2E = np.abs(np.sum(relDiffE) / ((len(IRF)) / <span class="s4">2</span>))
+
+    <span class="s2"># ---------------------------------------------------------------------------</span>
+    # PLOT Result
+    # ---------------------------------------------------------------------------
+
+    # plt.plot(time,IRF)
+    # plt.plot(time,np.real(fRecons))
+
+    <span class="s0">return </span>(alphaSel, betaSel, error2E, aInf)
+
+
+<span class="s0">def </span>calcM(wdir, rho=<span class="s4">1025.0</span>, dof=[<span class="s4">0</span>, <span class="s4">0</span>, <span class="s4">1</span>, <span class="s4">0</span>, <span class="s4">0</span>, <span class="s4">0</span>]):
+    pathFile = os.path.join(wdir, <span class="s3">'results'</span>, <span class="s3">'KH.dat'</span>)
+    dof = np.array(dof)
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        khRaw = f.readlines()
+    KH = np.zeros((<span class="s4">6</span>, <span class="s4">6</span>))
+    <span class="s0">for </span>iL <span class="s0">in </span>range(len(khRaw)):
+        KH[iL, :] = np.array([float(a) <span class="s0">for </span>a <span class="s0">in </span>khRaw[iL].split()])
+    <span class="s0">if </span>sum(dof) &gt; <span class="s4">1</span>:
+        c = KH
+    <span class="s0">else</span>:
+        dof = list(dof)
+        c = np.dot(KH, dof)[dof.index(<span class="s4">1</span>)]
+
+    M = np.diag([<span class="s4">1.</span>, <span class="s4">1.</span>, <span class="s4">1.</span>, <span class="s4">1.</span>, <span class="s4">1.</span>, <span class="s4">1.</span>])
+    pathFile = os.path.join(wdir, <span class="s3">'Nemoh'</span>, <span class="s3">'Hydrostatics.dat'</span>)
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        mRaw = f.readlines()
+    mass = rho * float(mRaw[<span class="s4">3</span>].split()[<span class="s4">2</span>])
+    M[<span class="s4">0</span>:<span class="s4">3</span>, <span class="s4">0</span>:<span class="s4">3</span>] *= mass
+    zG = float(mRaw[<span class="s4">2</span>].split()[-<span class="s4">1</span>])
+    M[<span class="s4">0</span>, <span class="s4">4</span>] = mass * zG
+    M[<span class="s4">1</span>, <span class="s4">3</span>] = -mass * zG
+    M[<span class="s4">4</span>, <span class="s4">0</span>] = mass * zG
+    M[<span class="s4">3</span>, <span class="s4">1</span>] = -mass * zG
+
+    I = np.zeros((<span class="s4">3</span>, <span class="s4">3</span>))
+    pathFile = os.path.join(wdir, <span class="s3">'Nemoh'</span>, <span class="s3">'Inertia_hull.dat'</span>)
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        mRaw = f.readlines()
+    <span class="s0">for </span>iL <span class="s0">in </span>range(len(mRaw)):
+        I[iL, :] = np.array([float(a) <span class="s0">for </span>a <span class="s0">in </span>mRaw[iL].split()])
+    M[<span class="s4">3</span>::, <span class="s4">3</span>::] *= I
+    <span class="s0">if </span>sum(dof) &gt; <span class="s4">1</span>:
+        <span class="s0">None</span>
+    else:
+        M = np.dot(M, dof)[dof.index(<span class="s4">1</span>)]
+    <span class="s0">return </span>(M, c)
+
+
+<span class="s0">def </span>writeOutputNemoh(wdir, M, Mainf, c, alpha, beta):
+    pathFile = os.path.join(wdir, <span class="s3">'Nemoh'</span>, <span class="s3">'outNemoh.dat'</span>)
+    fid = open(pathFile, <span class="s3">'w'</span>)
+    inString = <span class="s3">'{0:e}'</span>
+    fid.write(<span class="s3">'Mass:</span><span class="s0">\t</span><span class="s3">' </span>+ inString.format(M) + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'Mainf:</span><span class="s0">\t</span><span class="s3">' </span>+ inString.format(Mainf) + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'c:</span><span class="s0">\t</span><span class="s3">' </span>+ inString.format(c) + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'=========================================================</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'ALPHA</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'=========================================================</span><span class="s0">\n</span><span class="s3">'</span>)
+    <span class="s0">for </span>iA <span class="s0">in </span>range(<span class="s4">0</span>, len(alpha)):
+        fid.write(str(np.real(alpha[iA])) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(np.imag(alpha[iA])) + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'=========================================================</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'BETA</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.write(<span class="s3">'=========================================================</span><span class="s0">\n</span><span class="s3">'</span>)
+    <span class="s0">for </span>iB <span class="s0">in </span>range(<span class="s4">0</span>, len(beta)):
+        fid.write(str(np.real(beta[iB])) + <span class="s3">'</span><span class="s0">\t</span><span class="s3">' </span>+ str(np.imag(beta[iB])) + <span class="s3">'</span><span class="s0">\n</span><span class="s3">'</span>)
+    fid.close()
+
+
+<span class="s0">def </span>getOmega(nemoh_results_directory):
+    pathFile = nemoh_results_directory.joinpath(<span class="s3">'Fe.dat'</span>)
+    omega = list()
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        irfRaw = f.readlines()
+        <span class="s2"># Find all occurences of separation lines containing 'Zone t=&quot;Diffraction force - beta ='</span>
+        first_sep_found = <span class="s0">False</span>
+        for line <span class="s0">in </span>irfRaw:
+            <span class="s0">if </span><span class="s3">r'Zone t=&quot;Diffraction force - beta =' </span><span class="s0">in </span>line:
+                <span class="s0">if not </span>first_sep_found:
+                    first_sep_found = <span class="s0">True</span>
+                else:
+                    <span class="s0">break</span>
+            elif first_sep_found:
+                omega.append(float(line.split()[<span class="s4">0</span>]))
+    omega = np.asfarray(omega)
+    <span class="s0">return </span>omega
+
+
+<span class="s0">def </span>getDirections(nemoh_results_directory):
+    pathFile = nemoh_results_directory.joinpath(<span class="s3">'Fe.dat'</span>)
+    Dir = list()
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        irfRaw = f.readlines()
+        <span class="s0">for </span>line <span class="s0">in </span>irfRaw:
+            <span class="s0">if </span><span class="s3">r'Zone t=&quot;Diffraction force - beta =' </span><span class="s0">in </span>line:
+                Dir.append(float(line[<span class="s4">35</span>:].split()[<span class="s4">0</span>]))
+    <span class="s0">return </span>Dir
+
+
+<span class="s0">def </span>get_ab(nemoh_results_directory, dof, omega, dir, nbody=<span class="s4">1</span>):
+    ndir = len(dir)
+    nomega = len(omega)
+    ndof = sum(dof)
+    <span class="s2"># Open Radiation Coefficients</span>
+    pathFile = nemoh_results_directory.joinpath(<span class="s3">'RadiationCoefficients.tec'</span>)
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        irfRaw = f.readlines()
+    <span class="s2"># Remove header text</span>
+    irfRaw = irfRaw[<span class="s4">1 </span>+ sum(dof)::]
+    <span class="s2"># Remove table labels, one per direction and dof</span>
+    <span class="s0">del </span>irfRaw[::nomega + <span class="s4">1</span>]
+    <span class="s2"># Map to numpy array</span>
+    x = np.array([line.split() <span class="s0">for </span>line <span class="s0">in </span>irfRaw],dtype=<span class="s3">'float'</span>)
+    <span class="s2"># Remove freq. vector</span>
+    x = x[:, <span class="s4">1</span>:]
+    <span class="s2"># Split in A and B</span>
+    a = x[:, ::<span class="s4">2</span>]
+    <span class="s2"># print(A)</span>
+    b = x[:, <span class="s4">1</span>:][:, ::<span class="s4">2</span>]
+    <span class="s2"># TODO: Reshape on ndir&gt;1 not validated</span>
+    a = a.reshape(ndir, ndof, nomega, ndof).swapaxes(<span class="s4">1</span>,<span class="s4">2</span>)
+
+    <span class="s2">#print(a)</span>
+    b = b.reshape(ndir, ndof, nomega, ndof).swapaxes(<span class="s4">1</span>,<span class="s4">2</span>)
+    <span class="s0">return </span>(a, b)
+
+
+<span class="s0">def </span>get_fe(nemoh_results_directory, dof, omega, dir, nbody=<span class="s4">1</span>):
+    ndir = len(dir)
+    nomega = len(omega)
+    ndof = sum(dof)
+    <span class="s2"># Open Radiation Coefficients</span>
+    pathFile = nemoh_results_directory.joinpath(<span class="s3">'ExcitationForce.tec'</span>)
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        irfRaw = f.readlines()
+    irfRaw = irfRaw[<span class="s4">1 </span>+ sum(dof)::]
+    <span class="s2"># Remove table labels, one per direction</span>
+    <span class="s0">del </span>irfRaw[::nomega + <span class="s4">1</span>]
+    <span class="s2"># Map to numpy array</span>
+    x = np.asfarray([line.split() <span class="s0">for </span>line <span class="s0">in </span>irfRaw])
+    <span class="s2"># Remove freq. vector</span>
+    x = x[:, <span class="s4">1</span>:]
+    <span class="s2"># Split in mod and angle</span>
+    FeMod = x[:, ::<span class="s4">2</span>]
+    FeAng = x[:, <span class="s4">1</span>:][:, ::<span class="s4">2</span>]
+    <span class="s2"># Reshape on directions, 2D to 3D</span>
+    FeMod = FeMod.reshape(ndir, nomega, ndof)
+    FeAng = FeAng.reshape(ndir, nomega, ndof)
+    <span class="s0">return </span>tb.P2R(FeMod, FeAng)
+
+
+<span class="s0">def </span>get_pressure(nemoh_results_directory, problem):
+    pathFile = nemoh_results_directory.joinpath(<span class="s3">'pressure.{:5d}.dat'</span>.format(problem))
+    <span class="s0">with </span>open(pathFile, <span class="s3">'r'</span>) <span class="s0">as </span>f:
+        lines = f.readlines()
+    <span class="s2"># Number of vertices and number of panels</span>
+    ls = lines[<span class="s4">1</span>].split(<span class="s3">','</span>)
+    npoints = int(ls[<span class="s4">0</span>][<span class="s4">7</span>::])
+    npanel = int(ls[<span class="s4">1</span>][<span class="s4">3</span>::])
+    pressure = np.asarray([line.split() <span class="s0">for </span>line <span class="s0">in </span>lines[<span class="s4">2</span>:npoints + <span class="s4">2</span>]], dtype=<span class="s3">'float'</span>)
+    pressure_panels = np.asarray([line.split() <span class="s0">for </span>line <span class="s0">in </span>lines[npoints + <span class="s4">2</span>:npoints + <span class="s4">1 </span>+ npanel + <span class="s4">1</span>]], dtype=<span class="s3">'int'</span>)
+
+    <span class="s0">return </span>pressure, pressure_panels - <span class="s4">1</span>
+
+
+<span class="s0">def </span>irregAB(Ma, Bhyd, omega, M, c, dof, specSS):
+    <span class="s2"># Calculate RAO</span>
+    FeMod, FeAng = get_fe(dof)
+    raoPitch = (FeMod[<span class="s4">4</span>, :]) / np.abs(-omega ** <span class="s4">2.0 </span>* (M[<span class="s4">4</span>, <span class="s4">4</span>] + Ma[<span class="s4">4</span>, <span class="s4">4</span>, :]) - <span class="s4">1j </span>* omega * Bhyd[<span class="s4">4</span>, <span class="s4">4</span>, :] + c[<span class="s4">4</span>, <span class="s4">4</span>])
+    <span class="s2"># Find Peak</span>
+    BhydS = Bhyd[:, :, np.argmax(raoPitch)]
+    BhydS[<span class="s4">2</span>, <span class="s4">2</span>] = <span class="s4">0.0</span>
+    <span class="s2"># Calculate mean added mass</span>
+    MaS = np.zeros(np.shape(BhydS))
+    <span class="s0">for </span>iF <span class="s0">in </span>range(len(omega)):
+        MaS += specSS[iF] * Ma[:, :, iF]
+    MaS = MaS / (np.sum(specSS))
+
+    <span class="s0">return </span>MaS, BhydS
+
+
+<span class="s0">def </span>mesh(nemoh_path, hs_floater, sym=<span class="s0">None</span>):
+    MeshClipper_instance = mc.MeshClipper(hs_floater.mesh)
+
+    hydro_mesh = Mesh(MeshClipper_instance.lower_mesh.vertices, MeshClipper_instance.lower_mesh.faces)
+    hydro_mesh.merge_duplicates()
+    hydro_mesh.heal_normals()
+    hydro_mesh.heal_mesh()
+
+    <span class="s0">if </span>sym == <span class="s0">None or </span>sym == <span class="s4">0</span>:
+        nemoh_mesh = hydro_mesh
+    <span class="s0">elif </span>sym == <span class="s4">1</span>:
+        nemoh_mesh = hydro_mesh.de_symmetrize_xz()
+        nemoh_mesh.merge_duplicates()
+        nemoh_mesh.heal_normals()
+        nemoh_mesh.heal_mesh()
+    <span class="s0">else</span>:
+        print(<span class="s3">'sym cannot be {}'</span>.format(sym))
+        exit()
+
+    print(<span class="s3">'Number of faces: {}'</span>.format(nemoh_mesh.nb_faces))
+    print(<span class="s3">'Number of vertices: {}'</span>.format(nemoh_mesh.nb_vertices))
+
+    mesh_file = <span class="s3">'mesh.dat'</span>
+    mmio.write_MAR(os.path.join(nemoh_path, mesh_file), nemoh_mesh.vertices, nemoh_mesh.faces)
+
+    <span class="s0">if </span>sym == <span class="s4">1</span>:
+        <span class="s0">with </span>open(os.path.join(nemoh_path, mesh_file), <span class="s3">'r'</span>) <span class="s0">as </span>f:
+            lines = f.readlines()
+        print(lines[:<span class="s4">4</span>])
+        lines[<span class="s4">0</span>] = lines[<span class="s4">0</span>].replace(<span class="s3">'0'</span>, <span class="s3">'1'</span>)
+        print(lines[:<span class="s4">4</span>])
+        <span class="s0">with </span>open(os.path.join(nemoh_path, mesh_file), <span class="s3">'w'</span>) <span class="s0">as </span>f:
+            f.writelines(lines)
+
+    <span class="s0">return </span>nemoh_mesh, mesh_file
+
+
+<span class="s0">def </span>get_force(pressure_points, ppanels, sym=<span class="s0">None</span>):
+    <span class="s2"># --------------------------------------</span>
+    # Calculate section forces from pressure
+    # --------------------------------------
+    #
+
+    ppoints = pressure_points[:, <span class="s4">0</span>:<span class="s4">3</span>]
+    <span class="s2"># print(ppanels)</span>
+
+    pressure_polar = pressure_points[:, <span class="s4">3</span>:]
+    pressure_cmplx = tb.P2R(pressure_polar[:, <span class="s4">0</span>], pressure_polar[:, <span class="s4">1</span>])
+
+    ppanel_normals, ppanel_areas, ppanel_centers = get_panel_data(ppoints, ppanels, sym)
+
+    <span class="s2"># sec_panel_index = ppanel_centers[:, 0] &gt;= yz_section</span>
+    # loop trough section panels, find average pressure and calc force on panel normal
+    p_avg = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    f_norm = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    fx = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    fy = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    fz = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    mx = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    my = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    mz = np.zeros((ppanels.shape[<span class="s4">0</span>]), dtype=np.complex)
+    forces = np.zeros((ppanels.shape[<span class="s4">0</span>], <span class="s4">6</span>), dtype=np.complex)
+
+    <span class="s0">for </span>i, panel <span class="s0">in </span>enumerate(ppanels):
+        p_avg[i] = sum([pressure_cmplx[j] <span class="s0">for </span>j <span class="s0">in </span>panel]) / <span class="s4">4</span>
+
+        f_norm[i] = p_avg[i] * ppanel_areas[i]
+        <span class="s2"># print(f_norm)</span>
+        fx[i] = -f_norm[i] * ppanel_normals[i, <span class="s4">0</span>]
+        fy[i] = -f_norm[i] * ppanel_normals[i, <span class="s4">1</span>]
+        fz[i] = -f_norm[i] * ppanel_normals[i, <span class="s4">2</span>]
+        mx[i] = <span class="s4">0 </span>* ppanel_centers[i, <span class="s4">0</span>]
+        my[i] = fz[i] * ppanel_centers[i, <span class="s4">1</span>]
+        mz[i] = fy[i] * ppanel_centers[i, <span class="s4">2</span>]
+        forces[i] = [fx[i], fy[i], fz[i], mx[i], my[i], mz[i]]
+    <span class="s2"># print(fz)</span>
+
+    # sec_fx = sum(fx[sec_panel_index])
+    # sec_fy = sum(fy[sec_panel_index])
+    # sec_fz = sum(fz[sec_panel_index])
+    # sec_mx = 0 + 0j
+    # sec_my = sum(my[sec_panel_index])
+    # sec_mz = sum(mz[sec_panel_index])
+
+    # print(abs((fz)))
+    # print((abs(sum(fz))))
+
+    <span class="s0">return </span>forces, f_norm, p_avg
+
+    <span class="s2"># sec_panel_force = pressure[ppanels[sec_panel_index,:]]</span>
+
+
+<span class="s0">def </span>get_panel_data(ppoints, ppanels, sym=<span class="s0">None</span>):
+    <span class="s2"># --------------------------------------</span>
+    # Calculate section forces from pressure
+    # --------------------------------------
+    #
+    a1 = np.linalg.norm(np.cross(ppoints[ppanels[:, <span class="s4">1</span>]] - ppoints[ppanels[:, <span class="s4">0</span>]],
+                                 ppoints[ppanels[:, <span class="s4">2</span>]] - ppoints[ppanels[:, <span class="s4">0</span>]]), axis=<span class="s4">1</span>) * <span class="s4">0.5</span>
+    a2 = np.linalg.norm(np.cross(ppoints[ppanels[:, <span class="s4">3</span>]] - ppoints[ppanels[:, <span class="s4">0</span>]],
+                                 ppoints[ppanels[:, <span class="s4">2</span>]] - ppoints[ppanels[:, <span class="s4">0</span>]]), axis=<span class="s4">1</span>) * <span class="s4">0.5</span>
+    ppanel_areas = a1 + a2
+
+    c1 = np.sum(ppoints[ppanels[:, :<span class="s4">3</span>]], axis=<span class="s4">1</span>) / <span class="s4">3.</span>
+    c2 = (np.sum(ppoints[ppanels[:, <span class="s4">2</span>:<span class="s4">4</span>]], axis=<span class="s4">1</span>) + ppoints[ppanels[:, <span class="s4">0</span>]]) / <span class="s4">3.</span>
+
+    ppanel_centers = (np.array(([a1, ] * <span class="s4">3</span>)).T * c1 + np.array(([a2, ] * <span class="s4">3</span>)).T * c2)
+    ppanel_centers /= np.array(([ppanel_areas, ] * <span class="s4">3</span>)).T
+
+    <span class="s0">if </span>sym == <span class="s0">None or </span>sym == <span class="s4">0</span>:
+        <span class="s0">pass</span>
+    elif sym == <span class="s4">1</span>:
+        ipanel = np.array([i <span class="s0">for </span>i, y <span class="s0">in </span>enumerate(ppanel_centers[:, <span class="s4">1</span>]) <span class="s0">if </span>y &lt; <span class="s4">0</span>])
+        ppanels[ipanel, :] = np.fliplr(ppanels[ipanel, :])
+    <span class="s0">else</span>:
+        print(<span class="s3">'sym cannot be {}'</span>.format(sym))
+        exit()
+
+    ppanel_cross = np.cross(ppoints[ppanels[:, <span class="s4">2</span>]] - ppoints[ppanels[:, <span class="s4">0</span>]],
+                            ppoints[ppanels[:, <span class="s4">3</span>]] - ppoints[ppanels[:, <span class="s4">1</span>]])
+    norm = np.linalg.norm(ppanel_cross, axis=<span class="s4">1</span>)
+    ppanel_normals = np.true_divide(ppanel_cross, norm[:, np.newaxis])
+
+    <span class="s0">return </span>ppanel_normals, ppanel_areas, ppanel_centers
+
+<span class="s0">def </span>get_f_yz(nemoh_results_directory, problem, sym=<span class="s0">None</span>, yz_section=<span class="s4">7.5</span>):
+    <span class="s2"># --------------------------------------</span>
+    # Calculate section forces from pressure
+    # --------------------------------------
+    #
+    pressure_points, ppanels = get_pressure(nemoh_results_directory, problem)
+    forces, f_norm, p_avg = get_force(pressure_points, ppanels, sym)
+    ppoints = pressure_points[:, <span class="s4">0</span>:<span class="s4">3</span>]
+    ppanel_normals, ppanel_areas, ppanel_centers = get_panel_data(ppoints, ppanels, sym)
+
+    sec_panel_index = ppanel_centers[:, <span class="s4">0</span>] &gt;= yz_section
+
+
+    sec_fx = sum(forces[sec_panel_index,<span class="s4">0</span>])
+    sec_fy = sum(forces[sec_panel_index,<span class="s4">1</span>])
+    sec_fz = sum(forces[sec_panel_index,<span class="s4">2</span>])
+    sec_mx = sum(forces[sec_panel_index,<span class="s4">3</span>])
+    sec_my = sum(forces[sec_panel_index,<span class="s4">4</span>])
+    sec_mz = sum(forces[sec_panel_index,<span class="s4">5</span>])
+
+    <span class="s0">return </span>[sec_fx, sec_fy, sec_fz, sec_mx, sec_my, sec_mz]
+</pre>
+</body>
+</html>

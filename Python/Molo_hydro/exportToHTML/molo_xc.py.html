@@ -1,0 +1,95 @@
+<html>
+<head>
+<title>molo_xc.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080; font-style: italic;}
+.s1 { color: #000000;}
+.s2 { color: #000080; font-weight: bold;}
+.s3 { color: #008080; font-weight: bold;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+molo_xc.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># from meshmagick.mesh import Mesh</span>
+
+<span class="s2">import </span>meshmagick.hydrostatics <span class="s2">as </span>hs
+<span class="s2">import </span>meshmagick.mesh_clipper <span class="s2">as </span>mc
+<span class="s2">import </span>meshmagick.mmio <span class="s2">as </span>mmio
+<span class="s2">import </span>model_set_up
+<span class="s2">import </span>tool_box <span class="s2">as </span>tb
+<span class="s0"># from meshmagick.mesh import Mesh</span>
+<span class="s2">from </span>meshmagick.mesh <span class="s2">import </span>*
+
+<span class="s0"># unit_model, floater_model, wtg_model = model_set_up.read_excel_model('MOLO.xlsx', floater_id=1, tower_id=1, rna_id=1)</span>
+unit_model, floater_model, wtg_model = model_set_up.read_json(<span class="s3">r'templates\model_template.json'</span>)
+tb.write_gmsh(root, floater_model)
+
+vertices, faces = mmio.load_MSH(<span class="s3">'MOLO_{}c.msh'</span>.format(floater_model.nc))
+MOLO = Mesh(vertices, faces)
+MOLO.merge_duplicates()
+MOLO.heal_normals()
+MOLO.heal_mesh()
+MOLO.rotate_z(-np.pi / <span class="s4">2</span>)  <span class="s0"># IMPORTANT</span>
+print(<span class="s3">'Before equilibrium calc'</span>)
+unit_model.print_vector_matrix_global()
+hs_MOLO = hs.Hydrostatics(MOLO, verbose=<span class="s2">True</span>)
+hs_MOLO.gravity = <span class="s4">9.81</span>
+hs_MOLO.rho_water = <span class="s4">1025.</span>
+hs_MOLO.mass = unit_model.mass / <span class="s4">1000  </span><span class="s0"># Give mass in tons</span>
+print(<span class="s3">'Mass given to hydro is {:5.2f} t'</span>.format(hs_MOLO.mass))
+<span class="s0"># M=0.1*unit_model.mass</span>
+# F1=hs.Force(point=(0,0,7+5),value=(M,0,0),name=&quot;F1&quot;)
+# F2=hs.Force(point=(0,0,7-5),value=(-M,0,0),name=&quot;F2&quot;)
+# hs_MOLO.add_force(F1)
+# hs_MOLO.add_force(F2)
+hs_MOLO.gravity_center = -unit_model.inertias.reduction_point
+hs_MOLO.equilibrate()
+<span class="s0"># Update model with calculated draft</span>
+z_d = hs_MOLO.hs_data[<span class="s3">'draught'</span>]
+unit_model.inertias.reduction_point = [<span class="s4">0</span>, <span class="s4">0</span>, unit_model.inertias.reduction_point[<span class="s4">2</span>] + z_d]
+print(<span class="s3">'</span><span class="s2">\n\n</span><span class="s3">After equilibrium calc giving {:5.2f} m draught'</span>.format(z_d))
+unit_model.print_vector_matrix_global()
+
+K33 = hs_MOLO.hs_data[<span class="s3">'stiffness_matrix'</span>][<span class="s4">0</span>, <span class="s4">0</span>]
+K44 = hs_MOLO.hs_data[<span class="s3">'stiffness_matrix'</span>][<span class="s4">1</span>, <span class="s4">1</span>]
+M33 = unit_model.inertias.mass_matrix_global[<span class="s4">2</span>][<span class="s4">2</span>]
+M44 = unit_model.inertias.mass_matrix_global[<span class="s4">3</span>][<span class="s4">3</span>]
+T33 = <span class="s4">1 </span>/ (np.sqrt(K33 / M33) / (<span class="s4">2 </span>* np.pi))
+T44 = <span class="s4">1 </span>/ (np.sqrt(K44 / M44) / (<span class="s4">2 </span>* np.pi))
+print(<span class="s3">'</span><span class="s2">\n\n</span><span class="s3">T33 = {:&gt;4.1f} s'</span>.format(T33))
+print(<span class="s3">'T44 = {:&gt;4.1f} s'</span>.format(T44))
+
+<span class="s0"># with open('hydrostatic_report.txt', 'w+') as f:</span>
+#    f.write(hs_MOLO.get_hydrostatic_report())
+print(hs_MOLO.get_hydrostatic_report())
+
+tb.save_M_and_K(M=unit_model.inertias.mass_matrix_global, MMK=hs_MOLO.hs_data[<span class="s3">'stiffness_matrix'</span>])
+
+MOLO_waterline = mc.MeshClipper(hs_MOLO.mesh)
+
+hydro_mesh = Mesh(MOLO_waterline.lower_mesh.vertices, MOLO_waterline.lower_mesh.faces)
+hydro_mesh.merge_duplicates()
+hydro_mesh.heal_normals()
+hydro_mesh.heal_mesh()
+hydro_mesh.show()
+
+MOLO_symmetri = hydro_mesh.de_symmetrize_xz()
+MOLO_symmetri.merge_duplicates()
+MOLO_symmetri.heal_normals()
+MOLO_symmetri.heal_mesh()
+<span class="s0"># MOLO_symmetri.show()</span>
+
+print(<span class="s3">'Number of faces: {}'</span>.format(MOLO_symmetri.nb_faces))
+print(<span class="s3">'Number of vertices: {}'</span>.format(MOLO_symmetri.nb_vertices))
+
+mmio.write_MAR(<span class="s3">'MOLO_sym.dat'</span>, MOLO_symmetri.vertices, MOLO_symmetri.faces)
+<span class="s0"># mmio.write_MAR('MOLO.dat', hydro_mesh.vertices, hydro_mesh.faces)</span>
+</pre>
+</body>
+</html>

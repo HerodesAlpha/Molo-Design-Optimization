@@ -1,0 +1,81 @@
+<html>
+<head>
+<title>common.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #0000ff;}
+.s3 { color: #008080; font-weight: bold;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+common.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span>pathlib <span class="s0">import </span>Path
+
+
+<span class="s0">class </span>file_io(object):
+    <span class="s0">def </span>__init__(self, root_dir, case_number=<span class="s0">None</span>):
+        <span class="s0">if </span>case_number == <span class="s0">None</span>:
+            i = <span class="s2">0</span>
+            <span class="s0">while </span><span class="s2">1</span>:
+                i += <span class="s2">1</span>
+                <span class="s0">if not </span>root_dir.joinpath(<span class="s3">'case{:04d}'</span>.format(i)).exists():
+                    <span class="s0">break</span>
+            self._case_label = <span class="s3">'case{:04d}'</span>.format(i)
+        <span class="s0">else</span>:
+            self._case_label = <span class="s3">'case{:04d}'</span>.format(case_number)
+
+        self._case_dir = root_dir.joinpath(self._case_label)
+
+        self._nemoh_root = self._case_dir.joinpath(<span class="s3">'nemoh'</span>)
+
+        self._gmsh_root = self._case_dir.joinpath(<span class="s3">'gmsh'</span>)
+
+        self._data_io_dir = self._case_dir.joinpath(<span class="s3">'data_io'</span>)
+
+        self._nemoh_results = self._nemoh_root.joinpath(<span class="s3">'results'</span>)
+
+        <span class="s0">if </span>case_number == <span class="s0">None</span>:
+            self._nemoh_root.mkdir(parents=<span class="s0">True</span>, exist_ok=<span class="s0">False</span>)
+            self._gmsh_root.mkdir(parents=<span class="s0">True</span>, exist_ok=<span class="s0">False</span>)
+            self._data_io_dir.mkdir(parents=<span class="s0">True</span>, exist_ok=<span class="s0">False</span>)
+
+        self._templates_dir = Path(<span class="s3">r'.\templates'</span>)
+        <span class="s0">if not </span>self._templates_dir.exists():
+            print(<span class="s3">'Templates folder missing'</span>)
+
+    @property
+    <span class="s0">def </span>case_dir(self):
+        <span class="s0">return </span>self._case_dir
+
+    @property
+    <span class="s0">def </span>nemoh_dir(self):
+        <span class="s0">return </span>self._nemoh_root
+
+    @property
+    <span class="s0">def </span>gmsh_dir(self):
+        <span class="s0">return </span>self._gmsh_root
+
+    @property
+    <span class="s0">def </span>data_io_dir(self):
+        <span class="s0">return </span>self._data_io_dir
+
+    @property
+    <span class="s0">def </span>templates_dir(self):
+        <span class="s0">return </span>self._templates_dir
+
+    @property
+    <span class="s0">def </span>nemoh_results(self):
+        <span class="s0">return </span>self._nemoh_results
+
+    @property
+    <span class="s0">def </span>nemoh_root(self):
+        <span class="s0">return </span>self._nemoh_root
+</pre>
+</body>
+</html>
