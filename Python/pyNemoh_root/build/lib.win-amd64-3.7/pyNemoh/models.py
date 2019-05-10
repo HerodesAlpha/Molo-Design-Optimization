@@ -55,7 +55,7 @@ class TMesh:
         self.x = np.zeros((3, n_points))
         self.n = np.zeros((3, n_panels))
         self.xm = np.zeros((3, n_panels))
-        self.p = np.zeros((4, n_panels))
+        self.p = np.zeros((4, n_panels), dtype=int)
         self.c_panel = np.zeros(n_panels)
         self.a = np.zeros(n_panels)
         self.last_panel = np.zeros(n_bodies)

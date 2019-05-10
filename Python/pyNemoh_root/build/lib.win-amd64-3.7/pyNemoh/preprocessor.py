@@ -657,6 +657,7 @@ def run(hdf5_data, custom_config):
         custom_config, dict The custom configuration dictionary
     """
 
+    print('XXX preprocessor:660: {}'.format(hdf5_data.get('input/calculations/bodies/body1/generalised_forces')[1][0]))
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
     signature = __name__ + '.run(hdf5_data, custom_config)'
@@ -739,7 +740,7 @@ def run(hdf5_data, custom_config):
     dset = hdf5_data.get(structure.H5_KOCHIN_NUMBER)
     utility.check_dataset_type(dset, name='The number of direction for the computation of far field coefficients (Kochin function)',
      location=structure.H5_KOCHIN_NUMBER)
-    n_theta = dset[0]
+    n_theta = int(dset[0]) # 08.05.2019 Eivind Sønju: Cast to int
 
     dset = hdf5_data.get(structure.H5_KOCHIN_MIN)
     utility.check_dataset_type(dset, name='The minimum number of direction for the computation of far field coefficients (Kochin function)',
@@ -762,12 +763,12 @@ def run(hdf5_data, custom_config):
     dset = hdf5_data.get(structure.H5_FREE_SURFACE_POINTS_X)
     utility.check_dataset_type(dset, name=str(structure.H5_FREE_SURFACE_POINTS_X_ATTR['description']),
                                location=structure.H5_FREE_SURFACE_POINTS_X)
-    n_x = dset[0]
+    n_x = int(dset[0])
 
     dset = hdf5_data.get(structure.H5_FREE_SURFACE_POINTS_Y)
     utility.check_dataset_type(dset, name=str(structure.H5_FREE_SURFACE_POINTS_Y_ATTR['description']),
                                location=structure.H5_FREE_SURFACE_POINTS_Y)
-    n_y = dset[0]
+    n_y = int(dset[0])
 
     dset = hdf5_data.get(structure.H5_FREE_SURFACE_DIMENSION_X)
     utility.check_dataset_type(dset, name=str(structure.H5_FREE_SURFACE_DIMENSION_X_ATTR['description']),
@@ -793,8 +794,9 @@ def run(hdf5_data, custom_config):
     j_rad = 0
     j_int = 0
 
-    for c in range(len(bodies)):
-        body = bodies[c]
+    # for c, body in range(len(bodies)):
+    #     body = bodies[c]
+    for c, body in enumerate(bodies): # 06.05.2019 Eivind Sønju
         # This has already been checked
         freedom_degree = body.get(structure.H5_FREEDOM_DEGREE)
         utility.check_array_ndim(freedom_degree, name='the freedom degree for body number ' + str(c),
@@ -1227,6 +1229,8 @@ def preprocess(custom_config):
  
 
     with h5py.File(hdf5_file, "a") as hdf5_db:
+        print('XXX preprocessor:1232: {}'.format(
+            hdf5_db.get('input/calculations/bodies/body1/generalised_forces')[1][0]))
         if nemoh_cal_validation:
             # If nemoh_cal is a valid string then it must be a valid file and we will convert its entries into the hdf5_file
             utility.check_is_file(nemoh_cal, 'The path to the nemoh calculations configured by NEMOH_CALCULATIONS_FILE')
@@ -1245,6 +1249,9 @@ def preprocess(custom_config):
             dset[:] = int(remove_irregular_frequencies)
         else:
             settings.REMOVE_IRREGULAR_FREQUENCIES = hdf5_db.get(structure.H5_SOLVER_REMOVE_IRREGULAR_FREQUENCIES)[0]
+
+        print('XXX preprocessor:1251: {}'.format(
+            hdf5_db.get('input/calculations/bodies/body1/generalised_forces')[1][0]))
 
         run(hdf5_db, custom_config)
         utility.log_and_print(logger, 'The preprocessing results are saved in the hdf5 file '

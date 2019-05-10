@@ -1,2 +1,2 @@
 __author__ = 'Eivind Sonju'
-print(__author__)
+print('pyNemoh loaded')
