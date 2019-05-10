@@ -14,11 +14,10 @@ import stability
 
 create_model = True
 run_nemoh = True
-calc_gz = False
+calc_gz = True
 postprocessing = True
 
-ROOT = Path(r'C:\Users\EDUX\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\MOLO_Analyses')
-ROOT = Path(r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\MOLO_Analyses')
+ROOT = Path(r'C:\analyses')
 
 TEMPLATES_DIR = Path(r'.\templates')
 

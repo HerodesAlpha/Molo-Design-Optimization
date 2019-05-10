@@ -301,10 +301,11 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4, dens_cylinde
     print('{}'.format(gmsh_geo_file))
     try:
         a = subprocess.check_output(
-            ['gmsh', '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
+            [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
              '{}'.format(gmsh_msh_file)])
     except:
-        print('gmsh failed\n')
+        print(a)
+        exit()
     finally:
         return gmsh_msh_file
 

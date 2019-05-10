@@ -26,6 +26,8 @@ class FileIO(object):
 
         self._gmsh_root = self._case_dir.joinpath('gmsh')
 
+        self._gmsh_exe = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
+
         self._data_io_dir = self._case_dir.joinpath('data_io')
 
         self._nemoh_results_dir = self._nemoh_root.joinpath('results')
@@ -84,3 +86,7 @@ class FileIO(object):
     @property
     def stability_dir(self):
         return self._stability_dir
+
+    @property
+    def gmsh_exe(self):
+        return self._gmsh_exe
