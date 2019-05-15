@@ -45,6 +45,11 @@ Changes in version 2.0 (OPENWARP - PROVIDE A COMMAND LINE INTERFACE USING PYTHON
     Using the newly refactored structure.
 """
 
+__author__ = "Eivind Sonju"
+__copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
+__version__ = "2.0"
+
+
 import json
 import logging
 import sys
@@ -56,18 +61,15 @@ from .structure import H5_STRUCTURE
 
 from . import settings
 from . import utility
+from . import solver_fortran
 
 #import pyximport
 #pyximport.install()
 import importlib
-solver_fortran_spec = importlib.util.find_spec('solver_fortran', package='pyNemoh')
-print(solver_fortran_spec)
-import pyNemoh.solver_fortran as solver_fortran
-dir(solver_fortran)
-
-__author__ = "Eivind Sonju"
-__copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
-__version__ = "2.0"
+#solver_fortran_spec = importlib.util.find_spec('solver_fortran', package='pyNemoh')
+#print(solver_fortran_spec)
+#import pyNemoh.solver_fortran as solver_fortran
+#dir(solver_fortran)
 
 # The HDF5 structure
 structure = H5_STRUCTURE()

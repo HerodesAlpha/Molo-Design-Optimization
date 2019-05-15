@@ -32,13 +32,11 @@ Changes in version 1.8 (OPENWARP - PROVIDE A COMMAND LINE INTERFACE USING PYTHON
     Refactor this module to re-use the same structure as the hdf5 file.
 """
 
-import numpy as np
-
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-
+import numpy as np
 
 class BaseStructure(object):
     """

@@ -10,6 +10,7 @@
 *.lib
 *.def
 *.obj
+*.mod
 
 
 # Packages #
@@ -57,3 +58,6 @@ composer.lock
 # Directories #
 #############
 /Fortran/Build/*
+/Python/test_files/*
+/Python/pyNemoh_root/build/*
+/Python/pyNemoh_root/pyNemoh_old/*

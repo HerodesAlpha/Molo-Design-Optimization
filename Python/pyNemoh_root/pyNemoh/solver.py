@@ -62,13 +62,10 @@ from .structure import H5_STRUCTURE
 from . import settings
 from . import utility
 
-#import pyximport
-#pyximport.install()
-import importlib
-solver_fortran_spec = importlib.util.find_spec('solver_fortran', package='pyNemoh')
-print(solver_fortran_spec)
+import os
+
+os.environ["PATH"] += os.pathsep + os.path.dirname(__file__)
 import pyNemoh.solver_fortran as solver_fortran
-dir(solver_fortran)
 
 # The HDF5 structure
 structure = H5_STRUCTURE()
