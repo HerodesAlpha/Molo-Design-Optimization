@@ -1,3 +1,8 @@
+__author__ = "Eivind Sonju"
+__copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
+__version__ = "2.0"
+
+
 # matplotlib.use('Agg')  # Not to use X server. For TravisCI.
 import matplotlib.pyplot as plt  # noqa
 import numpy as np

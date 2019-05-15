@@ -1,3 +1,7 @@
+__author__ = "Eivind Sonju"
+__copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
+__version__ = "2.0"
+
 import json
 from pathlib import Path
 import pickle
@@ -10,6 +14,8 @@ import calculations
 import model_set_up as ms
 import nemoh
 from common import FileIO
+
+
 import stability
 
 create_model = True
