@@ -1,0 +1,3112 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'openWECv2.ui'
+#
+# Created: Wed May 06 10:39:04 2015
+#      by: PyQt4 UI code generator 4.9.6
+#
+# WARNING! All changes made in this file will be lost!
+
+
+import glob
+import importlib
+import os
+import shutil as sh
+import sys
+from functools import partial
+
+import matplotlib.tri as tri
+import numpy as np
+from PyQt5 import QtCore, QtGui, QtWidgets
+from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+import nemoh as ne
+
+try:
+    _encoding = QtWidgets.QApplication.UnicodeUTF8
+
+
+    def _translate(context, text, disambig):
+        return QtCore.QCoreApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtCore.QCoreApplication.translate(context, text, disambig)
+
+
+class GenericThread(QtCore.QThread):
+    def __init__(self, function, *args, **kwargs):
+        QtCore.QThread.__init__(self)
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        self.function(*self.args, **self.kwargs)
+        return
+
+
+class EmittingStream(QtCore.QObject):
+    textWritten = QtCore.pyqtSignal(str)
+
+    def write(self, text):
+        self.textWritten.emit(str(text))
+
+
+class MyMplCanvas(FigureCanvas):
+    """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        self.fig.patch.set_facecolor('white')
+        #
+        FigureCanvas.__init__(self, self.fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+    def compute_initial_figure(self):
+        pass
+
+
+class MyStaticMplCanvas(MyMplCanvas):
+    """Simple canvas with a sine plot."""
+
+    def compute_initial_figure(self):
+        t = [0, 0]
+        s = [0, 0]
+        self.axes.plot(t, s)
+
+
+class ParkConfig(QtWidgets.QWidget):
+    def __init__(self):
+        QtWidgets.QWidget.__init__(self)
+        self.setupUi(self)
+
+    def setupUi(self, Form):
+        Form.setObjectName("Form")
+        Form.resize(758, 586)
+        self.horizontalLayout = QtWidgets.QHBoxLayout(Form)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.formLayout = QtWidgets.QFormLayout()
+        self.formLayout.setObjectName("formLayout")
+        self.titleLabel = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.titleLabel.setFont(font)
+        self.titleLabel.setObjectName("titleLabel")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.titleLabel)
+        self.xLocLabel = QtWidgets.QLabel(Form)
+        self.xLocLabel.setObjectName("xLocLabel")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.xLocLabel)
+        self.yLocLabel = QtWidgets.QLabel(Form)
+        self.yLocLabel.setObjectName("yLocLabel")
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.yLocLabel)
+        self.xLocEdit = QtWidgets.QLineEdit(Form)
+        self.xLocEdit.setObjectName("xLocEdit")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.xLocEdit)
+        self.yLocEdit = QtWidgets.QLineEdit(Form)
+        self.yLocEdit.setObjectName("yLocEdit")
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.yLocEdit)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(1, QtWidgets.QFormLayout.LabelRole, spacerItem)
+        self.verticalLayout.addLayout(self.formLayout)
+        self.addButton = QtWidgets.QPushButton(Form)
+        self.addButton.setObjectName("addButton")
+        self.addButton.clicked.connect(self.addToList)
+        self.verticalLayout.addWidget(self.addButton)
+        self.arrayList = QtWidgets.QListWidget(Form)
+        self.arrayList.setObjectName("arrayList")
+        self.verticalLayout.addWidget(self.arrayList)
+        self.deleteButton = QtWidgets.QPushButton(Form)
+        self.deleteButton.setObjectName("deleteButton")
+        self.deleteButton.clicked.connect(self.remFromList)
+        self.verticalLayout.addWidget(self.deleteButton)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem1)
+        self.doneButton = QtWidgets.QPushButton(Form)
+        self.doneButton.setObjectName("doneButton")
+        self.doneButton.clicked.connect(self.saveParkFile)
+        self.verticalLayout.addWidget(self.doneButton)
+        self.verticalLayout_2.addLayout(self.verticalLayout)
+        self.horizontalLayout.addLayout(self.verticalLayout_2)
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.coordList = []
+
+        self.mpl = MyStaticMplCanvas(Form, width=5, height=4, dpi=100)
+        self.ntb = NavigationToolbar(self.mpl, Form)
+
+        self.verticalLayout_3.addWidget(self.mpl)
+        self.verticalLayout_3.addWidget(self.ntb)
+        self.horizontalLayout.addLayout(self.verticalLayout_3)
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+    def retranslateUi(self, Form):
+        self.wDir = os.path.join(os.path.expanduser('~'), 'openWEC')
+        Form.setWindowTitle(_translate("Form", "Array Configuration", None))
+        self.titleLabel.setText(_translate("Form", "Array Configuration Tool", None))
+        self.xLocLabel.setText(_translate("Form", "X-Location", None))
+        self.yLocLabel.setText(_translate("Form", "Y-Location", None))
+        self.addButton.setText(_translate("Form", "Add", None))
+        self.deleteButton.setText(_translate("Form", "Delete", None))
+        self.doneButton.setText(_translate("Form", "Done", None))
+        self.ntb._views.clear()
+        self.openParkFile()
+        if len(self.coordList) > 0:
+            self.updateGraph()
+
+    def openParkFile(self):
+        fname = os.path.join(self.wDir, 'Other', 'parkconfig.dat')
+        if os.path.isfile(fname):
+            with open(fname) as f:
+                allData = f.readlines()
+            nrCoord = int(allData[0])
+            self.coordList = []
+            for iC in range(nrCoord):
+                xLoc = float(allData[iC + 1].split()[0])
+                yLoc = float(allData[iC + 1].split()[1])
+                self.coordList.append(np.array([xLoc, yLoc]))
+                item = QtWidgets.QListWidgetItem("X: {0:.2f}   Y: {1:.2f}".format(xLoc, yLoc))
+                self.arrayList.addItem(item)
+
+    def saveParkFile(self):
+        fname = os.path.join(self.wDir, 'Other', 'parkconfig.dat')
+        with open(fname, 'w') as f:
+            f.write('{:d}\n'.format(len(self.coordList)))
+            for iL in range(len(self.coordList)):
+                f.write('{0:f}  {1:f}\n'.format(self.coordList[iL][0], self.coordList[iL][1]))
+        self.hide()
+
+    def addToList(self):
+        xLoc = float(self.xLocEdit.text())
+        yLoc = float(self.yLocEdit.text())
+        loc = np.array([xLoc, yLoc])
+        self.coordList.append(loc)
+        item = QtWidgets.QListWidgetItem("X: {0:.2f}   Y: {1:.2f}".format(xLoc, yLoc))
+        self.arrayList.addItem(item)
+        self.updateGraph()
+
+    def remFromList(self):
+        iDel = self.arrayList.currentRow()
+        del self.coordList[iDel]
+        self.arrayList.takeItem(self.arrayList.row(self.arrayList.currentItem()))
+        self.updateGraph()
+
+    def updateGraph(self):
+        xpl = [a[0] for a in self.coordList]
+        ypl = [a[1] for a in self.coordList]
+        if len(self.coordList) > 1:
+            xSet = max([np.abs(min(xpl)), np.abs(max(xpl))])
+            ySet = max([np.abs(min(ypl)), np.abs(max(ypl))])
+            xLimit = [-1.1 * xSet, 1.1 * xSet]
+            yLimit = [-1.1 * ySet, 1.1 * ySet]
+        g = self.mpl
+        t = self.ntb
+        t.update()
+        g.fig.delaxes(g.axes)
+        g.axes = g.fig.add_axes([0.20, 0.17, 0.75, 0.75])
+        g.axes.plot(xpl, ypl, 'ko')
+        g.axes.set_xlabel("X [m]")
+        g.axes.set_ylabel("Y [m]")
+        if len(xpl) > 1:
+            g.axes.set_xlim(xLimit)
+            g.axes.set_ylim(yLimit)
+        g.draw()
+        g.axes.hold(False)
+
+
+class CustomSpec(QtWidgets.QWidget):
+    def __init__(self):
+        QtWidgets.QWidget.__init__(self)
+        self.setupUi(self)
+
+    def setupUi(self, Form):
+        Form.setObjectName("Form")
+        Form.resize(442, 388)
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout(Form)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.loadCS = QtWidgets.QPushButton(Form)
+        self.loadCS.setObjectName("loadCS")
+        self.verticalLayout_2.addWidget(self.loadCS)
+
+        self.mpl = MyStaticMplCanvas(Form, width=5, height=4, dpi=100)
+        self.ntb = NavigationToolbar(self.mpl, Form)
+        self.verticalLayout_2.addWidget(self.mpl)
+        self.verticalLayout_2.addWidget(self.ntb)
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+    def retranslateUi(self, Form):
+        self.wDir = os.path.join(os.path.expanduser("~"), 'openWEC')
+        Form.setWindowTitle(_translate("Form", "Form", None))
+        self.loadCS.setText(_translate("Form", "Load spectrum", None))
+        self.loadCS.clicked.connect(self.loadSpec)
+        self.ntb._views.clear()
+
+    def loadSpec(self):
+        fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Spectrum', os.path.join(self.wDir, 'Other'),
+                                                      "ASCII Files (*.txt *.csv *.dat)")[0]
+        spec = np.loadtxt(str(fname))
+
+        g = self.mpl
+        t = self.ntb
+        t.update()
+        g.fig.delaxes(g.axes)
+        g.axes = g.fig.add_axes([0.20, 0.17, 0.75, 0.75])
+        g.axes.plot(spec[:, 0], spec[:, 1], color='#468499')
+        g.axes.set_xlabel("Frequency")
+        g.axes.set_ylabel("Spectrum")
+        g.draw()
+        g.axes.hold(False)
+
+        # Copy Result files to Simulation directory
+        sh.copy(fname, os.path.join(self.wDir, 'Other', 'spec.dat'))
+
+    def close(self):
+        self.hide()
+
+
+class MoorDynPopup(QtWidgets.QWidget):
+    def __init__(self):
+        QtWidgets.QWidget.__init__(self)
+        self.setupUi(self)
+
+    def __del__(self):
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+    def setupUi(self, Form):
+        Form.setObjectName("Form")
+        Form.resize(1032, 849)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(Form)
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.label = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.verticalLayout_3.addWidget(self.label)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.pushButton_5 = QtWidgets.QPushButton(Form)
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.horizontalLayout_3.addWidget(self.pushButton_5)
+        self.pushButton = QtWidgets.QPushButton(Form)
+        self.pushButton.setObjectName("pushButton")
+        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+        self.LineTypeTable = QtWidgets.QTableWidget(Form)
+        self.LineTypeTable.setObjectName("LineTypeTable")
+        self.LineTypeTable.setColumnCount(9)
+        self.LineTypeTable.setRowCount(1)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(5, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(6, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(7, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LineTypeTable.setHorizontalHeaderItem(8, item)
+        self.verticalLayout_3.addWidget(self.LineTypeTable)
+        self.label_2 = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_2.setFont(font)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout_3.addWidget(self.label_2)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.pushButton_7 = QtWidgets.QPushButton(Form)
+        self.pushButton_7.setObjectName("pushButton_7")
+        self.horizontalLayout_4.addWidget(self.pushButton_7)
+        self.pushButton_6 = QtWidgets.QPushButton(Form)
+        self.pushButton_6.setObjectName("pushButton_6")
+        self.horizontalLayout_4.addWidget(self.pushButton_6)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
+        self.NodeTable = QtWidgets.QTableWidget(Form)
+        self.NodeTable.setObjectName("NodeTable")
+        self.NodeTable.setColumnCount(11)
+        self.NodeTable.setRowCount(1)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(5, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(6, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(7, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(8, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(9, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.NodeTable.setHorizontalHeaderItem(10, item)
+        self.verticalLayout_3.addWidget(self.NodeTable)
+        self.label_3 = QtWidgets.QLabel(Form)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_3.setFont(font)
+        self.label_3.setObjectName("label_3")
+        self.verticalLayout_3.addWidget(self.label_3)
+        self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.pushButton_9 = QtWidgets.QPushButton(Form)
+        self.pushButton_9.setObjectName("pushButton_9")
+        self.horizontalLayout_5.addWidget(self.pushButton_9)
+        self.pushButton_8 = QtWidgets.QPushButton(Form)
+        self.pushButton_8.setObjectName("pushButton_8")
+        self.horizontalLayout_5.addWidget(self.pushButton_8)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
+        self.LinesTable = QtWidgets.QTableWidget(Form)
+        self.LinesTable.setObjectName("LinesTable")
+        self.LinesTable.setColumnCount(6)
+        self.LinesTable.setRowCount(1)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setHorizontalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setHorizontalHeaderItem(5, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.LinesTable.setItem(0, 1, item)
+        self.verticalLayout_3.addWidget(self.LinesTable)
+        self.horizontalLayout.addLayout(self.verticalLayout_3)
+        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.pushButton_2 = QtWidgets.QPushButton(Form)
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.verticalLayout.addWidget(self.pushButton_2)
+        self.pushButton_3 = QtWidgets.QPushButton(Form)
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.verticalLayout.addWidget(self.pushButton_3)
+        self.pushButton_10 = QtWidgets.QPushButton(Form)
+        self.pushButton_10.setObjectName("pushButton_10")
+        self.verticalLayout.addWidget(self.pushButton_10)
+        self.pushButton_4 = QtWidgets.QPushButton(Form)
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.verticalLayout.addWidget(self.pushButton_4)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem)
+        self.horizontalLayout.addLayout(self.verticalLayout)
+        self.horizontalLayout_2.addLayout(self.horizontalLayout)
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+    def retranslateUi(self, Form):
+        self.wDir = os.path.join(os.path.expanduser('~'), 'openWEC')
+        Form.setWindowTitle(_translate("Form", "MoorDyn Configuration", None))
+        self.label.setText(_translate("Form", "Line Type", None))
+        self.pushButton_5.setText(_translate("Form", "Add Line Type", None))
+        self.pushButton_5.clicked.connect(lambda: self.addremLine(self.LineTypeTable, 1))
+        self.pushButton.setText(_translate("Form", "Remove Line Type", None))
+        self.pushButton.clicked.connect(lambda: self.addremLine(self.LineTypeTable, -1))
+        item = self.LineTypeTable.verticalHeaderItem(0)
+        item.setText(_translate("Form", "1", None))
+        item = self.LineTypeTable.horizontalHeaderItem(0)
+        item.setText(_translate("Form", "Name", None))
+        item = self.LineTypeTable.horizontalHeaderItem(1)
+        item.setText(_translate("Form", "Diameter", None))
+        item = self.LineTypeTable.horizontalHeaderItem(2)
+        item.setText(_translate("Form", "Mass Density", None))
+        item = self.LineTypeTable.horizontalHeaderItem(3)
+        item.setText(_translate("Form", "Line Stifness", None))
+        item = self.LineTypeTable.horizontalHeaderItem(4)
+        item.setText(_translate("Form", "Internal Damping", None))
+        item = self.LineTypeTable.horizontalHeaderItem(5)
+        item.setText(_translate("Form", "Can", None))
+        item = self.LineTypeTable.horizontalHeaderItem(6)
+        item.setText(_translate("Form", "Cat", None))
+        item = self.LineTypeTable.horizontalHeaderItem(7)
+        item.setText(_translate("Form", "Cdn", None))
+        item = self.LineTypeTable.horizontalHeaderItem(8)
+        item.setText(_translate("Form", "Cdt", None))
+        self.label_2.setText(_translate("Form", "Nodes", None))
+        self.pushButton_7.setText(_translate("Form", "Add Node", None))
+        self.pushButton_7.clicked.connect(lambda: self.addremLine(self.NodeTable, 1))
+        self.pushButton_6.setText(_translate("Form", "Remove Node", None))
+        self.pushButton_6.clicked.connect(lambda: self.addremLine(self.NodeTable, -1))
+        item = self.NodeTable.verticalHeaderItem(0)
+        item.setText(_translate("Form", "1", None))
+        item = self.NodeTable.horizontalHeaderItem(0)
+        item.setText(_translate("Form", "Type", None))
+        item = self.NodeTable.horizontalHeaderItem(1)
+        item.setText(_translate("Form", "X", None))
+        item = self.NodeTable.horizontalHeaderItem(2)
+        item.setText(_translate("Form", "Y", None))
+        item = self.NodeTable.horizontalHeaderItem(3)
+        item.setText(_translate("Form", "Z", None))
+        item = self.NodeTable.horizontalHeaderItem(4)
+        item.setText(_translate("Form", "Mass", None))
+        item = self.NodeTable.horizontalHeaderItem(5)
+        item.setText(_translate("Form", "Volume", None))
+        item = self.NodeTable.horizontalHeaderItem(6)
+        item.setText(_translate("Form", "Fx", None))
+        item = self.NodeTable.horizontalHeaderItem(7)
+        item.setText(_translate("Form", "Fy", None))
+        item = self.NodeTable.horizontalHeaderItem(8)
+        item.setText(_translate("Form", "Fz", None))
+        item = self.NodeTable.horizontalHeaderItem(9)
+        item.setText(_translate("Form", "CdA", None))
+        item = self.NodeTable.horizontalHeaderItem(10)
+        item.setText(_translate("Form", "CA", None))
+        self.label_3.setText(_translate("Form", "Lines", None))
+        self.pushButton_9.setText(_translate("Form", "Add Line", None))
+        self.pushButton_9.clicked.connect(lambda: self.addremLine(self.LinesTable, 1))
+        self.pushButton_8.setText(_translate("Form", "Remove Line", None))
+        self.pushButton_8.clicked.connect(lambda: self.addremLine(self.LinesTable, -1))
+        item = self.LinesTable.verticalHeaderItem(0)
+        item.setText(_translate("Form", "1", None))
+        item = self.LinesTable.horizontalHeaderItem(0)
+        item.setText(_translate("Form", "Type", None))
+        item = self.LinesTable.horizontalHeaderItem(1)
+        item.setText(_translate("Form", "Unstretched Length", None))
+        item = self.LinesTable.horizontalHeaderItem(2)
+        item.setText(_translate("Form", "# Segments", None))
+        item = self.LinesTable.horizontalHeaderItem(3)
+        item.setText(_translate("Form", "Anchor Node", None))
+        item = self.LinesTable.horizontalHeaderItem(4)
+        item.setText(_translate("Form", "Vessel Node", None))
+        item = self.LinesTable.horizontalHeaderItem(5)
+        item.setText(_translate("Form", "Output?", None))
+        __sortingEnabled = self.LinesTable.isSortingEnabled()
+        self.LinesTable.setSortingEnabled(False)
+        self.LinesTable.setSortingEnabled(__sortingEnabled)
+        self.pushButton_2.setText(_translate("Form", "Open Lines File", None))
+        self.pushButton_2.clicked.connect(self.openLinesFile)
+        self.pushButton_3.setText(_translate("Form", "Save Lines File", None))
+        self.pushButton_3.clicked.connect(self.saveLinesFile)
+        self.pushButton_10.setText(_translate("Form", "Manual", None))
+        self.pushButton_10.clicked.connect(self.openMdManual)
+        self.pushButton_4.setText(_translate("Form", "Cancel", None))
+        self.pushButton_4.clicked.connect(self.close)
+
+    def addremLine(self, table, ltype):
+        rowC = table.rowCount()
+        if ltype > 0:
+            table.setRowCount(rowC + 1)
+        else:
+            if table.currentRow() > -1:
+                row = table.currentRow()
+                table.removeRow(row)
+            else:
+                table.setRowCount(rowC - 1)
+
+    def openMdManual(self):
+        os.chdir('Mooring')
+        if sys.platform == 'linux2':
+            os.system('xdg-open', 'MoorDyn_Manual.pdf')
+        else:
+            os.startfile('MoorDyn_Manual.pdf')
+        os.chdir('..')
+
+    def openLinesFile(self):
+        sys.path.insert(0, './Run')
+        import moorSim as ms
+
+        fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',
+                                                      os.path.join(self.wDir, 'Mooring'), '*.txt')[0]
+        mdLines = ms.openLines(fname)
+        # Line types
+        self.LineTypeTable.setRowCount(mdLines['nrLineTypes'])
+        for iL in range(mdLines['nrLineTypes']):
+            for iC in range(len(mdLines['linetype_{:d}'.format(iL + 1)])):
+                text = mdLines['linetype_{:d}'.format(iL + 1)][iC]
+                self.LineTypeTable.setItem(iL, iC, QtWidgets.QTableWidgetItem(text))
+
+        # Nodes
+        self.NodeTable.setRowCount(mdLines['nrNodes'])
+        for iL in range(mdLines['nrNodes']):
+            for iC in range(len(mdLines['node_{:d}'.format(iL + 1)])):
+                text = mdLines['node_{:d}'.format(iL + 1)][iC]
+                self.NodeTable.setItem(iL, iC, QtWidgets.QTableWidgetItem(text))
+
+        # Lines
+        self.LinesTable.setRowCount(mdLines['nrLines'])
+        for iL in range(mdLines['nrLines']):
+            for iC in range(len(mdLines['line_{:d}'.format(iL + 1)])):
+                text = mdLines['line_{:d}'.format(iL + 1)][iC]
+                self.LinesTable.setItem(iL, iC, QtWidgets.QTableWidgetItem(text))
+
+    def saveLinesFile(self):
+        linesFile = ['']
+        depth = 0.0
+
+        # Header
+        linesFile.append('MoorDyn input file for OpenWEC mooring system\n')
+
+        # Line Dictionary
+        linesFile.append(
+            '---------------------- LINE DICTIONARY -----------------------------------------------------\n')
+        linesFile.append('LineType  Diam    MassDenInAir    EA        BA/-zeta     Can     Cat    Cdn     Cdt\n')
+        linesFile.append('(-)       (m)       (kg/m)        (N)       (Pa-s/-)     (-)     (-)    (-)     (-)\n')
+        for iR in range(self.LineTypeTable.rowCount()):
+            line = ''
+            for iC in range(self.LineTypeTable.columnCount()):
+                line = line + self.LineTypeTable.item(iR, iC).text() + '\t'
+            line = line + '\n'
+            linesFile.append(line)
+
+        # Nodes
+        linesFile.append(
+            '---------------------- NODE PROPERTIES -----------------------------------------------------\n')
+        linesFile.append(
+            'Node      Type      X        Y         Z        M        V        FX       FY      FZ     CdA   CA\n')
+        linesFile.append(
+            '(-)       (-)      (m)      (m)       (m)      (kg)     (m^3)    (kN)     (kN)    (kN)   (m^2)  (-)\n')
+        for iR in range(self.NodeTable.rowCount()):
+            line = '{:d}\t'.format(iR + 1)
+            for iC in range(self.NodeTable.columnCount()):
+                line = line + self.NodeTable.item(iR, iC).text() + '\t'
+                if iC == 3:
+                    depthT = -1.0 * float(self.NodeTable.item(iR, iC).text())
+                    if depthT > depth:
+                        depth = depthT
+            line = line + '\n'
+            linesFile.append(line)
+
+        # Lines
+        linesFile.append(
+            '---------------------- LINE PROPERTIES -----------------------------------------------------\n')
+        linesFile.append('Line     LineType  UnstrLen  NumSegs   NodeAnch  NodeFair  Flags/Outputs\n')
+        linesFile.append('(-)      (-)       (m)         (-)       (-)       (-)       (-)\n')
+        for iR in range(self.LinesTable.rowCount()):
+            line = '{:d}\t'.format(iR + 1)
+            for iC in range(self.LinesTable.columnCount()):
+                line = line + self.LinesTable.item(iR, iC).text() + '\t'
+            line = line + '\n'
+            linesFile.append(line)
+
+        # Solver Options
+        linesFile.append('---------------------- SOLVER OPTIONS-----------------------------------------\n')
+        linesFile.append('0.002    dtM          - time step to use in mooring integration\n')
+        linesFile.append(
+            '0        WaveKin      - wave kinematics flag (0=neglect, the only option currently supported)\n')
+        linesFile.append('3.0e0    kBot         - bottom stiffness\n')
+        linesFile.append('3.0e0    cBot         - bottom damping\n')
+        linesFile.append('{:f}      WtrDpth      - water depth\n'.format(depth))
+        linesFile.append(
+            '5.0      CdScaleIC    - factor by which to scale drag coefficients during dynamic relaxation IC gen\n')
+        linesFile.append('0.001    threshIC     - threshold for IC convergence\n')
+        linesFile.append('-------------------------- OUTPUTS --------------------------------\n')
+        linesFile.append('FairTen1 FairTen2 FairTen3\n')
+        linesFile.append('--------------------- need this line ------------------\n')
+
+        # Write file
+        fileName = os.path.join(self.wDir, 'Mooring', 'lines.txt')
+        with open(fileName, 'w') as f:
+            f.writelines(linesFile)
+        print('Lines file succesfully written!\n')
+
+    def close(self):
+        self.hide()
+
+
+class Ui_MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self)
+        self.setupUi(self)
+        sys.stdout = EmittingStream(textWritten=self.normalOutputWritten)
+        sys.stderr = EmittingStream(textWritten=self.normalOutputWritten)
+
+    def __del__(self):
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+    def setupUi(self, MainWindow):
+        MainWindow.resize(1556, 987)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap("./src/icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.centralwidget)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
+        self.tabWidget.setObjectName("tabWidget")
+        # Mesh tab
+        self.tabMesh = QtWidgets.QWidget()
+        self.tabMesh.setObjectName("tabMesh")
+        self.gridLayout = QtWidgets.QGridLayout(self.tabMesh)
+        self.gridLayout.setObjectName("gridLayout")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.infoConsoleLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.infoConsoleLabel.setFont(font)
+        self.infoConsoleLabel.setObjectName("infoConsoleLabel")
+        self.verticalLayout_2.addWidget(self.infoConsoleLabel)
+        self.messageBox = QtWidgets.QTextEdit(self.tabMesh)
+        self.messageBox.setEnabled(True)
+        self.messageBox.setReadOnly(True)
+        self.messageBox.setObjectName("messageBox")
+        self.verticalLayout_2.addWidget(self.messageBox)
+        self.visualisationLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.visualisationLabel.setFont(font)
+        self.visualisationLabel.setObjectName("visualisationLabel")
+        self.verticalLayout_2.addWidget(self.visualisationLabel)
+        self.formLayout_3 = QtWidgets.QFormLayout()
+        self.formLayout_3.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        self.formLayout_3.setObjectName("formLayout_3")
+        self.meshMethodLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.meshMethodLabel.setFont(font)
+        self.meshMethodLabel.setObjectName("meshMethodLabel")
+        self.formLayout_3.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.meshMethodLabel)
+        self.meshMethod = QtWidgets.QComboBox(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.meshMethod.setFont(font)
+        self.meshMethod.setObjectName("meshMethod")
+        self.meshMethod.addItem("")
+        self.meshMethod.addItem("")
+        self.meshMethod.addItem("")
+        self.formLayout_3.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.meshMethod)
+        self.geoProp = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.geoProp.setFont(font)
+        self.geoProp.setObjectName("geoProp")
+        self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.geoProp)
+        self.verticalLayout_7 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_7.setObjectName("verticalLayout_7")
+        self.comboBox = QtWidgets.QComboBox(self.tabMesh)
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.verticalLayout_7.addWidget(self.comboBox)
+        self.sketchShape = QtWidgets.QLabel(self.tabMesh)
+        self.sketchShape.setText("")
+        self.sketchShape.setPixmap(QtGui.QPixmap("src/box.png"))
+        self.sketchShape.setObjectName("sketchShape")
+        self.verticalLayout_7.addWidget(self.sketchShape)
+        self.formLayout_3.setLayout(2, QtWidgets.QFormLayout.LabelRole, self.verticalLayout_7)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.propForm = QtWidgets.QFormLayout()
+        self.propForm.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        self.propForm.setObjectName("propForm")
+        self.propLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.propLabel.setFont(font)
+        self.propLabel.setObjectName("propLabel")
+        self.propForm.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.propLabel)
+        self.prop1Label = QtWidgets.QLabel(self.tabMesh)
+        self.prop1Label.setObjectName("prop1Label")
+        self.propForm.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.prop1Label)
+        self.prop1 = QtWidgets.QLineEdit(self.tabMesh)
+        self.prop1.setObjectName("prop1")
+        self.propForm.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.prop1)
+        self.prop2Label = QtWidgets.QLabel(self.tabMesh)
+        self.prop2Label.setObjectName("prop2Label")
+        self.propForm.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.prop2Label)
+        self.prop2 = QtWidgets.QLineEdit(self.tabMesh)
+        self.prop2.setObjectName("prop2")
+        self.propForm.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.prop2)
+        self.prop3Label = QtWidgets.QLabel(self.tabMesh)
+        self.prop3Label.setObjectName("prop3Label")
+        self.propForm.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.prop3Label)
+        self.prop3 = QtWidgets.QLineEdit(self.tabMesh)
+        self.prop3.setObjectName("prop3")
+        self.propForm.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.prop3)
+        self.XinsLabel = QtWidgets.QLabel(self.tabMesh)
+        self.XinsLabel.setObjectName("XinsLabel")
+        self.propForm.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.XinsLabel)
+        self.Xins = QtWidgets.QLineEdit(self.tabMesh)
+        self.Xins.setObjectName("Xins")
+        self.propForm.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.Xins)
+        self.YinsLabel = QtWidgets.QLabel(self.tabMesh)
+        self.YinsLabel.setObjectName("YinsLabel")
+        self.propForm.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.YinsLabel)
+        self.Yins = QtWidgets.QLineEdit(self.tabMesh)
+        self.Yins.setObjectName("Yins")
+        self.propForm.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.Yins)
+        self.ZinsLabel = QtWidgets.QLabel(self.tabMesh)
+        self.ZinsLabel.setObjectName("ZinsLabel")
+        self.propForm.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.ZinsLabel)
+        self.Zins = QtWidgets.QLineEdit(self.tabMesh)
+        self.Zins.setObjectName("Zins")
+        self.propForm.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.Zins)
+        self.createObj = QtWidgets.QPushButton(self.tabMesh)
+        self.createObj.setObjectName("createObj")
+        self.propForm.setWidget(7, QtWidgets.QFormLayout.FieldRole, self.createObj)
+        self.horizontalLayout.addLayout(self.propForm)
+        self.transForm = QtWidgets.QFormLayout()
+        self.transForm.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        self.transForm.setObjectName("transForm")
+        self.transLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.transLabel.setFont(font)
+        self.transLabel.setObjectName("transLabel")
+        self.transForm.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.transLabel)
+        self.label_3 = QtWidgets.QLabel(self.tabMesh)
+        self.label_3.setObjectName("label_3")
+        self.transForm.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_3)
+        self.lineEdit = QtWidgets.QLineEdit(self.tabMesh)
+        self.lineEdit.setObjectName("lineEdit")
+        self.transForm.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEdit)
+        self.label_5 = QtWidgets.QLabel(self.tabMesh)
+        self.label_5.setObjectName("label_5")
+        self.transForm.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_5)
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.tabMesh)
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.transForm.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.lineEdit_2)
+        self.label_6 = QtWidgets.QLabel(self.tabMesh)
+        self.label_6.setObjectName("label_6")
+        self.transForm.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.label_6)
+        self.lineEdit_3 = QtWidgets.QLineEdit(self.tabMesh)
+        self.lineEdit_3.setObjectName("lineEdit_3")
+        self.transForm.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.lineEdit_3)
+        self.pushButton = QtWidgets.QPushButton(self.tabMesh)
+        self.pushButton.setObjectName("pushButton")
+        self.transForm.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.pushButton)
+        self.horizontalLayout.addLayout(self.transForm)
+        self.rotForm = QtWidgets.QFormLayout()
+        self.rotForm.setObjectName("rotForm")
+        self.label_4 = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_4.setFont(font)
+        self.label_4.setObjectName("label_4")
+        self.rotForm.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label_4)
+        self.label_7 = QtWidgets.QLabel(self.tabMesh)
+        self.label_7.setObjectName("label_7")
+        self.rotForm.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_7)
+        self.lineEdit_4 = QtWidgets.QLineEdit(self.tabMesh)
+        self.lineEdit_4.setObjectName("lineEdit_4")
+        self.rotForm.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEdit_4)
+        self.label_8 = QtWidgets.QLabel(self.tabMesh)
+        self.label_8.setObjectName("label_8")
+        self.rotForm.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_8)
+        self.lineEdit_5 = QtWidgets.QLineEdit(self.tabMesh)
+        self.lineEdit_5.setObjectName("lineEdit_5")
+        self.rotForm.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.lineEdit_5)
+        self.label_9 = QtWidgets.QLabel(self.tabMesh)
+        self.label_9.setObjectName("label_9")
+        self.rotForm.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.label_9)
+        self.lineEdit_6 = QtWidgets.QLineEdit(self.tabMesh)
+        self.lineEdit_6.setObjectName("lineEdit_6")
+        self.rotForm.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.lineEdit_6)
+        self.pushButton_2 = QtWidgets.QPushButton(self.tabMesh)
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.rotForm.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.pushButton_2)
+        self.horizontalLayout.addLayout(self.rotForm)
+        self.formLayout_3.setLayout(2, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout)
+        self.label_10 = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_10.setFont(font)
+        self.label_10.setObjectName("label_10")
+        self.formLayout_3.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.label_10)
+        self.listWidget = QtWidgets.QListWidget(self.tabMesh)
+        self.listWidget.setObjectName("listWidget")
+        self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.listWidget)
+        self.waterDepthLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.waterDepthLabel.setFont(font)
+        self.waterDepthLabel.setObjectName("waterDepthLabel")
+        self.formLayout_3.setWidget(7, QtWidgets.QFormLayout.LabelRole, self.waterDepthLabel)
+        self.waterDepthBox = QtWidgets.QLineEdit(self.tabMesh)
+        self.waterDepthBox.setObjectName("waterDepthBox")
+        self.formLayout_3.setWidget(7, QtWidgets.QFormLayout.FieldRole, self.waterDepthBox)
+        self.zGLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.zGLabel.setFont(font)
+        self.zGLabel.setObjectName("zGLabel")
+        self.formLayout_3.setWidget(8, QtWidgets.QFormLayout.LabelRole, self.zGLabel)
+        self.zGBox = QtWidgets.QLineEdit(self.tabMesh)
+        self.zGBox.setObjectName("zGBox")
+        self.formLayout_3.setWidget(8, QtWidgets.QFormLayout.FieldRole, self.zGBox)
+        self.rhoLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.rhoLabel.setFont(font)
+        self.rhoLabel.setObjectName("rhoLabel")
+        self.formLayout_3.setWidget(9, QtWidgets.QFormLayout.LabelRole, self.rhoLabel)
+        self.rhoBox = QtWidgets.QLineEdit(self.tabMesh)
+        self.rhoBox.setObjectName("rhoBox")
+        self.formLayout_3.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.rhoBox)
+        self.MeshProp = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.MeshProp.setFont(font)
+        self.MeshProp.setObjectName("MeshProp")
+        self.formLayout_3.setWidget(10, QtWidgets.QFormLayout.LabelRole, self.MeshProp)
+        self.nPanelLabel = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.nPanelLabel.setFont(font)
+        self.nPanelLabel.setObjectName("nPanelLabel")
+        self.formLayout_3.setWidget(11, QtWidgets.QFormLayout.LabelRole, self.nPanelLabel)
+        self.nPanelBox = QtWidgets.QLineEdit(self.tabMesh)
+        self.nPanelBox.setObjectName("nPanelBox")
+        self.formLayout_3.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.nPanelBox)
+        self.meshButton = QtWidgets.QPushButton(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.meshButton.setFont(font)
+        self.meshButton.setObjectName("meshButton")
+        self.formLayout_3.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.meshButton)
+        self.pushButton_3 = QtWidgets.QPushButton(self.tabMesh)
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.formLayout_3.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.pushButton_3)
+        self.genProp = QtWidgets.QLabel(self.tabMesh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.genProp.setFont(font)
+        self.genProp.setObjectName("genProp")
+        self.formLayout_3.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.genProp)
+        self.gridLayout.addLayout(self.formLayout_3, 1, 0, 1, 1)
+        self.tabWidget.addTab(self.tabMesh, "")
+
+        self.mplMesh = MyStaticMplCanvas(self.tabMesh, width=5, height=4, dpi=100)
+        self.ntbMesh = NavigationToolbar(self.mplMesh, self.tabMesh)
+        self.verticalLayout_2.addWidget(self.mplMesh)
+        self.verticalLayout_2.addWidget(self.ntbMesh)
+        self.gridLayout.addLayout(self.verticalLayout_2, 1, 1, 1, 1)
+        self.tabWidget.addTab(self.tabMesh, "")
+        # Nemoh Tab
+        self.tabNemoh = QtWidgets.QWidget()
+        self.tabNemoh.setObjectName("tabNemoh")
+        self.gridLayout_3 = QtWidgets.QGridLayout(self.tabNemoh)
+        self.gridLayout_3.setObjectName("gridLayout_3")
+        self.formLayout_2 = QtWidgets.QFormLayout()
+        self.formLayout_2.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
+        self.formLayout_2.setObjectName("formLayout_2")
+        self.labelBEM = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.labelBEM.setFont(font)
+        self.labelBEM.setObjectName("labelBEM")
+        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.labelBEM)
+        self.label = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label)
+        self.omegaLabel = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.omegaLabel.setFont(font)
+        self.omegaLabel.setObjectName("omegaLabel")
+        self.formLayout_2.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.omegaLabel)
+        self.omegaStart = QtWidgets.QLineEdit(self.tabNemoh)
+        self.omegaStart.setObjectName("omegaStart")
+        self.formLayout_2.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.omegaStart)
+        self.omegaStop = QtWidgets.QLineEdit(self.tabNemoh)
+        self.omegaStop.setObjectName("omegaStop")
+        self.formLayout_2.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.omegaStop)
+        self.omegaStep = QtWidgets.QLineEdit(self.tabNemoh)
+        self.omegaStep.setObjectName("omegaStep")
+        self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.omegaStep)
+        self.dofLabel = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.dofLabel.setFont(font)
+        self.dofLabel.setObjectName("dofLabel")
+        self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.dofLabel)
+        self.dofImage = QtWidgets.QLabel(self.tabNemoh)
+        self.dofImage.setText("")
+        self.dofImage.setPixmap(QtGui.QPixmap("src/dof.PNG"))
+        self.dofImage.setScaledContents(False)
+        self.dofImage.setObjectName("dofImage")
+        self.formLayout_2.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.dofImage)
+        self.dofLayout = QtWidgets.QGridLayout()
+        self.dofLayout.setObjectName("dofLayout")
+        self.checkRoll = QtWidgets.QCheckBox(self.tabNemoh)
+        self.checkRoll.setObjectName("checkRoll")
+        self.dofLayout.addWidget(self.checkRoll, 0, 1, 1, 1)
+        self.checkHeave = QtWidgets.QCheckBox(self.tabNemoh)
+        self.checkHeave.setObjectName("checkHeave")
+        self.dofLayout.addWidget(self.checkHeave, 2, 0, 1, 1)
+        self.checkYaw = QtWidgets.QCheckBox(self.tabNemoh)
+        self.checkYaw.setObjectName("checkYaw")
+        self.dofLayout.addWidget(self.checkYaw, 2, 1, 1, 1)
+        self.checkPitch = QtWidgets.QCheckBox(self.tabNemoh)
+        self.checkPitch.setObjectName("checkPitch")
+        self.dofLayout.addWidget(self.checkPitch, 1, 1, 1, 1)
+        self.checkSurge = QtWidgets.QCheckBox(self.tabNemoh)
+        self.checkSurge.setObjectName("checkSurge")
+        self.dofLayout.addWidget(self.checkSurge, 0, 0, 1, 1)
+        self.checkSway = QtWidgets.QCheckBox(self.tabNemoh)
+        self.checkSway.setObjectName("checkSway")
+        self.dofLayout.addWidget(self.checkSway, 1, 0, 1, 1)
+        self.formLayout_2.setLayout(6, QtWidgets.QFormLayout.FieldRole, self.dofLayout)
+        self.label_2 = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_2.setFont(font)
+        self.label_2.setObjectName("label_2")
+        self.formLayout_2.setWidget(7, QtWidgets.QFormLayout.LabelRole, self.label_2)
+        self.wavDirStart = QtWidgets.QLineEdit(self.tabNemoh)
+        self.wavDirStart.setObjectName("wavDirStart")
+        self.formLayout_2.setWidget(9, QtWidgets.QFormLayout.FieldRole, self.wavDirStart)
+        self.wavDirStop = QtWidgets.QLineEdit(self.tabNemoh)
+        self.wavDirStop.setObjectName("wavDirStop")
+        self.formLayout_2.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.wavDirStop)
+        self.wavDirStep = QtWidgets.QLineEdit(self.tabNemoh)
+        self.wavDirStep.setObjectName("wavDirStep")
+        self.formLayout_2.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.wavDirStep)
+        self.irfLabel = QtWidgets.QLabel(self.tabNemoh)
+        self.irfLabel.setObjectName("irfLabel")
+        self.formLayout_2.setWidget(12, QtWidgets.QFormLayout.LabelRole, self.irfLabel)
+        self.irfCheck = QtWidgets.QCheckBox(self.tabNemoh)
+        self.irfCheck.setText("")
+        self.irfCheck.setObjectName("irfCheck")
+        self.formLayout_2.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.irfCheck)
+        self.irfDur = QtWidgets.QLineEdit(self.tabNemoh)
+        self.irfDur.setObjectName("irfDur")
+        self.formLayout_2.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.irfDur)
+        self.irfStep = QtWidgets.QLineEdit(self.tabNemoh)
+        self.irfStep.setObjectName("irfStep")
+        self.formLayout_2.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.irfStep)
+        self.kochinLabel = QtWidgets.QLabel(self.tabNemoh)
+        self.kochinLabel.setObjectName("kochinLabel")
+        self.formLayout_2.setWidget(15, QtWidgets.QFormLayout.LabelRole, self.kochinLabel)
+        self.kochinCheck = QtWidgets.QCheckBox(self.tabNemoh)
+        self.kochinCheck.setText("")
+        self.kochinCheck.setObjectName("kochinCheck")
+        self.formLayout_2.setWidget(15, QtWidgets.QFormLayout.FieldRole, self.kochinCheck)
+        self.kochinStart = QtWidgets.QLineEdit(self.tabNemoh)
+        self.kochinStart.setObjectName("kochinStart")
+        self.formLayout_2.setWidget(16, QtWidgets.QFormLayout.FieldRole, self.kochinStart)
+        self.kochinStop = QtWidgets.QLineEdit(self.tabNemoh)
+        self.kochinStop.setObjectName("kochinStop")
+        self.formLayout_2.setWidget(17, QtWidgets.QFormLayout.FieldRole, self.kochinStop)
+        self.kochinStep = QtWidgets.QLineEdit(self.tabNemoh)
+        self.kochinStep.setObjectName("kochinStep")
+        self.formLayout_2.setWidget(18, QtWidgets.QFormLayout.FieldRole, self.kochinStep)
+        self.nemohButton = QtWidgets.QPushButton(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.nemohButton.setFont(font)
+        self.nemohButton.setObjectName("nemohButton")
+        self.formLayout_2.setWidget(25, QtWidgets.QFormLayout.FieldRole, self.nemohButton)
+        self.wavDirCheck = QtWidgets.QCheckBox(self.tabNemoh)
+        self.wavDirCheck.setText("")
+        self.wavDirCheck.setObjectName("wavDirCheck")
+        self.formLayout_2.setWidget(8, QtWidgets.QFormLayout.FieldRole, self.wavDirCheck)
+        self.wavDirLabel = QtWidgets.QLabel(self.tabNemoh)
+        self.wavDirLabel.setObjectName("wavDirLabel")
+        self.formLayout_2.setWidget(8, QtWidgets.QFormLayout.LabelRole, self.wavDirLabel)
+        self.fsCheck = QtWidgets.QCheckBox(self.tabNemoh)
+        self.fsCheck.setText("")
+        self.fsCheck.setObjectName("fsCheck")
+        self.formLayout_2.setWidget(19, QtWidgets.QFormLayout.FieldRole, self.fsCheck)
+        self.fsLabel = QtWidgets.QLabel(self.tabNemoh)
+        self.fsLabel.setObjectName("fsLabel")
+        self.formLayout_2.setWidget(19, QtWidgets.QFormLayout.LabelRole, self.fsLabel)
+        self.fsDeltaX = QtWidgets.QLineEdit(self.tabNemoh)
+        self.fsDeltaX.setObjectName("fsDeltaX")
+        self.formLayout_2.setWidget(20, QtWidgets.QFormLayout.FieldRole, self.fsDeltaX)
+        self.fsDeltaY = QtWidgets.QLineEdit(self.tabNemoh)
+        self.fsDeltaY.setObjectName("fsDeltaY")
+        self.formLayout_2.setWidget(21, QtWidgets.QFormLayout.FieldRole, self.fsDeltaY)
+        self.fsLengthX = QtWidgets.QLineEdit(self.tabNemoh)
+        self.fsLengthX.setObjectName("fsLengthX")
+        self.formLayout_2.setWidget(22, QtWidgets.QFormLayout.FieldRole, self.fsLengthX)
+        self.fsLengthY = QtWidgets.QLineEdit(self.tabNemoh)
+        self.fsLengthY.setObjectName("fsLengthY")
+        self.formLayout_2.setWidget(23, QtWidgets.QFormLayout.FieldRole, self.fsLengthY)
+        self.parkLabel = QtWidgets.QLabel(self.tabNemoh)
+        self.parkLabel.setObjectName("parkLabel")
+        self.formLayout_2.setWidget(24, QtWidgets.QFormLayout.LabelRole, self.parkLabel)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.parkCheck = QtWidgets.QCheckBox(self.tabNemoh)
+        self.parkCheck.setText("")
+        self.parkCheck.setObjectName("parkCheck")
+        self.horizontalLayout_2.addWidget(self.parkCheck)
+        self.parkConfig = QtWidgets.QPushButton(self.tabNemoh)
+        self.parkConfig.setObjectName("parkConfig")
+        self.parkConfig.setEnabled(False)
+        self.horizontalLayout_2.addWidget(self.parkConfig)
+        self.formLayout_2.setLayout(24, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_2)
+        self.gridLayout_3.addLayout(self.formLayout_2, 0, 0, 1, 1)
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.nemConsLabel = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.nemConsLabel.setFont(font)
+        self.nemConsLabel.setObjectName("nemConsLabel")
+        self.verticalLayout_3.addWidget(self.nemConsLabel)
+        self.nemMessBox = QtWidgets.QTextEdit(self.tabNemoh)
+        self.nemMessBox.setEnabled(True)
+        self.nemMessBox.setReadOnly(True)
+        self.nemMessBox.setObjectName("nemMessBox")
+        self.verticalLayout_3.addWidget(self.nemMessBox)
+        self.nemVisualisation = QtWidgets.QLabel(self.tabNemoh)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.nemVisualisation.setFont(font)
+        self.nemVisualisation.setObjectName("nemVisualisation")
+        self.verticalLayout_3.addWidget(self.nemVisualisation)
+
+        self.mplNem = MyStaticMplCanvas(self.tabNemoh, width=5, height=4, dpi=100)
+        self.ntbNem = NavigationToolbar(self.mplNem, self.tabNemoh)
+        self.verticalLayout_3.addWidget(self.mplNem)
+        self.verticalLayout_3.addWidget(self.ntbNem)
+
+        self.gridLayout_3.addLayout(self.verticalLayout_3, 0, 1, 1, 1)
+        self.tabWidget.addTab(self.tabNemoh, "")
+        # Simulation tab
+        self.tabSim = QtWidgets.QWidget()
+        self.tabSim.setObjectName("tabSim")
+        self.gridLayout_4 = QtWidgets.QGridLayout(self.tabSim)
+        self.gridLayout_4.setObjectName("gridLayout_4")
+        self.formLayout = QtWidgets.QFormLayout()
+        self.formLayout.setObjectName("formLayout")
+        self.wavProp = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.wavProp.setFont(font)
+        self.wavProp.setObjectName("wavProp")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.wavProp)
+        self.wavTypeLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.wavTypeLabel.setFont(font)
+        self.wavTypeLabel.setObjectName("wavTypeLabel")
+        self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.wavTypeLabel)
+        self.waveLayout = QtWidgets.QHBoxLayout()
+        self.waveLayout.setObjectName("waveLayout")
+        self.wavType = QtWidgets.QComboBox(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.wavType.setFont(font)
+        self.wavType.setObjectName("wavType")
+        self.wavType.addItem("")
+        self.wavType.addItem("")
+        self.waveLayout.addWidget(self.wavType)
+        self.checkCS = QtWidgets.QCheckBox(self.tabSim)
+        self.checkCS.setObjectName("checkCS")
+        self.waveLayout.addWidget(self.checkCS)
+        self.specButton = QtWidgets.QPushButton(self.tabSim)
+        self.specButton.setEnabled(False)
+        self.specButton.setObjectName("specButton")
+        self.waveLayout.addWidget(self.specButton)
+        self.formLayout.setLayout(1, QtWidgets.QFormLayout.FieldRole, self.waveLayout)
+        self.wavHLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.wavHLabel.setFont(font)
+        self.wavHLabel.setObjectName("wavHLabel")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.wavHLabel)
+        self.wavHBox = QtWidgets.QLineEdit(self.tabSim)
+        self.wavHBox.setObjectName("wavHBox")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.wavHBox)
+        self.wavTLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.wavTLabel.setFont(font)
+        self.wavTLabel.setObjectName("wavTLabel")
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.wavTLabel)
+        self.wavTBox = QtWidgets.QLineEdit(self.tabSim)
+        self.wavTBox.setObjectName("wavTBox")
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.wavTBox)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(4, QtWidgets.QFormLayout.LabelRole, spacerItem)
+        self.ptoProp = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.ptoProp.setFont(font)
+        self.ptoProp.setObjectName("ptoProp")
+        self.formLayout.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.ptoProp)
+        self.dampTypeLabel = QtWidgets.QLabel(self.tabSim)
+        self.dampTypeLabel.setObjectName("dampTypeLabel")
+        self.formLayout.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.dampTypeLabel)
+        self.dampSelect = QtWidgets.QComboBox(self.tabSim)
+        self.dampSelect.setObjectName("dampSelect")
+        self.dampSelect.addItem("")
+        self.dampSelect.addItem("")
+        self.formLayout.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.dampSelect)
+        self.fdampLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.fdampLabel.setFont(font)
+        self.fdampLabel.setObjectName("fdampLabel")
+        self.formLayout.setWidget(7, QtWidgets.QFormLayout.LabelRole, self.fdampLabel)
+        self.fdampLayout = QtWidgets.QHBoxLayout()
+        self.fdampLayout.setObjectName("fdampLayout")
+        self.msupLabel = QtWidgets.QLabel(self.tabSim)
+        self.msupLabel.setObjectName("msupLabel")
+        self.fdampLayout.addWidget(self.msupLabel)
+        self.msupEdit = QtWidgets.QLineEdit(self.tabSim)
+        self.msupEdit.setObjectName("msupEdit")
+        self.fdampLayout.addWidget(self.msupEdit)
+        self.bsupLabel = QtWidgets.QLabel(self.tabSim)
+        self.bsupLabel.setObjectName("bsupLabel")
+        self.fdampLayout.addWidget(self.bsupLabel)
+        self.bsupEdit = QtWidgets.QLineEdit(self.tabSim)
+        self.bsupEdit.setObjectName("bsupEdit")
+        self.fdampLayout.addWidget(self.bsupEdit)
+        self.csupLabel = QtWidgets.QLabel(self.tabSim)
+        self.csupLabel.setObjectName("csupLabel")
+        self.fdampLayout.addWidget(self.csupLabel)
+        self.csupEdit = QtWidgets.QLineEdit(self.tabSim)
+        self.csupEdit.setObjectName("csupEdit")
+        self.fdampLayout.addWidget(self.csupEdit)
+        self.formLayout.setLayout(7, QtWidgets.QFormLayout.FieldRole, self.fdampLayout)
+
+        verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(8, QtWidgets.QFormLayout.LabelRole, verticalSpacer)
+        self.moorPropLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.moorPropLabel.setFont(font)
+        self.moorPropLabel.setObjectName("moorPropLabel")
+        self.formLayout.setWidget(9, QtWidgets.QFormLayout.LabelRole, self.moorPropLabel)
+        self.moorCheck = QtWidgets.QCheckBox(self.tabSim)
+        self.moorCheck.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.moorCheck.setObjectName("moorCheck")
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.LabelRole, self.moorCheck)
+        self.moorConfig = QtWidgets.QPushButton(self.tabSim)
+        self.moorConfig.setObjectName("moorConfig")
+        self.formLayout.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.moorConfig)
+
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout.setItem(11, QtWidgets.QFormLayout.LabelRole, spacerItem1)
+        self.simProp = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.simProp.setFont(font)
+        self.simProp.setObjectName("simProp")
+        self.formLayout.setWidget(12, QtWidgets.QFormLayout.LabelRole, self.simProp)
+        self.simTimeLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.simTimeLabel.setFont(font)
+        self.simTimeLabel.setObjectName("simTimeLabel")
+        self.formLayout.setWidget(13, QtWidgets.QFormLayout.LabelRole, self.simTimeLabel)
+        self.simTimeBox = QtWidgets.QLineEdit(self.tabSim)
+        self.simTimeBox.setObjectName("simTimeBox")
+        self.formLayout.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.simTimeBox)
+        self.dtLabel = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.dtLabel.setFont(font)
+        self.dtLabel.setObjectName("dtLabel")
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.LabelRole, self.dtLabel)
+        self.dtBox = QtWidgets.QLineEdit(self.tabSim)
+        self.dtBox.setObjectName("dtBox")
+        self.formLayout.setWidget(14, QtWidgets.QFormLayout.FieldRole, self.dtBox)
+        self.simButton = QtWidgets.QPushButton(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Raleway")
+        self.simButton.setFont(font)
+        self.simButton.setObjectName("simButton")
+        self.formLayout.setWidget(15, QtWidgets.QFormLayout.FieldRole, self.simButton)
+        self.gridLayout_4.addLayout(self.formLayout, 0, 0, 1, 1)
+        self.verticalLayout_5 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_5.setObjectName("verticalLayout_5")
+        self.nemConsLabel_2 = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.nemConsLabel_2.setFont(font)
+        self.nemConsLabel_2.setObjectName("nemConsLabel_2")
+        self.verticalLayout_5.addWidget(self.nemConsLabel_2)
+        self.simMessBox = QtWidgets.QTextEdit(self.tabSim)
+        self.simMessBox.setEnabled(True)
+        self.simMessBox.setReadOnly(True)
+        self.simMessBox.setObjectName("simMessBox")
+        self.verticalLayout_5.addWidget(self.simMessBox)
+        self.nemVisualisation_2 = QtWidgets.QLabel(self.tabSim)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.nemVisualisation_2.setFont(font)
+        self.nemVisualisation_2.setObjectName("nemVisualisation_2")
+        self.verticalLayout_5.addWidget(self.nemVisualisation_2)
+
+        self.mplSim = MyStaticMplCanvas(self.tabSim, width=5, height=4, dpi=100)
+        self.ntbSim = NavigationToolbar(self.mplSim, self.tabSim)
+        self.verticalLayout_5.addWidget(self.mplSim)
+        self.verticalLayout_5.addWidget(self.ntbSim)
+
+        self.gridLayout_4.addLayout(self.verticalLayout_5, 0, 1, 1, 1)
+        self.tabWidget.addTab(self.tabSim, "")
+        # Postprocessing tab
+        self.tabPost = QtWidgets.QWidget()
+        self.tabPost.setObjectName("tabPost")
+        self.gridLayout_5 = QtWidgets.QGridLayout(self.tabPost)
+        self.gridLayout_5.setObjectName("gridLayout_5")
+        self.formLayout_5 = QtWidgets.QFormLayout()
+        self.formLayout_5.setObjectName("formLayout_5")
+        self.plotToolTitle = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.plotToolTitle.setFont(font)
+        self.plotToolTitle.setObjectName("plotToolTitle")
+        self.formLayout_5.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.plotToolTitle)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout_5.setItem(1, QtWidgets.QFormLayout.LabelRole, spacerItem2)
+        self.upPlotTitle = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.upPlotTitle.setFont(font)
+        self.upPlotTitle.setObjectName("upPlotTitle")
+        self.formLayout_5.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.upPlotTitle)
+        self.plotX1 = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.plotX1.setFont(font)
+        self.plotX1.setObjectName("plotX1")
+        self.formLayout_5.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.plotX1)
+        self.chooseX1 = QtWidgets.QComboBox(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.chooseX1.setFont(font)
+        self.chooseX1.setObjectName("chooseX1")
+        self.chooseX1.addItem("")
+        self.chooseX1.addItem("")
+        self.chooseX1.addItem("")
+        self.formLayout_5.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.chooseX1)
+        self.plotY1 = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.plotY1.setFont(font)
+        self.plotY1.setObjectName("plotY1")
+        self.formLayout_5.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.plotY1)
+        self.chooseY1 = QtWidgets.QComboBox(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.chooseY1.setFont(font)
+        self.chooseY1.setObjectName("chooseY1")
+        self.chooseY1.addItem("")
+        self.chooseY1.addItem("")
+        self.chooseY1.addItem("")
+        self.chooseY1.addItem("")
+        self.formLayout_5.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.chooseY1)
+        self.makePlot1 = QtWidgets.QPushButton(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.makePlot1.setFont(font)
+        self.makePlot1.setObjectName("makePlot1")
+        self.formLayout_5.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.makePlot1)
+        self.lowPlotTitle = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lowPlotTitle.setFont(font)
+        self.lowPlotTitle.setObjectName("lowPlotTitle")
+        self.formLayout_5.setWidget(9, QtWidgets.QFormLayout.LabelRole, self.lowPlotTitle)
+        self.plotX2 = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.plotX2.setFont(font)
+        self.plotX2.setObjectName("plotX2")
+        self.formLayout_5.setWidget(10, QtWidgets.QFormLayout.LabelRole, self.plotX2)
+        self.plotY2 = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.plotY2.setFont(font)
+        self.plotY2.setObjectName("plotY2")
+        self.formLayout_5.setWidget(11, QtWidgets.QFormLayout.LabelRole, self.plotY2)
+        self.chooseY2 = QtWidgets.QComboBox(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.chooseY2.setFont(font)
+        self.chooseY2.setObjectName("chooseY2")
+        self.chooseY2.addItem("")
+        self.chooseY2.addItem("")
+        self.chooseY2.addItem("")
+        self.chooseY2.addItem("")
+        self.formLayout_5.setWidget(11, QtWidgets.QFormLayout.FieldRole, self.chooseY2)
+        self.chooseX2 = QtWidgets.QComboBox(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.chooseX2.setFont(font)
+        self.chooseX2.setObjectName("chooseX2")
+        self.chooseX2.addItem("")
+        self.chooseX2.addItem("")
+        self.chooseX2.addItem("")
+        self.formLayout_5.setWidget(10, QtWidgets.QFormLayout.FieldRole, self.chooseX2)
+        self.makePlot2 = QtWidgets.QPushButton(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.makePlot2.setFont(font)
+        self.makePlot2.setObjectName("makePlot2")
+        self.formLayout_5.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.makePlot2)
+        spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.formLayout_5.setItem(8, QtWidgets.QFormLayout.LabelRole, spacerItem3)
+        self.dofPlotU = QtWidgets.QComboBox(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.dofPlotU.setFont(font)
+        self.dofPlotU.setObjectName("dofPlotU")
+        self.dofPlotU.addItem("")
+        self.formLayout_5.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.dofPlotU)
+        self.dofPlotLabelU = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.dofPlotLabelU.setFont(font)
+        self.dofPlotLabelU.setObjectName("dofPlotLabelU")
+        self.formLayout_5.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.dofPlotLabelU)
+        self.dofPlotL = QtWidgets.QComboBox(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.dofPlotL.setFont(font)
+        self.dofPlotL.setObjectName("dofPlotL")
+        self.dofPlotL.addItem("")
+        self.formLayout_5.setWidget(12, QtWidgets.QFormLayout.FieldRole, self.dofPlotL)
+        self.dofLabelL = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        self.dofLabelL.setFont(font)
+        self.dofLabelL.setObjectName("dofLabelL")
+        self.formLayout_5.setWidget(12, QtWidgets.QFormLayout.LabelRole, self.dofLabelL)
+        self.gridLayout_5.addLayout(self.formLayout_5, 0, 0, 1, 1)
+        self.verticalLayout_6 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_6.setObjectName("verticalLayout_6")
+        self.nemConsLabel_3 = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.nemConsLabel_3.setFont(font)
+        self.nemConsLabel_3.setObjectName("nemConsLabel_3")
+        self.verticalLayout_6.addWidget(self.nemConsLabel_3)
+        self.postMessBox = QtWidgets.QTextEdit(self.tabPost)
+        self.postMessBox.setEnabled(True)
+        self.postMessBox.setReadOnly(True)
+        self.postMessBox.setObjectName("postMessBox")
+        self.verticalLayout_6.addWidget(self.postMessBox)
+        self.nemVisualisation_3 = QtWidgets.QLabel(self.tabPost)
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(9)
+        font.setBold(True)
+        font.setWeight(75)
+        self.nemVisualisation_3.setFont(font)
+        self.nemVisualisation_3.setObjectName("nemVisualisation_3")
+        self.verticalLayout_6.addWidget(self.nemVisualisation_3)
+
+        self.mpl1 = MyStaticMplCanvas(self.tabPost, width=5, height=4, dpi=100)
+        self.ntb1 = NavigationToolbar(self.mpl1, self.tabPost)
+        self.mpl2 = MyStaticMplCanvas(self.tabPost, width=5, height=4, dpi=100)
+        self.ntb2 = NavigationToolbar(self.mpl2, self.tabPost)
+        self.verticalLayout_6.addWidget(self.mpl1)
+        self.verticalLayout_6.addWidget(self.ntb1)
+        self.verticalLayout_6.addWidget(self.mpl2)
+        self.verticalLayout_6.addWidget(self.ntb2)
+
+        self.gridLayout_5.addLayout(self.verticalLayout_6, 0, 1, 1, 1)
+        self.tabWidget.addTab(self.tabPost, "")
+        self.verticalLayout.addWidget(self.tabWidget)
+        self.gridLayout_2.addLayout(self.verticalLayout, 0, 0, 1, 1)
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1556, 26))
+        self.menubar.setObjectName("menubar")
+        self.menuAbout = QtWidgets.QMenu(self.menubar)
+        self.menuAbout.setObjectName("menuAbout")
+        self.menuHelp = QtWidgets.QMenu(self.menubar)
+        self.menuHelp.setObjectName("menuHelp")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+        self.actionOpen = QtWidgets.QAction(MainWindow)
+        self.actionOpen.setObjectName("actionOpen")
+        self.actionSave = QtWidgets.QAction(MainWindow)
+        self.actionSave.setObjectName("actionSave")
+        self.actionAbout = QtWidgets.QAction(MainWindow)
+        self.actionAbout.setObjectName("actionAbout")
+        self.actionManual = QtWidgets.QAction(MainWindow)
+        self.actionManual.setObjectName("actionManual")
+        self.actionClose = QtWidgets.QAction(MainWindow)
+        self.actionClose.setObjectName("actionClose")
+
+        self.menuAbout.addAction(self.actionOpen)
+        self.menuAbout.addAction(self.actionSave)
+        self.menuAbout.addAction(self.actionAbout)
+        self.menuAbout.addSeparator()
+        self.menuAbout.addAction(self.actionClose)
+        self.menuHelp.addAction(self.actionManual)
+        self.menubar.addAction(self.menuAbout.menuAction())
+        self.menubar.addAction(self.menuHelp.menuAction())
+
+        self.retranslateUi(MainWindow)
+        self.tabWidget.setCurrentIndex(0)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        # Initialize plot variables
+        self.freq = np.array([0, 1])
+        self.time = np.array([0, 1])
+        self.Ma = np.array([0, 1])
+        self.Bhyd = np.array([0, 1])
+        self.Fe = np.array([0, 1])
+        self.RAO = np.array([0, 1])
+        self.posZ = np.array([0, 1])
+        self.velZ = np.array([0, 1])
+        self.wave = np.array([0, 1])
+        self.Fpto = np.array([0, 1])
+        self.X = np.zeros((4, 4))
+        self.Y = np.zeros((4, 4))
+        self.etaDiff = np.zeros((4, 4))
+        self.etaRad = np.zeros((4, 4))
+
+        self.nrObj = 0
+        self.meshObj = []
+        self.wDir = os.path.join(os.path.expanduser("~"), 'openWEC')
+
+        # Set GUI
+        # Mesh Tab
+        MainWindow.setWindowTitle(_translate("openWEC", "openWEC", None))
+        self.infoConsoleLabel.setText(_translate("openWEC", "Information Console", None))
+        self.visualisationLabel.setText(_translate("openWEC", "Visualisation", None))
+        self.meshMethodLabel.setText(_translate("openWEC", "Mesh method:", None))
+        self.meshMethod.setItemText(0, _translate("openWEC", "Generate new", None))
+        self.meshMethod.setItemText(1, _translate("openWEC", "Import Nemoh mesh", None))
+        self.meshMethod.setItemText(2, _translate("openWEC", "Convert .stl mesh", None))
+        self.meshMethod.currentIndexChanged.connect(self.displayMessage)
+        self.geoProp.setText(_translate("openWEC", "Mesh Creator", None))
+        self.comboBox.setItemText(0, _translate("openWEC", "Box", None))
+        self.comboBox.setItemText(1, _translate("openWEC", "Cylinder", None))
+        self.comboBox.setItemText(2, _translate("openWEC", "Cone", None))
+        self.comboBox.setItemText(3, _translate("openWEC", "Sphere", None))
+        self.comboBox.setItemText(4, _translate("openWEC", "Pyramid", None))
+        self.comboBox.setItemText(5, _translate("openWEC", "Wedge", None))
+        self.comboBox.setItemText(6, _translate("openWEC", "Hemisphere", None))
+        self.comboBox.setItemText(7, _translate("openWEC", "Hemicylinder", None))
+        self.comboBox.setItemText(8, _translate("openWEC", "Torus", None))
+        self.comboBox.currentIndexChanged.connect(self.meshTypeFig)
+        self.propLabel.setText(_translate("openWEC", "Properties", None))
+        self.prop1Label.setText(_translate("openWEC", "Length", None))
+        self.prop2Label.setText(_translate("openWEC", "Width", None))
+        self.prop3Label.setText(_translate("openWEC", "Height", None))
+        self.XinsLabel.setText(_translate("openWEC", "Xinsert", None))
+        self.YinsLabel.setText(_translate("openWEC", "Yinsert", None))
+        self.ZinsLabel.setText(_translate("openWEC", "Zinsert", None))
+        self.createObj.setText(_translate("openWEC", "Create", None))
+        self.transLabel.setText(_translate("openWEC", "Translation", None))
+        self.label_3.setText(_translate("openWEC", "tX", None))
+        self.label_5.setText(_translate("openWEC", "tY", None))
+        self.label_6.setText(_translate("openWEC", "tZ", None))
+        self.pushButton.setText(_translate("openWEC", "Translate", None))
+        self.label_4.setText(_translate("openWEC", "Rotation", None))
+        self.label_7.setText(_translate("openWEC", "theta", None))
+        self.label_8.setText(_translate("openWEC", "axis (x1,y1,z1)", None))
+        self.label_9.setText(_translate("openWEC", "axis (x2,y2,z2)", None))
+        self.pushButton_2.setText(_translate("openWEC", "Rotate", None))
+        self.label_10.setText(_translate("openWEC", "Object List", None))
+        self.waterDepthLabel.setText(_translate("openWEC", "Water Depth:", None))
+        self.waterDepthBox.setPlaceholderText(_translate("openWEC", "in meter; 0 for infinite depth", None))
+        self.zGLabel.setText(_translate("openWEC", "Position of COG:", None))
+        self.zGBox.setPlaceholderText(_translate("openWEC", "in meter; negative below WL", None))
+        self.rhoLabel.setText(_translate("openWEC", "Density:", None))
+        self.rhoBox.setPlaceholderText(_translate("openWEC", "in kg/m³", None))
+        self.MeshProp.setText(_translate("openWEC", "Mesh Properties:", None))
+        self.nPanelLabel.setText(_translate("openWEC", "Number of mesh panels: ", None))
+        self.nPanelBox.setPlaceholderText(_translate("openWEC", "integer (>100)", None))
+        self.meshButton.setText(_translate("openWEC", "Mesh!", None))
+        self.pushButton_3.setText(_translate("openWEC", "Delete selected object", None))
+        self.genProp.setText(_translate("openWEC", "General properties", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabMesh), _translate("openWEC", "Mesh Tool", None))
+        self.nemConsLabel.setText(_translate("openWEC", "Information Console", None))
+        self.nemVisualisation.setText(_translate("openWEC", "Visualisation", None))
+        self.createObj.clicked.connect(self.drawObj)
+        self.meshButton.clicked.connect(self.makeMesh)
+        self.pushButton.clicked.connect(self.transObj)
+        self.pushButton_2.clicked.connect(self.rotObj)
+        self.pushButton_3.clicked.connect(self.delObj)
+        # Nemoh Tab
+        self.labelBEM.setText(_translate("MainWindow", "BEM Solver Options", None))
+        self.label.setText(_translate("MainWindow", "Basic", None))
+        self.omegaLabel.setText(_translate("MainWindow", "Frequency range:", None))
+        self.omegaStart.setPlaceholderText(_translate("MainWindow", "start in rad/s (0.2)", None))
+        self.omegaStop.setPlaceholderText(_translate("MainWindow", "stop in rad/s (2.5)", None))
+        self.omegaStep.setPlaceholderText(_translate("MainWindow", "number of steps in between (50)", None))
+        self.dofLabel.setText(_translate("openWEC", "Degrees of Freedom", None))
+        self.checkRoll.setText(_translate("openWEC", "Roll (X-rotation)", None))
+        self.checkHeave.setText(_translate("openWEC", "Heave (Z-translation)", None))
+        self.checkHeave.setChecked(True)
+        self.checkYaw.setText(_translate("openWEC", "Yaw (Z-rotation)", None))
+        self.checkPitch.setText(_translate("openWEC", "Pitch (Y-rotation)", None))
+        self.checkSurge.setText(_translate("openWEC", "Surge (X-translation)", None))
+        self.checkSway.setText(_translate("openWEC", "Sway (Y-translation)", None))
+        self.label_2.setText(_translate("MainWindow", "Advanced", None))
+        self.wavDirStart.setPlaceholderText(_translate("MainWindow", "start in degrees (0.0)", None))
+        self.wavDirStop.setPlaceholderText(_translate("MainWindow", "end in degrees (0.0)", None))
+        self.wavDirStep.setPlaceholderText(_translate("MainWindow", "number of steps in between (1)", None))
+        self.irfLabel.setText(_translate("MainWindow", "Calculate IRF:", None))
+        self.irfDur.setPlaceholderText(_translate("MainWindow", "IRF Duration in seconds (20)", None))
+        self.irfStep.setPlaceholderText(_translate("MainWindow", "IRF time step in seconds (0.01)", None))
+        self.kochinLabel.setText(_translate("MainWindow", "Kochin function:", None))
+        self.kochinStart.setPlaceholderText(_translate("MainWindow", "Kochin Start in degrees", None))
+        self.kochinStop.setPlaceholderText(_translate("MainWindow", "Kochin Stop in degrees", None))
+        self.kochinStep.setPlaceholderText(_translate("MainWindow", "Kochin steps in between", None))
+        self.nemohButton.setText(_translate("MainWindow", "Simulate!", None))
+        self.nemohButton.clicked.connect(self.runNemohCode)
+        self.wavDirLabel.setText(_translate("MainWindow", "Wave directions:", None))
+        self.fsLabel.setText(_translate("MainWindow", "Free Surface:", None))
+        self.fsDeltaX.setPlaceholderText(_translate("MainWindow", "number of grid points in X-direction", None))
+        self.fsDeltaY.setPlaceholderText(_translate("MainWindow", "number of grid points in Y-direction", None))
+        self.fsLengthX.setPlaceholderText(_translate("MainWindow", "length of grid in X-direction", None))
+        self.fsLengthY.setPlaceholderText(_translate("MainWindow", "length of grid in Y-direction", None))
+        self.parkLabel.setText(_translate("openWEC", "WEC Array Simulation:", None))
+        self.parkCheck.clicked.connect(self.setParkButton)
+        self.parkConfig.setText(_translate("openWEC", "Configure...", None))
+        self.parkConfig.clicked.connect(self.runParkConfig)
+        self.nemConsLabel.setText(_translate("MainWindow", "Information Console", None))
+        self.nemVisualisation.setText(_translate("MainWindow", "Visualisation", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabNemoh), _translate("MainWindow", "Nemoh", None))
+        # Time Solver
+        self.wavProp.setText(_translate("MainWindow", "Wave climate", None))
+        self.wavTypeLabel.setText(_translate("MainWindow", "Wave Type:", None))
+        self.wavType.setItemText(0, _translate("MainWindow", "Regular", None))
+        self.wavType.setItemText(1, _translate("MainWindow", "Irregular", None))
+        self.checkCS.setText(_translate("openWEC", "Custom Spectrum", None))
+        self.checkCS.setCheckable(False)
+        self.checkCS.clicked.connect(self.displayMessageSim)
+        self.specButton.setText(_translate("openWEC", "Edit...", None))
+        self.specButton.clicked.connect(self.runCustomSpec)
+        self.wavType.currentIndexChanged.connect(self.displayMessageSim)
+        self.wavHLabel.setText(_translate("MainWindow", "Wave Height:", None))
+        self.wavHBox.setPlaceholderText(_translate("MainWindow", "in meter", None))
+        self.wavTLabel.setText(_translate("MainWindow", "Wave Period:", None))
+        self.wavTBox.setPlaceholderText(_translate("MainWindow", "in seconds", None))
+        self.ptoProp.setText(_translate("MainWindow", "PTO Properties", None))
+        self.fdampLabel.setText(_translate("openWEC", "PTO Values:", None))
+        self.dampTypeLabel.setText(_translate("openWEC", "Damping Type:", None))
+        self.dampSelect.setItemText(0, _translate("openWEC", "Linear", None))
+        self.dampSelect.setItemText(1, _translate("openWEC", "Coulomb", None))
+        self.dampSelect.currentIndexChanged.connect(self.changePtoLabels)
+        self.msupLabel.setText(_translate("openWEC", "Mpto: ", None))
+        self.msupEdit.setPlaceholderText(_translate("openWEC", "Exernal Mass in kg", None))
+        self.bsupLabel.setText(_translate("openWEC", "Bpto: ", None))
+        self.bsupEdit.setPlaceholderText(_translate("openWEC", "External Damping in kg/s", None))
+        self.csupLabel.setText(_translate("openWEC", "Cpto: ", None))
+        self.csupEdit.setPlaceholderText(_translate("openWEC", "External Spring in kg/s²", None))
+        self.moorPropLabel.setText(_translate("openWEC", "Mooring Properties", None))
+        self.moorCheck.setText(_translate("openWEC", "Enable Mooring Lines", None))
+        self.moorCheck.clicked.connect(self.changeMoorDyn)
+        self.moorConfig.setText(_translate("openWEC", "Configure...", None))
+        self.moorConfig.clicked.connect(self.runMoorDynConfig)
+        self.moorConfig.setEnabled(False)
+        self.simProp.setText(_translate("MainWindow", "Simulation", None))
+        self.simTimeLabel.setText(_translate("MainWindow", "Time:", None))
+        self.simTimeBox.setPlaceholderText(_translate("MainWindow", "in seconds", None))
+        self.dtLabel.setText(_translate("MainWindow", "Time Step:", None))
+        self.dtBox.setPlaceholderText(_translate("MainWindow", "in seconds", None))
+        self.simButton.setText(_translate("MainWindow", "Simulate!", None))
+        self.simButton.clicked.connect(partial(self.runThread, pf=self.postSim, f=self.runSimulation))
+        self.nemConsLabel_2.setText(_translate("MainWindow", "Information Console", None))
+        self.nemVisualisation_2.setText(_translate("MainWindow", "Visualisation", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSim), _translate("MainWindow", "Simulation", None))
+        # Post Processor
+        self.plotToolTitle.setText(_translate("MainWindow", "Plotting Tool", None))
+        self.upPlotTitle.setText(_translate("MainWindow", "Upper Plot", None))
+        self.plotX1.setText(_translate("MainWindow",
+                                       "Variable for X-axis                                                                                    ",
+                                       None))
+        self.chooseX1.setItemText(0, _translate("MainWindow",
+                                                "Frequency                                                                                                                  ",
+                                                None))
+        self.chooseX1.setItemText(1, _translate("MainWindow", "Time", None))
+        self.chooseX1.setItemText(2, _translate("MainWindow", "Grid", None))
+        self.chooseX1.currentIndexChanged.connect(partial(self.plotVariables, plotWindow=1))
+        self.plotY1.setText(_translate("MainWindow", "Variable for Y-axis", None))
+        self.chooseY1.setItemText(0, _translate("MainWindow", "Added Mass", None))
+        self.chooseY1.setItemText(1, _translate("MainWindow", "Hydrodynamic Damping", None))
+        self.chooseY1.setItemText(2, _translate("MainWindow", "Wave Excitation Force", None))
+        self.chooseY1.setItemText(3, _translate("MainWindow", "Response Amplitude Operator", None))
+        self.dofPlotU.setItemText(0, _translate("openWEC", "-", None))
+        self.dofPlotLabelU.setText(_translate("openWEC", "Degree of Freedom", None))
+        self.makePlot1.setText(_translate("MainWindow", "Plot 1", None))
+        self.makePlot1.clicked.connect(partial(self.overwriteGraph, plotWindow=1))
+        self.lowPlotTitle.setText(_translate("MainWindow", "Lower Plot", None))
+        self.plotX2.setText(_translate("MainWindow", "Variable for X-axis", None))
+        self.plotY2.setText(_translate("MainWindow", "Variable for Y-axis", None))
+        self.chooseY2.setItemText(0, _translate("MainWindow", "Added Mass", None))
+        self.chooseY2.setItemText(1, _translate("MainWindow", "Hydrodynamic Damping", None))
+        self.chooseY2.setItemText(2, _translate("MainWindow", "Wave Excitation Force", None))
+        self.chooseY2.setItemText(3, _translate("MainWindow", "Response Amplitude Operator", None))
+        self.chooseX2.setItemText(0, _translate("MainWindow", "Frequency", None))
+        self.chooseX2.setItemText(1, _translate("MainWindow", "Time", None))
+        self.chooseX2.setItemText(2, _translate("MainWindow", "Grid", None))
+        self.chooseX2.currentIndexChanged.connect(partial(self.plotVariables, plotWindow=2))
+        self.dofPlotL.setItemText(0, _translate("openWEC", "-", None))
+        self.dofLabelL.setText(_translate("openWEC", "Degree of Freedom", None))
+        self.makePlot2.setText(_translate("MainWindow", "Plot 2", None))
+        self.makePlot2.clicked.connect(partial(self.overwriteGraph, plotWindow=2))
+
+        # self.ntb1._views.clear()
+        # self.ntb2._views.clear()
+        # self.ntbMesh._views.clear()
+        # self.ntbNem._views.clear()
+        # self.ntbSim._views.clear()
+
+        self.nemConsLabel_3.setText(_translate("MainWindow", "Information Console", None))
+        self.nemVisualisation_3.setText(_translate("MainWindow", "Visualisation", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabPost),
+                                  _translate("MainWindow", "Post-Processing", None))
+        self.menuAbout.setTitle(_translate("MainWindow", "Program", None))
+        self.menuHelp.setTitle(_translate("MainWindow", "Help", None))
+        self.actionOpen.setText(_translate("MainWindow", "Open..", None))
+        self.actionOpen.triggered.connect(self.openFile)
+        self.actionSave.setText(_translate("MainWindow", "Save..", None))
+        self.actionSave.triggered.connect(self.saveFile)
+        self.actionAbout.setText(_translate("MainWindow", "About", None))
+        self.actionAbout.triggered.connect(self.about)
+        self.actionManual.setText(_translate("MainWindow", "Manual", None))
+        self.actionManual.triggered.connect(self.manual)
+        self.actionClose.setText(_translate("MainWindow", "Close", None))
+        self.actionClose.triggered.connect(self.close)
+        self.cleanUp()
+
+    def overwriteGraph(self, plotWindow=1):
+        # Get the correct dof data        
+        import processNemoh as pn
+
+        nameDof = ['Surge', 'Sway', 'Heave', 'Roll', 'Pitch', 'Yaw']
+
+        # Set the correct variables
+        if plotWindow == 1:
+            dofSel = [0, 0, 0, 0, 0, 0]
+            test = 4 * self.chooseX1.currentIndex() + self.chooseY1.currentIndex()
+            iSel = nameDof.index(self.dofPlotU.currentText())
+            dofSel[iSel] = 1
+            mpl = self.mpl1
+            ntb = self.ntb1
+        else:
+            dofSel = [0, 0, 0, 0, 0, 0]
+            test = 4 * self.chooseX2.currentIndex() + self.chooseY2.currentIndex()
+            iSel = nameDof.index(self.dofPlotL.currentText())
+            dofSel[iSel] = 1
+            mpl = self.mpl2
+            ntb = self.ntb2
+
+        try:
+            rho = float(self.rhoBox.text())
+        except:
+            rho = 1025.0
+
+        (self.Ma, self.Bhyd, omeg) = pn.getAB(self.dof, sel=iSel)
+        self.freq = omeg / (2 * np.pi)
+        (self.Fe, self.Fpha) = pn.getFe(self.dof, sel=iSel)
+        (Mass, KH) = pn.calcM(rho=rho, dof=dofSel)
+        self.RAO = (self.Fe) / np.abs(-omeg ** 2.0 * (Mass + self.Ma) - 1j * omeg * self.Bhyd + KH)
+
+        pT = ""
+        if test / 4 == 1:
+            if sum(self.dof) > 1:
+                posZ = self.posZ[iSel, :]
+                velZ = self.velZ[iSel, :]
+                Fpto = self.Fpto[iSel, :]
+            else:
+                posZ = self.posZ
+                velZ = self.velZ
+                Fpto = self.Fpto
+        elif test / 4 == 2:
+            pT = "Grid"
+            fsFile = os.path.join(self.wDir, 'Nemoh', 'freesurface.    1.dat')
+            if (os.path.isfile(fsFile)):
+                None
+            else:
+                print("Warning! No free surface was calculated with Nemoh! Plotting not possible!")
+
+        if test == 0:
+            xVar = self.freq
+            yVar = self.Ma
+            xlabel = '$Frequency [Hz]$'
+            ylabel = '$Added Mass/Inertia$'
+        elif test == 1:
+            xVar = self.freq
+            yVar = self.Bhyd
+            xlabel = '$Frequency [Hz]$'
+            ylabel = '$Hydrodynamic Damping$'
+        elif test == 2:
+            xVar = self.freq
+            yVar = self.Fe
+            xlabel = '$Frequency [Hz]$'
+            ylabel = '$Excitation Force/Torque$'
+        elif test == 3:
+            xVar = self.freq
+            yVar = self.RAO
+            xlabel = '$Frequency [Hz]$'
+            ylabel = '$RAO$'
+        elif test == 4:
+            xVar = self.time
+            yVar = self.wave
+            xlabel = '$Time [s]$'
+            ylabel = '$\eta [m]$'
+        elif test == 5:
+            xVar = self.time
+            yVar = posZ
+            xlabel = '$Time [s]$'
+            ylabel = '$WEC Response$'
+        elif test == 6:
+            xVar = self.time
+            yVar = velZ
+            xlabel = '$Time [s]$'
+            ylabel = '$WEC Velocity$'
+        elif test == 7:
+            xVar = self.time
+            yVar = Fpto
+            xlabel = '$Time [s]$'
+            ylabel = '$PTO Force/Torque$'
+        elif test == 8:
+            xVar = (self.X, self.Y)
+            yVar = np.abs(self.etaDiff)
+            xlabel = '$X [m]$'
+            ylabel = '$Y [m]$'
+        elif test == 9:
+            xVar = (self.X, self.Y)
+            yVar = np.angle(self.etaDiff)
+            xlabel = '$X [m]$'
+            ylabel = '$Y [m]$'
+        elif test == 10:
+            xVar = (self.X, self.Y)
+            yVar = np.abs(self.etaRad)
+            xlabel = '$X [m]$'
+            ylabel = '$Y [m]$'
+        elif test == 11:
+            xVar = (self.X, self.Y)
+            yVar = np.angle(self.etaRad)
+            xlabel = '$X [m]$'
+            ylabel = '$Y [m]$'
+
+        # Plot the variables
+        self.updateGraph(x=xVar, y=yVar, g=mpl, t=ntb, xlab=xlabel, ylab=ylabel, plotType=pT)
+
+    def updateGraph(self, x=[0, 1, 2], y=[1, 1, 1], x2=[], y2=[], g=[], t=[],
+                    xlab="", ylab="", plotType=""):
+
+        if plotType == "Mesh":
+            g = self.mplMesh
+            t = self.ntbMesh
+            g.fig.delaxes(g.axes)
+            t.update()
+            g.axes = g.fig.add_subplot(111, projection='3d')
+            triangul = tri.Triangulation(x, y, triangles=x2)
+            g.axes.plot_trisurf(triangul, y2, color='#468499', edgecolors='None')
+            g.axes._axis3don = False
+            # Create cubic bounding box to simulate equal aspect ratio
+            max_range = np.array([x.max() - x.min(), y.max() - y.min(), y2.max() - y2.min()]).max()
+            Xb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][0].flatten() + 0.5 * (x.max() + x.min())
+            Yb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][1].flatten() + 0.5 * (y.max() + y.min())
+            Zb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][2].flatten() + 0.5 * (y2.max() + y2.min())
+            # Comment or uncomment following both lines to test the fake bounding box:
+            for xb, yb, zb in zip(Xb, Yb, Zb):
+                g.axes.plot([xb], [yb], [zb], 'w')
+            # Plot axes
+            xline = ((-max(np.abs(x)) / 2.0, max(np.abs(x)) / 2.0), (0, 0), (0, 0))
+            g.axes.plot(xline[0], xline[1], xline[2], 'grey')
+            yline = ((0, 0), (-max(np.abs(y)) / 2.0, max(np.abs(y)) / 2.0), (0, 0))
+            g.axes.plot(yline[0], yline[1], yline[2], 'grey')
+            zline = ((0, 0), (0, 0), (-max(np.abs(y2)) / 2.0, max(np.abs(y2)) / 2.0))
+            g.axes.plot(zline[0], zline[1], zline[2], 'grey')
+            g.draw()
+
+        elif plotType == "Obj":
+            g = self.mplMesh
+            t = self.ntbMesh
+            g.fig.delaxes(g.axes)
+            t.update()
+            g.axes = g.fig.add_subplot(111, projection='3d')
+            for iO in range(len(self.meshObj)):
+                ob = self.meshObj[iO]
+                triangul = tri.Triangulation(ob.X, ob.Y, triangles=ob.trii)
+                g.axes.plot_trisurf(triangul, ob.Z, color='#468499', edgecolors='None')
+            g.axes._axis3don = False
+            g.draw()
+
+        elif plotType == "Grid":
+            t.update()
+            g.fig.delaxes(g.axes)
+            g.axes = g.fig.add_axes([0.1, 0.17, 0.7, 0.75])
+            cax = g.fig.add_axes([0.85, 0.17, 0.05, 0.75])
+            test = g.axes.pcolor(x[0], x[1], y)
+            g.fig.colorbar(test, cax=cax, orientation='vertical')
+            g.axes.set_xlabel(xlab)
+            g.axes.set_ylabel(ylab)
+            g.draw()
+            g.axes.hold(False)
+
+        else:
+            t.update()
+            g.fig.delaxes(g.axes)
+            g.axes = g.fig.add_axes([0.20, 0.17, 0.75, 0.75])
+            g.axes.plot(x, y, color='#468499')
+            g.axes.hold(True)
+            g.axes.plot(x2, y2, color='#FF6666')
+            g.axes.set_xlabel(xlab)
+            g.axes.set_ylabel(ylab)
+            g.draw()
+            g.axes.hold(False)
+
+    def displayMessage(self):
+        if self.meshMethod.currentIndex() == 2:
+            print(("ATTENTION!\n" +
+                   "You have chosen to import and convert a .stl mesh \n" +
+                   "Please fill in the General Properties \n" +
+                   "You will be prompted to load the .stl mesh when you press \n" +
+                   "Mesh!"))
+        if self.meshMethod.currentIndex() == 1:
+            print(("ATTENTION!\n" +
+                   "You have chosen to import a Nemoh mesh \n" +
+                   "Please fill in the General and Mesh Properties \n" +
+                   "You will be prompted to load the Nemoh mesh when you press \n" +
+                   "Mesh!"))
+
+    def meshTypeFig(self):
+        if self.comboBox.currentIndex() == 0:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/box.png"))
+            self.prop1Label.setText(_translate("openWEC", "Length", None))
+            self.prop2Label.setText(_translate("openWEC", "Width", None))
+            self.prop3Label.setText(_translate("openWEC", "Height", None))
+        if self.comboBox.currentIndex() == 1:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/cylinder.png"))
+            self.prop1Label.setText(_translate("openWEC", "Diameter", None))
+            self.prop2Label.setText(_translate("openWEC", "Height", None))
+            self.prop3Label.setText(_translate("openWEC", "None", None))
+        if self.comboBox.currentIndex() == 2:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/cone.png"))
+            self.prop1Label.setText(_translate("openWEC", "Diameter", None))
+            self.prop2Label.setText(_translate("openWEC", "Height", None))
+            self.prop3Label.setText(_translate("openWEC", "None", None))
+        if self.comboBox.currentIndex() == 3:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/sphere.png"))
+            self.prop1Label.setText(_translate("openWEC", "Diameter", None))
+            self.prop2Label.setText(_translate("openWEC", "None", None))
+            self.prop3Label.setText(_translate("openWEC", "None", None))
+        if self.comboBox.currentIndex() == 4:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/pyramid.png"))
+            self.prop1Label.setText(_translate("openWEC", "Length", None))
+            self.prop2Label.setText(_translate("openWEC", "Width", None))
+            self.prop3Label.setText(_translate("openWEC", "Height", None))
+        if self.comboBox.currentIndex() == 5:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/wedge.png"))
+            self.prop1Label.setText(_translate("openWEC", "Length", None))
+            self.prop2Label.setText(_translate("openWEC", "Width", None))
+            self.prop3Label.setText(_translate("openWEC", "Height", None))
+        if self.comboBox.currentIndex() == 6:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/hemisphere.png"))
+            self.prop1Label.setText(_translate("openWEC", "Diameter", None))
+            self.prop2Label.setText(_translate("openWEC", "None", None))
+            self.prop3Label.setText(_translate("openWEC", "None", None))
+        if self.comboBox.currentIndex() == 7:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/hemicylinder.png"))
+            self.prop1Label.setText(_translate("openWEC", "Diameter", None))
+            self.prop2Label.setText(_translate("openWEC", "Length", None))
+            self.prop3Label.setText(_translate("openWEC", "None", None))
+        if self.comboBox.currentIndex() == 8:
+            self.sketchShape.setPixmap(QtGui.QPixmap("src/torus.png"))
+            self.prop1Label.setText(_translate("openWEC", "Diam. Out", None))
+            self.prop2Label.setText(_translate("openWEC", "Diam. In", None))
+            self.prop3Label.setText(_translate("openWEC", "None", None))
+
+    def displayMessageSim(self):
+        if self.wavType.currentIndex() == 1:
+            self.checkCS.setCheckable(True)
+            print(("ATTENTION!\n" +
+                   "When choosing irregular waves, you need to have selected the IRF calculation in the Nemoh tab!!"))
+            if self.checkCS.isChecked():
+                self.specButton.setEnabled(True)
+            else:
+                self.specButton.setEnabled(False)
+        else:
+            self.specButton.setDisabled(True)
+
+    def plotVariables(self, plotWindow=1):
+        if plotWindow == 1:
+            if self.chooseX1.currentIndex() == 1:
+                self.chooseY1.setItemText(0, _translate("MainWindow", "Wave Signal", None))
+                self.chooseY1.setItemText(1, _translate("MainWindow", "WEC Position", None))
+                self.chooseY1.setItemText(2, _translate("MainWindow", "WEC Velocity", None))
+                self.chooseY1.setItemText(3, _translate("MainWindow", "WEC PTO Force", None))
+            if self.chooseX1.currentIndex() == 0:
+                self.chooseY1.setItemText(0, _translate("MainWindow", "Added Mass", None))
+                self.chooseY1.setItemText(1, _translate("MainWindow", "Hydrodynamic Damping", None))
+                self.chooseY1.setItemText(2, _translate("MainWindow", "Wave Excitation Force", None))
+                self.chooseY1.setItemText(3, _translate("MainWindow", "Response Amplitude Operator", None))
+            if self.chooseX1.currentIndex() == 2:
+                self.chooseY1.setItemText(0, _translate("MainWindow", "Diffraction Amplitude", None))
+                self.chooseY1.setItemText(1, _translate("MainWindow", "Diffraction Phase Angle", None))
+                self.chooseY1.setItemText(2, _translate("MainWindow", "Radiation Amplitude", None))
+                self.chooseY1.setItemText(3, _translate("MainWindow", "Radiation Phase Angle", None))
+        else:
+            if self.chooseX2.currentIndex() == 1:
+                self.chooseY2.setItemText(0, _translate("MainWindow", "Wave Signal", None))
+                self.chooseY2.setItemText(1, _translate("MainWindow", "WEC Position", None))
+                self.chooseY2.setItemText(2, _translate("MainWindow", "WEC Velocity", None))
+                self.chooseY2.setItemText(3, _translate("MainWindow", "WEC PTO Force", None))
+            if self.chooseX2.currentIndex() == 0:
+                self.chooseY2.setItemText(0, _translate("MainWindow", "Added Mass", None))
+                self.chooseY2.setItemText(1, _translate("MainWindow", "Hydrodynamic Damping", None))
+                self.chooseY2.setItemText(2, _translate("MainWindow", "Wave Excitation Force", None))
+                self.chooseY2.setItemText(3, _translate("MainWindow", "Response Amplitude Operator", None))
+            if self.chooseX2.currentIndex() == 2:
+                self.chooseY2.setItemText(0, _translate("MainWindow", "Diffraction Amplitude", None))
+                self.chooseY2.setItemText(1, _translate("MainWindow", "Diffraction Phase Angle", None))
+                self.chooseY2.setItemText(2, _translate("MainWindow", "Radiation Amplitude", None))
+                self.chooseY2.setItemText(3, _translate("MainWindow", "Radiation Phase Angle", None))
+
+    def drawObj(self, MainWindow):
+
+        sys.path.insert(0, './Run')
+        import meshTypes as mt
+
+        if self.comboBox.currentIndex() == 0:
+            # Box
+            length = float(self.prop1.text())
+            width = float(self.prop2.text())
+            height = float(self.prop3.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.box(length, width, height, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 1:
+            # Cylinder
+            diameter = float(self.prop1.text())
+            height = float(self.prop2.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.cylinder(diameter, height, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 2:
+            # Cone
+            diameter = float(self.prop1.text())
+            height = float(self.prop2.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.cone(diameter, height, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 3:
+            # Sphere
+            diameter = float(self.prop1.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.sphere(diameter, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 4:
+            # Pyramid
+            length = float(self.prop1.text())
+            width = float(self.prop2.text())
+            height = float(self.prop3.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.pyramid(length, width, height, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 5:
+            # Wedge
+            length = float(self.prop1.text())
+            width = float(self.prop2.text())
+            height = float(self.prop3.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.wedge(length, width, height, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 6:
+            # Hemisphere
+            diameter = float(self.prop1.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.hemisphere(diameter, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 7:
+            # Hemicylinder
+            diameter = float(self.prop1.text())
+            height = float(self.prop2.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.hemicylinder(diameter, height, [xC, yC, zC])
+        elif self.comboBox.currentIndex() == 8:
+            # Hemicylinder
+            diamOut = float(self.prop1.text())
+            diamIn = float(self.prop2.text())
+            xC = float(self.Xins.text())
+            yC = float(self.Yins.text())
+            zC = float(self.Zins.text())
+            ob = mt.torus(diamOut, diamIn, [xC, yC, zC])
+
+        # Add object to list        
+        self.meshObj.append(ob)
+        self.nrObj += 1
+        item = QtWidgets.QListWidgetItem(ob.name + "-mesh-" + str(self.nrObj))
+        self.listWidget.addItem(item)
+
+        # Update graph
+        self.updateGraph(plotType="Obj")
+
+    def delObj(self):
+        if len(self.meshObj) > 0:
+            iDel = self.listWidget.currentRow()
+            self.meshObj.remove(self.meshObj[iDel])
+            self.listWidget.takeItem(self.listWidget.row(self.listWidget.currentItem()))
+            self.updateGraph(plotType="Obj")
+        else:
+            None
+
+    def transObj(self):
+        xT = float(self.lineEdit.text())
+        yT = float(self.lineEdit_2.text())
+        zT = float(self.lineEdit_3.text())
+        self.meshObj[self.listWidget.currentRow()].translate(xT, yT, zT)
+        self.updateGraph(plotType="Obj")
+
+    def rotObj(self):
+        theta = float(self.lineEdit_4.text()) * np.pi / 180.0
+        U1 = [float(x) for x in self.lineEdit_5.text().split(',')]
+        U2 = [float(x) for x in self.lineEdit_6.text().split(',')]
+        self.meshObj[self.listWidget.currentRow()].rotate(U1, U2, theta)
+        self.updateGraph(plotType="Obj")
+
+    def makeMesh(self, MainWindow):
+
+        sys.path.insert(0, './Run')
+        import meshTypes as mt
+
+        zG = float(self.zGBox.text())
+        cG = [0.0, 0.0, zG]
+
+        if self.meshMethod.currentIndex() == 0:
+            nPanels = int(self.nPanelBox.text())
+            meshFile = os.path.join(self.wDir, 'Calculation', 'mesh', 'axisym')
+            if (len(self.meshObj) > 1):
+                startMesh = self.meshObj[0]
+                cG[0] = startMesh.xC
+                cG[1] = startMesh.yC
+                for iM in range(len(self.meshObj) - 1):
+                    comMesh = mt.Mesh()
+                    comMesh.combineMesh(startMesh, self.meshObj[iM + 1])
+                    startMesh = comMesh
+                comMesh.delHorPan()
+                mt.writeMesh(comMesh, meshFile)
+                # ne.createMeshOpt(zG,nPanels,int(0),rho=float(self.rhoBox.text()))
+                self.genericThread = GenericThread(ne.createMeshOpt, cG, nPanels, int(0), rho=float(self.rhoBox.text()))
+                self.genericThread.start()
+            elif (len(self.meshObj) == 1):
+                cG[0] = self.meshObj[0].xC
+                cG[1] = self.meshObj[0].yC
+                mt.writeMesh(self.meshObj[0], meshFile)
+                self.genericThread = GenericThread(ne.createMeshOpt, cG, nPanels, int(0), rho=float(self.rhoBox.text()))
+                self.genericThread.start()
+            else:
+                print('WARNING: Cannot create mesh when no mesh parts are created!')
+
+        elif self.meshMethod.currentIndex() == 2:
+            nPanels = self.convertMesh()
+            self.genericThread = GenericThread(ne.createMeshOpt, cG, nPanels, int(0), rho=float(self.rhoBox.text()))
+            self.genericThread.start()
+
+        elif self.meshMethod.currentIndex() == 1:
+            nPanels = self.convertMesh()
+            self.genericThread = GenericThread(ne.createMeshOpt, cG, nPanels, int(0), rho=float(self.rhoBox.text()))
+            self.genericThread.start()
+
+        print('Meshing....')
+        self.genericThread.finished.connect(self.visualizeMesh)
+
+    def visualizeMesh(self):
+        # Mesh visualisation
+        sys.path.insert(0, './Run')
+        import processNemoh as pn
+
+        (X, Y, Z, trian) = pn.getMesh()
+        self.updateGraph(x=X, y=Y, x2=trian, y2=Z, plotType="Mesh")
+        print('Mesh succesfully created!')
+
+    def runNemohCode(self):
+        # Delete previous results
+        folder = os.path.join(self.wDir, 'Calculation', 'results')
+        for fil in os.listdir(folder):
+            filPath = os.path.join(folder, fil)
+            if os.path.isfile(filPath):
+                os.unlink(filPath)
+
+        # Basic Options
+        waterDepth = float(self.waterDepthBox.text())
+        o2 = float(self.omegaStart.text())
+        o3 = float(self.omegaStop.text())
+        o1 = int(float(self.omegaStep.text()))
+        omega = [o1, o2, o3]
+        try:
+            rhoW = float(self.rhoBox.text())
+        except:
+            rhoW = 1025.0
+        zG = float(self.zGBox.text())
+
+        # DOF        
+        self.dof = [1, 1, 1, 1, 1, 1]
+        self.dof[0] = int(self.checkSurge.isChecked())
+        self.dof[1] = int(self.checkSway.isChecked())
+        self.dof[2] = int(self.checkHeave.isChecked())
+        self.dof[3] = int(self.checkRoll.isChecked())
+        self.dof[4] = int(self.checkPitch.isChecked())
+        self.dof[5] = int(self.checkYaw.isChecked())
+
+        # Advanced Options
+        advOps = {}
+        if self.wavDirCheck.isChecked():
+            advOps['dirCheck'] = True
+            advOps['dirStart'] = float(self.wavDirStart.text())
+            advOps['dirStop'] = float(self.wavDirStop.text())
+            advOps['dirStep'] = int(float(self.wavDirStep.text()))
+        else:
+            advOps['dirCheck'] = False
+        if self.irfCheck.isChecked():
+            advOps['irfCheck'] = True
+            advOps['irfDur'] = float(self.irfDur.text())
+            advOps['irfStep'] = float(self.irfStep.text())
+        else:
+            advOps['irfCheck'] = False
+        if self.kochinCheck.isChecked():
+            advOps['kochCheck'] = True
+            advOps['kochStart'] = float(self.kochinStart.text())
+            advOps['kochStop'] = float(self.kochinStop.text())
+            advOps['kochStep'] = int(float(self.kochinStep.text()))
+        else:
+            advOps['kochCheck'] = False
+        if self.fsCheck.isChecked():
+            advOps['fsCheck'] = True
+            advOps['fsDeltaX'] = int(self.fsDeltaX.text())
+            advOps['fsDeltaY'] = int(self.fsDeltaX.text())
+            advOps['fsLengthX'] = float(self.fsLengthX.text())
+            advOps['fsLengthY'] = float(self.fsLengthY.text())
+        else:
+            advOps['fsCheck'] = False
+        if self.parkCheck.isChecked():
+            advOps['parkCheck'] = True
+            parkFile = os.path.join(self.wDir, 'Other', 'parkconfig.dat')
+            if os.path.isfile(parkFile):
+                advOps['parkFile'] = parkFile
+                with open(advOps['parkFile']) as f:
+                    data = f.readlines()
+                if int(data[0]) > 0:
+                    None
+                else:
+                    print('WARNING: You must configure the array configuration before running the simulation')
+                    print('WARNING: Simulation will be run with single WEC!')
+                    advOps['parkCheck'] = False
+        else:
+            advOps['parkCheck'] = False
+
+        # Write CAL file
+        nbody = ne.writeCalFile(rhoW, waterDepth, omega, zG, self.dof, aO=advOps)
+        self.genericThread = GenericThread(ne.runNemoh, nbody=nbody)
+        self.genericThread.start()
+        print("Nemoh Simulation Running...")
+        self.genericThread.finished.connect(partial(self.postNemoh, advOps, rhoW, waterDepth))
+
+    def postNemoh(self, advOps, rhoW, depth):
+        # Delete content of destination folder
+        folder = os.path.join(self.wDir, 'Nemoh')
+        for fil in os.listdir(folder):
+            filPath = os.path.join(folder, fil)
+            if os.path.isfile(filPath):
+                os.unlink(filPath)
+
+        # Copy Result files to Simulation directory
+        pathName = os.path.join(self.wDir, 'Calculation', 'results')
+        srcFiles = os.listdir(pathName)
+        for iFile in srcFiles:
+            fullFile = os.path.join(pathName, iFile)
+            if (os.path.isfile(fullFile)):
+                sh.copy(fullFile, folder)
+        pathName = os.path.join(self.wDir, 'Calculation', 'mesh')
+        srcFiles = os.listdir(pathName)
+        for iFile in srcFiles:
+            fullFile = os.path.join(pathName, iFile)
+            if (os.path.isfile(fullFile)):
+                sh.copy(fullFile, folder)
+
+        # Display results on matplotlib widgets
+        sys.path.insert(0, './Run')
+        import processNemoh as pn
+
+        xlabel = 'Frequency [Hz]'
+        ylabel = '$M_a$ and $B_{hyd}$'
+
+        isel = self.dof.index(1)
+        (self.Ma, self.Bhyd, omeg) = pn.getAB(self.dof, sel=isel)
+        self.freq = omeg / (2 * np.pi)
+        (self.Fe, self.Fpha) = pn.getFe(self.dof, sel=isel)
+        (Mass, KH) = pn.calcM(rho=rhoW, dof=self.dof)
+        if sum(self.dof) > 1:
+            Mass = Mass[isel, isel]
+            KH = KH[isel, isel]
+        RAO = (self.Fe) / np.abs(-omeg ** 2.0 * (Mass + self.Ma) - 1j * omeg * self.Bhyd + KH)
+        self.updateGraph(x=self.freq, y=self.Ma, x2=self.freq, y2=self.Bhyd, g=self.mplNem,
+                         t=self.ntbNem, xlab=xlabel, ylab=ylabel)
+
+        # Change DOF labels in postprocessing window
+        self.changeDofLabels()
+
+        # Calculate FS/Kochin grids
+        if self.fsCheck.isChecked():
+            self.X, self.Y, self.etaDiff, self.etaRad = pn.getFS(advOps, depth, omeg, RAO)
+
+        print('Program Finished!')
+
+    def openDialog(self):
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                         "Open Nemoh File", os.path.join(self.wDir, 'Calculation'),
+                                                         "Nemoh File (*.cal)")[0]
+        fileName = str(fileName)
+        # Copy result files
+        pathName = os.path.dirname(fileName)
+        pathName = os.path.join(pathName, 'results')
+        srcFiles = os.listdir(pathName)
+        for iFile in srcFiles:
+            fullFile = os.path.join(pathName, iFile)
+            if (os.path.isfile(fullFile)):
+                sh.copy(fullFile, os.path.join(self.wDir, 'Nemoh'))
+        # Copy mesh files
+        pathName = os.path.dirname(fileName)
+        pathName = os.path.join(pathName, 'mesh')
+        srcFiles = os.listdir(pathName)
+        for iFile in srcFiles:
+            fullFile = os.path.join(pathName, iFile)
+            if (os.path.isfile(fullFile)):
+                sh.copy(fullFile, os.path.join(self.wDir, 'Nemoh'))
+
+    def convertMesh(self):
+        if self.meshMethod.currentIndex() == 2:
+            fileName = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                             "Open STL Mesh", self.wDir, "Nemoh File (*.stl)")[0]
+            fileName = str(fileName)
+            print(fileName)
+
+            # convert to Nemoh format
+            V, F = self.load_STL(fileName)
+            nrNodes = len(V)
+            nrPanels = len(F)
+            self.write_MAR(V, F, nrNodes, nrPanels)
+        elif self.meshMethod.currentIndex() == 1:
+            nrPanels = int(self.nPanelBox.text())
+            fileName = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                             "Open Nemoh Mesh", self.wDir, "Nemoh Mesh File (*)")[0]
+            fileName = str(fileName)
+            print(fileName)
+            # copy to mesh directory
+            sh.copy(fileName, os.path.join(self.wDir, 'Calculation', 'mesh', 'axisym'))
+        return nrPanels
+
+    def runThread(self, pf=[], f=[], *args, **kwargs):
+        self.genericThread = GenericThread(f, *args, **kwargs)
+        self.genericThread.start()
+        self.genericThread.finished.connect(pf)
+
+    def runSimulation(self):
+
+        # Set type of simulation        
+        wavType = self.wavType.currentIndex()
+        if (wavType == 0):
+            wavName = 'regular'
+        else:
+            wavName = 'irregular'
+
+        # Import necessary modules
+        sys.path.insert(0, './Run')
+        import makeWaveFex as wav
+
+        import processNemoh as pn
+
+        import wecSim as wc
+
+        import moorSim as ms
+
+        # Get Wave Parameters
+        Hs = float(self.wavHBox.text())
+        Tm = float(self.wavTBox.text())
+        try:
+            rho = float(self.rhoBox.text())
+        except:
+            rho = 1025.0
+
+        # DOF        
+        self.dof = [1, 1, 1, 1, 1, 1]
+        self.dof[0] = int(self.checkSurge.isChecked())
+        self.dof[1] = int(self.checkSway.isChecked())
+        self.dof[2] = int(self.checkHeave.isChecked())
+        self.dof[3] = int(self.checkRoll.isChecked())
+        self.dof[4] = int(self.checkPitch.isChecked())
+        self.dof[5] = int(self.checkYaw.isChecked())
+        dof = self.dof
+
+        # Get degrees of freedom
+        self.indList = []
+        dof2 = [a for a in dof]
+        for iD in range(sum(dof)):
+            self.indList.append(dof2.index(1))
+            dof2[dof2.index(1)] = 0
+
+        # Get Damping force
+        dampType = self.dampSelect.currentIndex()
+        if dampType == 0:
+            Fdamp = []
+            Fdamp.append(float(self.msupEdit.text()))
+            Fdamp.append(float(self.bsupEdit.text()))
+            Fdamp.append(float(self.csupEdit.text()))
+        else:
+            Fdamp = float(self.fdampEdit.text())
+
+        # Get Simulation Parameters
+        tSim = int(self.simTimeBox.text())
+        tStep = float(self.dtBox.text())
+        time = np.linspace(0, tSim, tSim / tStep + 1)
+
+        # ---------------------------------------------------------------------------
+        # MODEL PREPARATION
+        # ---------------------------------------------------------------------------
+        importlib.reload(wav)
+        importlib.reload(pn)
+        importlib.reload(wc)
+
+        # Calculate Exciting wave and wave force
+
+        time, self.wave, Fex, specSS = wav.makeWaveFex(Hs, Tm, time, dof, wavName, Sout=True,
+                                                       CS=self.checkCS.isChecked())
+
+        # Preprocessing: calculate body parameters
+
+        M, c = pn.calcM(rho=rho, dof=dof)
+        if (wavType == 0):
+            Ma, Bhyd, omega = pn.getAB(dof)
+            if sum(dof) < 2:
+                Ma = np.interp(2 * np.pi / Tm, omega, Ma)
+                Bhyd = np.interp(2 * np.pi / Tm, omega, Bhyd)
+            else:
+                oI = np.interp(2 * np.pi / Tm, omega, omega)
+                mask = [a > 0 for a in omega - oI]
+                iS, iE = (mask.index(True) - 1, mask.index(True))
+                Ma = Ma[:, :, iS] + (Ma[:, :, iE] - Ma[:, :, iS]) * (oI - omega[iS]) / (omega[iE] - omega[iS])
+                Bhyd = Bhyd[:, :, iS] + (Bhyd[:, :, iE] - Bhyd[:, :, iS]) * (oI - omega[iS]) / (omega[iE] - omega[iS])
+        else:
+            alpha, beta, errorE, Mainf = pn.calcAlphaBeta(10, rho, dof)
+            if sum(dof) > 1:
+                Ma, Bhyd, omega = pn.getAB(dof)
+                MaS, BhydS = pn.irregAB(Ma, Bhyd, omega, M, c, dof, specSS)
+                MaS[2, 2] = Mainf
+                np.savetxt(os.path.join(self.wDir, 'Output', 'M.dat'), M)
+                np.savetxt(os.path.join(self.wDir, 'Output', 'c.dat'), c)
+                np.savetxt(os.path.join(self.wDir, 'Output', 'MaS.dat'), MaS)
+                np.savetxt(os.path.join(self.wDir, 'Output', 'BhydS.dat'), BhydS)
+                np.savetxt(os.path.join(self.wDir, 'Output', 'Fex.dat'), Fex)
+
+        # ---------------------------------------------------------------------------
+        # MODEL SIMULATION
+        # ---------------------------------------------------------------------------
+
+        # First Run
+
+        if self.checkCS.isChecked():
+            print('Custom spectrum selected')
+        else:
+            print(('Wave height: ' + str(Hs) + ' m'))
+            print(('Wave period: ' + str(Tm) + ' s'))
+        print('Simulation Start!')
+
+        # Set correct depth in mooring simulation
+        if self.moorCheck.isChecked():
+            ms.changeDepth(self.waterDepthBox.text())
+
+        if (wavType == 0):
+            if sum(dof) < 2:
+                self.time, self.posZ, self.velZ, self.Fpto = wc.simBodyReg1DOF(time, Fex, Fdamp, dampType, M, c, Ma,
+                                                                               Bhyd, moor=self.moorCheck.isChecked(),
+                                                                               dof=dof)
+            else:
+                self.time, self.posZ, self.velZ = wc.simBodyReg(time, Fex, Fdamp, dampType, M, c, Ma, Bhyd,
+                                                                moor=self.moorCheck.isChecked(), dof=dof)
+                self.Fpto = self.velZ * 0.0
+        else:
+            if sum(dof) < 2:
+                self.time, self.posZ, self.velZ, self.Fpto = wc.simBody1DOF(time, Fex, Fdamp, dampType, M, Mainf, c,
+                                                                            alpha, beta,
+                                                                            moor=self.moorCheck.isChecked(), dof=dof)
+            else:
+                self.time, self.posZ, self.velZ = wc.simBody(time, Fex, Fdamp, dampType, M, MaS, BhydS, c, alpha, beta,
+                                                             moor=self.moorCheck.isChecked(), dof=dof)
+                self.Fpto = self.velZ * 0.0
+
+        print('Simulation Finished!')
+
+    def postSim(self):
+        sys.path.insert(0, './Run')
+        import wecSim as wc
+
+        # Output to matplotlib widgets
+
+        xlabel = 'Time [s]'
+        ylabel = '$z$ and $v$'
+
+        if sum(self.dof) < 2:
+            diff = len(self.time) - len(self.posZ)
+            if diff > 0.5:
+                self.time = np.delete(self.time, 0)
+            elif diff < -0.5:
+                self.posZ = np.delete(self.posZ, -1)
+                self.velZ = np.delete(self.velZ, -1)
+                self.Fpto = np.delete(self.Fpto, -1)
+
+            self.updateGraph(x=self.time, y=self.posZ, x2=self.time, y2=self.velZ, g=self.mplSim,
+                             t=self.ntbSim, xlab=xlabel, ylab=ylabel)
+
+        else:
+
+            self.updateGraph(x=self.time, y=self.posZ[self.indList[0], :], x2=self.time,
+                             y2=self.velZ[self.indList[0], :], g=self.mplSim, t=self.ntbSim, xlab=xlabel, ylab=ylabel)
+
+        # Change DOF labels in postprocessing window
+        self.changeDofLabels()
+
+        # Save Results
+        saveName = QtWidgets.QFileDialog.getSaveFileName(self,
+                                                         "Save Simulation Results", os.path.join(self.wDir, 'Output'),
+                                                         "Text File (*.txt)")[0]
+        wc.saveResults(saveName, self.time, self.posZ, self.velZ, self.Fpto, li=self.indList)
+
+        # Calculate Produced Power
+
+        Pabs = self.Fpto * self.velZ
+        Pabs_mean = np.mean(Pabs)
+        print(('Mean Absorbed Power: ' + str(Pabs_mean) + ' Watt'))
+
+    def merge_duplicates(self, V, F, verbose=True, tol=1e-8):
+
+        nv, nbdim = V.shape
+
+        levels = [0, nv]
+        Vtmp = []
+        iperm = np.array([i for i in range(nv)])
+
+        for dim in range(nbdim):
+            # Sorting the first dimension
+            values = V[:, dim].copy()
+            if dim > 0:
+                values = values[iperm]
+            levels_tmp = []
+            for (ilevel, istart) in enumerate(levels[:-1]):
+                istop = levels[ilevel + 1]
+
+                if istop - istart > 1:
+                    level_values = values[istart:istop]
+                    iperm_view = iperm[istart:istop]
+
+                    iperm_tmp = level_values.argsort()
+
+                    level_values[:] = level_values[iperm_tmp]
+                    iperm_view[:] = iperm_view[iperm_tmp]
+
+                    levels_tmp.append(istart)
+                    vref = values[istart]
+
+                    for idx in range(istart, istop):
+                        cur_val = values[idx]
+                        if np.abs(cur_val - vref) > tol:
+                            levels_tmp.append(idx)
+                            vref = cur_val
+
+                else:
+                    levels_tmp.append(levels[ilevel])
+            if len(levels_tmp) == nv:
+                # No duplicate vertices
+                if verbose:
+                    print("The mesh has no duplicate vertices")
+                break
+
+            levels_tmp.append(nv)
+            levels = levels_tmp
+
+        else:
+            # Building the new merged node list
+            Vtmp = []
+            newID = np.array([i for i in range(nv)])
+            for (ilevel, istart) in enumerate(levels[:-1]):
+                istop = levels[ilevel + 1]
+
+                Vtmp.append(V[iperm[istart]])
+                newID[iperm[list(range(istart, istop))]] = ilevel
+            V = np.array(Vtmp, dtype=float, order='F')
+            # Applying renumbering to cells
+            for cell in F:
+                cell[:] = newID[cell - 1] + 1
+
+            if verbose:
+                nv_new = V.shape[0]
+                print("Initial number of nodes : {:d}".format(nv))
+                print("New number of nodes     : {:d}".format(nv_new))
+                print("{:d} nodes have been merged".format(nv - nv_new))
+
+        return V, F
+
+    def load_STL(self, fileName):
+
+        from vtk import vtkSTLReader
+
+        reader = vtkSTLReader()
+        reader.SetFileName(fileName)
+        reader.Update()
+
+        data = reader.GetOutputDataObject(0)
+
+        nv = data.GetNumberOfPoints()
+        V = np.zeros((nv, 3), dtype=float, order='F')
+        for k in range(nv):
+            V[k] = np.array(data.GetPoint(k))
+        nf = data.GetNumberOfCells()
+        F = np.zeros((nf, 4), dtype=np.int32, order='F')
+        for k in range(nf):
+            cell = data.GetCell(k)
+            if cell is not None:
+                for l in range(3):
+                    F[k][l] = cell.GetPointId(l)
+                    F[k][3] = F[k][0]  # always repeating the first node as stl is triangle only
+        F += 1
+
+        V, F = self.merge_duplicates(V, F)
+
+        return V, F
+
+    def write_MAR(self, V, F, nv, nf):
+        ofile = open(os.path.join(self.wDir, 'Calculation', 'mesh', 'axisym'), 'w')
+
+        ofile.write('{0:d}\n{1:d}\n'.format(nv, nf))
+
+        for (idx, vertex) in enumerate(V):
+            ofile.write('{0:f}\t{1:f}\t{2:f}\n'.format(vertex[0], vertex[1], vertex[2]))
+
+        cell_block = '\n'.join(
+            ''.join('{0:d}\t'.format(elt) for elt in cell)
+            for cell in F
+        ) + '\n'
+        ofile.write(cell_block)
+
+        ofile.close()
+        print('File %s written' % 'axisym')
+
+    def changeDofLabels(self):
+
+        nameDof = ['Surge', 'Sway', 'Heave', 'Roll', 'Pitch', 'Yaw']
+        if self.dofPlotU.count() < sum(self.dof):
+            for iC in range(sum(self.dof) - self.dofPlotU.count()):
+                self.dofPlotU.addItem("")
+                self.dofPlotL.addItem("")
+        elif self.dofPlotU.count() > sum(self.dof):
+            for iC in range(self.dofPlotU.count() - sum(self.dof)):
+                self.dofPlotU.removeItem(0)
+                self.dofPlotL.removeItem(0)
+
+        count = 0
+        for iD in range(sum(self.dof)):
+            indDof = self.dof.index(1, count)
+            count = indDof + 1
+            self.dofPlotU.setItemText(iD, nameDof[indDof])
+            self.dofPlotL.setItemText(iD, nameDof[indDof])
+
+    def changePtoLabels(self):
+        if self.dampSelect.currentIndex() == 0:
+            # Linear Damping with 3 options Mext, Bext, Cext
+            self.fdampEdit.deleteLater()
+            self.formLayout.removeItem(self.fdampLayout)
+            # Set UI
+            self.fdampLayout = QtWidgets.QHBoxLayout()
+            self.fdampLayout.setObjectName("fdampLayout")
+            self.msupLabel = QtWidgets.QLabel(self.tabSim)
+            self.msupLabel.setObjectName("msupLabel")
+            self.fdampLayout.addWidget(self.msupLabel)
+            self.msupEdit = QtWidgets.QLineEdit(self.tabSim)
+            self.msupEdit.setObjectName("msupEdit")
+            self.fdampLayout.addWidget(self.msupEdit)
+            self.bsupLabel = QtWidgets.QLabel(self.tabSim)
+            self.bsupLabel.setObjectName("bsupLabel")
+            self.fdampLayout.addWidget(self.bsupLabel)
+            self.bsupEdit = QtWidgets.QLineEdit(self.tabSim)
+            self.bsupEdit.setObjectName("bsupEdit")
+            self.fdampLayout.addWidget(self.bsupEdit)
+            self.csupLabel = QtWidgets.QLabel(self.tabSim)
+            self.csupLabel.setObjectName("csupLabel")
+            self.fdampLayout.addWidget(self.csupLabel)
+            self.csupEdit = QtWidgets.QLineEdit(self.tabSim)
+            self.csupEdit.setObjectName("csupEdit")
+            self.fdampLayout.addWidget(self.csupEdit)
+            self.formLayout.setLayout(7, QtWidgets.QFormLayout.FieldRole, self.fdampLayout)
+            # Retranslate UI
+            self.fdampLabel.setText(_translate("openWEC", "PTO Values:", None))
+            self.msupLabel.setText(_translate("openWEC", "Mpto: ", None))
+            self.msupEdit.setPlaceholderText(_translate("openWEC", "Exernal Mass in kg", None))
+            self.bsupLabel.setText(_translate("openWEC", "Bpto: ", None))
+            self.bsupEdit.setPlaceholderText(_translate("openWEC", "External Damping in kg/s", None))
+            self.csupLabel.setText(_translate("openWEC", "Cpto: ", None))
+            self.csupEdit.setPlaceholderText(_translate("openWEC", "External Spring in kg/s²", None))
+        else:
+            self.msupLabel.deleteLater()
+            self.bsupLabel.deleteLater()
+            self.csupLabel.deleteLater()
+            self.msupEdit.deleteLater()
+            self.bsupEdit.deleteLater()
+            self.csupEdit.deleteLater()
+            self.formLayout.removeItem(self.fdampLayout)
+            # Set UI
+            self.fdampLayout = QtWidgets.QHBoxLayout()
+            self.fdampLayout.setObjectName("fdampLayout")
+            self.fdampEdit = QtWidgets.QLineEdit(self.tabSim)
+            self.fdampEdit.setObjectName("fdampEdit")
+            self.fdampLayout.addWidget(self.fdampEdit)
+            self.formLayout.setLayout(7, QtWidgets.QFormLayout.FieldRole, self.fdampLayout)
+            # Retranslate UI
+            self.fdampLabel.setText(_translate("openWEC", "PTO Force:", None))
+            self.fdampEdit.setPlaceholderText(_translate("openWEC", "PTO Force in Newton", None))
+
+    def openFile(self):
+
+        sys.path.insert(0, './Run')
+
+        fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',
+                                                      './', '*.cu')[0]
+
+        with open(fname, 'r') as f:
+            inData = f.readlines()
+
+        # Set Mesh properties
+        self.meshMethod.setCurrentIndex(int(inData[1].split('\t')[0]))
+        self.comboBox.setCurrentIndex(int(inData[2].split('\t')[0]))
+        self.prop1.setText(inData[3].split('\t')[0])
+        self.prop2.setText(inData[4].split('\t')[0])
+        self.prop3.setText(inData[5].split('\t')[0])
+        self.Xins.setText(inData[6].split('\t')[0])
+        self.Yins.setText(inData[7].split('\t')[0])
+        self.Zins.setText(inData[8].split('\t')[0])
+        self.lineEdit.setText(inData[9].split('\t')[0])
+        self.lineEdit_2.setText(inData[10].split('\t')[0])
+        self.lineEdit_3.setText(inData[11].split('\t')[0])
+        self.lineEdit_4.setText(inData[12].split('\t')[0])
+        self.lineEdit_5.setText(inData[13].split('\t')[0])
+        self.lineEdit_6.setText(inData[14].split('\t')[0])
+        self.waterDepthBox.setText(inData[15].split('\t')[0])
+        self.zGBox.setText(inData[16].split('\t')[0])
+        self.rhoBox.setText(inData[17].split('\t')[0])
+        self.nPanelBox.setText(inData[18].split('\t')[0])
+        # Set Nemoh Properties
+        self.omegaStart.setText(inData[20].split('\t')[0])
+        self.omegaStop.setText(inData[21].split('\t')[0])
+        self.omegaStep.setText(inData[22].split('\t')[0])
+        self.checkSurge.setChecked(inData[23].split('\t')[0] == 'True')
+        self.checkSway.setChecked(inData[24].split('\t')[0] == 'True')
+        self.checkHeave.setChecked(inData[25].split('\t')[0] == 'True')
+        self.checkRoll.setChecked(inData[26].split('\t')[0] == 'True')
+        self.checkPitch.setChecked(inData[27].split('\t')[0] == 'True')
+        self.checkYaw.setChecked(inData[28].split('\t')[0] == 'True')
+        self.wavDirCheck.setChecked(inData[29].split('\t')[0] == 'True')
+        self.wavDirStart.setText(inData[30].split('\t')[0])
+        self.wavDirStop.setText(inData[31].split('\t')[0])
+        self.wavDirStep.setText(inData[32].split('\t')[0])
+        self.irfCheck.setChecked(inData[33].split('\t')[0] == 'True')
+        self.irfDur.setText(inData[34].split('\t')[0])
+        self.irfStep.setText(inData[35].split('\t')[0])
+        self.kochinCheck.setChecked(inData[36].split('\t')[0] == 'True')
+        self.kochinStart.setText(inData[37].split('\t')[0])
+        self.kochinStop.setText(inData[38].split('\t')[0])
+        self.kochinStep.setText(inData[39].split('\t')[0])
+        self.fsCheck.setChecked(inData[40].split('\t')[0] == 'True')
+        self.fsDeltaX.setText(inData[41].split('\t')[0])
+        self.fsDeltaY.setText(inData[42].split('\t')[0])
+        self.fsLengthX.setText(inData[43].split('\t')[0])
+        self.fsLengthY.setText(inData[44].split('\t')[0])
+        # Time Domain Properties
+        self.wavType.setCurrentIndex(int(inData[46].split('\t')[0]))
+        self.wavHBox.setText(inData[47].split('\t')[0])
+        self.wavTBox.setText(inData[48].split('\t')[0])
+        self.dampSelect.setCurrentIndex(int(inData[49].split('\t')[0]))
+        if int(inData[49].split('\t')[0]) == 0:
+            self.msupEdit.setText(inData[50].split('\t')[0].split(';')[0])
+            self.bsupEdit.setText(inData[50].split('\t')[0].split(';')[1])
+            self.csupEdit.setText(inData[50].split('\t')[0].split(';')[2])
+        else:
+            self.fdampEdit.setText(inData[50].split('\t')[0])
+        self.simTimeBox.setText(inData[51].split('\t')[0])
+        self.dtBox.setText(inData[52].split('\t')[0])
+        # Mesh Objects
+        self.meshObj = []
+        self.nrObj = 0
+        self.listWidget.clear()
+        iL = 55
+        for iO in range(int(inData[54].split('\t')[0])):
+            meshType = inData[iL].split('\t')[0]
+            if any(meshType in s for s in ['box', 'wedge', 'pyramid']):
+                length = float(inData[iL + 1].split('\t')[0])
+                width = float(inData[iL + 2].split('\t')[0])
+                height = float(inData[iL + 3].split('\t')[0])
+                cCor = [float(a) for a in inData[iL + 4].split('\t')[0].split(',')]
+                ob = eval('mt.' + meshType + '(length,width,height,cCor)')
+                self.meshObj.append(ob)
+                self.nrObj += 1
+                item = QtWidgets.QListWidgetItem(ob.name + "-mesh-" + str(self.nrObj))
+                self.listWidget.addItem(item)
+                self.updateGraph(plotType="Obj")
+                iL += 5
+            elif any(meshType in s for s in ['cone', 'cylinder', 'hemicylinder']):
+                diameter = float(inData[iL + 1].split('\t')[0])
+                height = float(inData[iL + 2].split('\t')[0])
+                cCor = [float(a) for a in inData[iL + 3].split('\t')[0].split(',')]
+                ob = eval('mt.' + meshType + '(diameter,height,cCor)')
+                self.meshObj.append(ob)
+                self.nrObj += 1
+                item = QtWidgets.QListWidgetItem(ob.name + "-mesh-" + str(self.nrObj))
+                self.listWidget.addItem(item)
+                self.updateGraph(plotType="Obj")
+                iL += 4
+            elif any(meshType in s for s in ['sphere', 'hemisphere']):
+                diameter = float(inData[iL + 1].split('\t')[0])
+                cCor = [float(a) for a in inData[iL + 2].split('\t')[0].split(',')]
+                ob = eval('mt.' + meshType + '(diameter,cCor)')
+                self.meshObj.append(ob)
+                self.nrObj += 1
+                item = QtWidgets.QListWidgetItem(ob.name + "-mesh-" + str(self.nrObj))
+                self.listWidget.addItem(item)
+                self.updateGraph(plotType="Obj")
+                iL += 3
+
+        print((fname + " successfully opened!"))
+
+    def saveFile(self):
+        fname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                      self.wDir, '*.cu')[0]
+
+        with open(fname, 'w') as f:
+            # Write Mesh Tab properties
+            f.write('------------------------------------- Mesh Properties -------------------------------------\n')
+            f.write(str(self.meshMethod.currentIndex()) + "\t Mesh Method\n")
+            f.write(str(self.comboBox.currentIndex()) + "\t Mesh Item\n")
+            f.write(self.prop1.text() + "\t 1st Property\n")
+            f.write(self.prop2.text() + "\t 2nd Property\n")
+            f.write(self.prop3.text() + "\t 3rd Property\n")
+            f.write(self.Xins.text() + "\t X insertion\n")
+            f.write(self.Yins.text() + "\t Y insertion\n")
+            f.write(self.Zins.text() + "\t Z insertion\n")
+            f.write(self.lineEdit.text() + "\t X translation\n")
+            f.write(self.lineEdit_2.text() + "\t Y translation\n")
+            f.write(self.lineEdit_3.text() + "\t Z translation\n")
+            f.write(self.lineEdit_4.text() + "\t Angle of Rotation\n")
+            f.write(self.lineEdit_5.text() + "\t Rotation axis 1\n")
+            f.write(self.lineEdit_6.text() + "\t Rotation axis 2\n")
+            f.write(self.waterDepthBox.text() + "\t Water Depth\n")
+            f.write(self.zGBox.text() + "\t Centre of Gravity Location\n")
+            f.write(self.rhoBox.text() + "\t Density\n")
+            f.write(self.nPanelBox.text() + "\t Number of Mesh Panels\n")
+            # Write Nemoh Tab properties
+            f.write('------------------------------------- Nemoh Properties -------------------------------------\n')
+            f.write(self.omegaStart.text() + "\t Starting Frequency\n")
+            f.write(self.omegaStop.text() + "\t Ending Frequency\n")
+            f.write(self.omegaStep.text() + "\t Number of Frequency Steps\n")
+            f.write(str(self.checkSurge.isChecked()) + "\t Surge\n")
+            f.write(str(self.checkSway.isChecked()) + "\t Surge\n")
+            f.write(str(self.checkHeave.isChecked()) + "\t Surge\n")
+            f.write(str(self.checkRoll.isChecked()) + "\t Surge\n")
+            f.write(str(self.checkPitch.isChecked()) + "\t Surge\n")
+            f.write(str(self.checkYaw.isChecked()) + "\t Surge\n")
+            f.write(str(self.wavDirCheck.isChecked()) + "\t Include Wave direction?\n")
+            f.write(self.wavDirStart.text() + "\t Starting wave direction\n")
+            f.write(self.wavDirStop.text() + "\t Ending wave direction\n")
+            f.write(self.wavDirStep.text() + "\t Number of wave direction steps\n")
+            f.write(str(self.irfCheck.isChecked()) + "\t Include IRF?\n")
+            f.write(self.irfDur.text() + "\t Duration of IRF\n")
+            f.write(self.irfStep.text() + "\t Time step of IRF\n")
+            f.write(str(self.kochinCheck.isChecked()) + "\t Include Kochin Function?\n")
+            f.write(self.kochinStart.text() + "\t Start of Kochin Function\n")
+            f.write(self.kochinStop.text() + "\t End of Kochin Function\n")
+            f.write(self.kochinStep.text() + "\t Number of Kochin Steps\n")
+            f.write(str(self.fsCheck.isChecked()) + "\t Include Wave Free Surface?\n")
+            f.write(self.fsDeltaX.text() + "\t Free Surface DeltaX\n")
+            f.write(self.fsDeltaY.text() + "\t Free Surface DeltaY\n")
+            f.write(self.fsLengthX.text() + "\t Free Surface X-length\n")
+            f.write(self.fsLengthY.text() + "\t Free Surface Y-length\n")
+            # Write Time Domain Properties
+            f.write(
+                '------------------------------------- Time Domain Properties -------------------------------------\n')
+            f.write(str(self.wavType.currentIndex()) + "\t Wave Type\n")
+            f.write(self.wavHBox.text() + "\t Wave Height\n")
+            f.write(self.wavTBox.text() + "\t Wave Period\n")
+            f.write(str(self.dampSelect.currentIndex()) + "\t Damping Type\n")
+            if self.dampSelect.currentIndex() == 0:
+                f.write(
+                    self.msupEdit.text() + ";" + self.bsupEdit.text() + ";" + self.csupEdit.text() + "\t Damping Value\n")
+            else:
+                f.write(self.fdampEdit.text() + "\t Damping Value\n")
+            f.write(self.simTimeBox.text() + "\t Simulation Time\n")
+            f.write(self.dtBox.text() + "\t Simulation Time Step\n")
+            # Save Mesh Parts
+            f.write('------------------------------------- Mesh Objects -------------------------------------\n')
+            f.write(str(len(self.meshObj)) + "\t Number of mesh objects\n")
+            for iO in range(len(self.meshObj)):
+                f.write(self.meshObj[iO].name + "\t Mesh type\n")
+                if any(self.meshObj[iO].name in s for s in ['box', 'wedge', 'pyramid']):
+                    f.write("{:.2f} \t Length\n".format(self.meshObj[iO].length))
+                    f.write("{:.2f} \t Width\n".format(self.meshObj[iO].width))
+                    f.write("{:.2f} \t Height\n".format(self.meshObj[iO].height))
+                    f.write("{0:.2f},{1:.2f},{2:.2f} \t Length\n".format(self.meshObj[iO].xC, self.meshObj[iO].yC,
+                                                                         self.meshObj[iO].zC))
+                elif any(self.meshObj[iO].name in s for s in ['cone', 'cylinder', 'hemicylinder']):
+                    f.write("{:.2f} \t Diameter\n".format(self.meshObj[iO].diameter))
+                    f.write("{:.2f} \t Height\n".format(self.meshObj[iO].height))
+                    f.write("{0:.2f},{1:.2f},{2:.2f} \t Length\n".format(self.meshObj[iO].xC, self.meshObj[iO].yC,
+                                                                         self.meshObj[iO].zC))
+                elif any(self.meshObj[iO].name in s for s in ['sphere', 'hemisphere']):
+                    f.write("{:.2f} \t Diameter\n".format(self.meshObj[iO].diameter))
+                    f.write("{0:.2f},{1:.2f},{2:.2f} \t Length\n".format(self.meshObj[iO].xC, self.meshObj[iO].yC,
+                                                                         self.meshObj[iO].zC))
+
+        print((fname + " successfully written!"))
+
+    def about(self):
+        print('openWEC alpha v0.1 \nCreated by Tim Verbrugghe \ntiml.verbrugghe@ugent.be')
+
+    def manual(self):
+        if sys.platform == 'linux2':
+            os.system('xdg-open', 'Manual.pdf')
+        else:
+            os.startfile('Manual.pdf')
+
+    def close(self):
+        QtWidgets.QApplication.quit()
+
+    def normalOutputWritten(self, text):
+        cursor = self.messageBox.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.messageBox.setTextCursor(cursor)
+        self.messageBox.ensureCursorVisible()
+
+        cursor = self.nemMessBox.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.nemMessBox.setTextCursor(cursor)
+        self.nemMessBox.ensureCursorVisible()
+
+        cursor = self.simMessBox.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.simMessBox.setTextCursor(cursor)
+        self.simMessBox.ensureCursorVisible()
+
+        cursor = self.postMessBox.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.postMessBox.setTextCursor(cursor)
+        self.postMessBox.ensureCursorVisible()
+
+    def runCustomSpec(self):
+        print("Opening Custom Spectrum Tool...")
+        self.w = CustomSpec()
+        self.w.show()
+
+    def runParkConfig(self):
+        print("Opening Array Configuration Tool...")
+        self.w = ParkConfig()
+        self.w.show()
+
+    def setParkButton(self):
+        parkFile = os.path.join(self.wDir, 'Other', 'parkconfig.dat')
+        if self.parkCheck.isChecked():
+            self.fsCheck.setChecked(True)
+            self.parkConfig.setEnabled(True)
+            if os.path.isfile(parkFile):
+                os.remove(parkFile)
+        else:
+            self.fsCheck.setChecked(False)
+            self.parkConfig.setEnabled(False)
+            if os.path.isfile(parkFile):
+                os.remove(parkFile)
+
+    def runMoorDynConfig(self):
+        print("Opening MoorDyn Configuration Tool...")
+        self.w = MoorDynPopup()
+        self.w.show()
+
+    def changeMoorDyn(self):
+        if self.moorCheck.isChecked():
+            self.moorConfig.setEnabled(True)
+        else:
+            self.moorConfig.setEnabled(False)
+
+    def cleanUp(self):
+        curDir = os.getcwd()
+        os.chdir(os.path.join(self.wDir, 'Calculation'))
+        fileList = glob.glob('./axisym*.dat')
+        for fil in fileList:
+            os.remove(fil)
+        os.chdir('./mesh')
+        fileList = os.listdir('./')
+        for fil in fileList:
+            os.remove(fil)
+        os.chdir('..')
+        os.chdir('./results')
+        fileList = os.listdir('./')
+        for fil in fileList:
+            os.remove(fil)
+        os.chdir('..')
+        os.chdir('..')
+        os.chdir('Nemoh')
+        fileList = os.listdir('./')
+        for fil in fileList:
+            os.remove(fil)
+        os.chdir(curDir)
+
+
+def openCustom():
+    ex2 = Ui_MainWindow()
+    return ex2

@@ -1,0 +1,64 @@
+{
+    "Analyses parameters": {
+        "Degrees of Freedom": [
+            0,
+            0,
+            1,
+            1,
+            1,
+            0
+        ],
+        "Density of sea water": 1025,
+        "Number of wave directions, Min and Max (degrees)": [
+            3,
+            0,
+            90
+        ],
+        "Number of wave frequencies, Min, and Max (rad/s)": [
+            121,
+            0.20943951023931953,
+            3.141592653589793
+        ],
+        "Use symmetri": 1,
+        "Water depth": 100
+    },
+    "Floater": {
+        "Ballast density": 2500,
+        "Ballast filling ratio": [
+            0.0,
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        ],
+        "Central column diameter": 6,
+        "Central column thickness": 0.04,
+        "Gap factor": 0.8,
+        "Lower flange thickness": 0.04,
+        "Number of radial columns": 3,
+        "Radial column diameter": 10,
+        "Radial column thickness": 0.04,
+        "Radial height": 18,
+        "Type": "Molo",
+        "Upper flange thickness": 0.04
+    },
+    "Rotor-Nacelle-Assembly": {
+        "Ixx": 500000,
+        "Ixy": 0,
+        "Ixz": 0,
+        "Iyy": 2000000,
+        "Iyz": 0,
+        "Izz": 2000000,
+        "Mass": 500000,
+        "Rotor diameter": 167,
+        "Type": "Vestas 9.5"
+    },
+    "Tower": {
+        "Diameter": 6,
+        "Height": 113.5,
+        "Thickness": 0.05,
+        "Type": "Tower"
+    }
+}
