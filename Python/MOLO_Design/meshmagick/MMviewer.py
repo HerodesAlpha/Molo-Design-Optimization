@@ -82,7 +82,7 @@ class MMViewer:
         corner_annotation.SetMaximumFontSize(20)
         corner_annotation.SetText(3, command_text)
         corner_annotation.GetTextProperty().SetColor(0., 0., 0.)
-        #self.renderer.AddViewProp(corner_annotation)
+        self.renderer.AddViewProp(corner_annotation)
 
         copyright_text = "MOLO Concept\nCopyright VERBUN AS {}".format(__year__)
 
@@ -416,8 +416,8 @@ class MMViewer:
         """Show the viewer"""
         self.renderer.ResetCamera()
         self.render_window.Render()
-        #self.render_window_interactor.Start()
-        # self.render_window_interactor.Initialize()
+        self.render_window_interactor.Start()
+        self.render_window_interactor.Initialize()
 
     def show_interactive(self):
         """Show the viewer"""

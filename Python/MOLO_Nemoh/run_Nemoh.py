@@ -11,7 +11,6 @@ import sys
 import numpy as np
 from pyNemoh.models import MeshFormat
 from pyNemoh import utility
-
 from logutils.queue import QueueListener
 import multiprocessing
 import logging
