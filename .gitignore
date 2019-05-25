@@ -62,4 +62,6 @@ composer.lock
 /Python/pyNemoh_root/build/*
 /Python/pyNemoh_root/pyNemoh_old/*
 /Python/MOLO_Hydro/exportToHTML/*
-/Python/MOLO_Nemoh/automated_tes/*
+/Python/MOLO_Nemoh/automated_test/*
+/Python/MOLO_Nemoh/MOLO_TEST/Test4/*
+/Python/MOLO_Nemoh/test_files/*
