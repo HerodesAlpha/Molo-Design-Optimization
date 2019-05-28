@@ -110,8 +110,7 @@ def require_dataset(hdf5_data, path, shape, dtype, maxshape=(None)):
         The dataset newly created or updated.
     """
     dset = None
-    path_exists = path in hdf5_data
-    if path_exists:
+    if path in hdf5_data:
         dset = hdf5_data.get(path, default = None)
     # Dataset not existing
     if dset is None:

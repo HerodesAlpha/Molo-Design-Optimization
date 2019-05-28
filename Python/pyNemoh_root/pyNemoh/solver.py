@@ -261,6 +261,12 @@ def write_result(hdf5_data, data):
     utility.set_hdf5_attributes(dset, structure.H5_RESULTS_STIFNESS_ATTR)
     dset[:, :, :] = data["stifness"]
 
+
+    if structure.H5_RESULTS_PRESSURE in hdf5_data:
+        del hdf5_data[structure.H5_RESULTS_PRESSURE]
+    dset = hdf5_data.create_dataset(structure.H5_RESULTS_PRESSURE,data=data["out_pressure"], shape=data["out_pressure"].shape)
+    utility.set_hdf5_attributes(dset, structure.H5_RESULTS_PRESSURE_ATTR)
+
     utility.log_exit(logger, signature, [None])
 
 

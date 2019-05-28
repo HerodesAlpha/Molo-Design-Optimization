@@ -595,6 +595,13 @@ class BaseStructure(object):
         Previous results/potential*.dat
         """
 
+        self.H5_RESULTS_PRESSURE = self.H5_RESULTS + 'pressure'
+        """
+        The potential
+        Previous results/potential*.dat
+        """
+
+
         self.H5_RESULTS_DRIFT_FORCES = self.H5_RESULTS + 'drift_forces'
         """
         The mean drift forces
@@ -1369,6 +1376,13 @@ class BaseStructure(object):
         }
         """
         The hydrostatic stifness matrix per body
+        """
+
+        self.H5_RESULTS_PRESSURE_ATTR = {
+            "description": np.string_("The dynamic pressure per panel per problem")
+        }
+        """
+        The dynamic pressure per panel per problem
         """
 
 

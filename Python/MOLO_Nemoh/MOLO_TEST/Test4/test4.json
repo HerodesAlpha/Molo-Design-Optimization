@@ -1,0 +1,164 @@
+{
+    "configuration": {
+        "clear_old_logs": true,
+        "log_level": "DEBUG"
+    },
+    "phase": [],
+    "simulations": {
+        "default": {
+            "calculation": {
+                "b_spline_order": 1,
+                "compute_drift_forces": false,
+                "compute_yaw_moment": false,
+                "gmres_max_iterations": 100,
+                "gmres_restart": 20,
+                "gmres_stopping": 5e-07,
+                "green_tabulation_numx": 328,
+                "green_tabulation_numz": 46,
+                "green_tabulation_simpson_npoints": 251,
+                "num_panel_higher_order": 1,
+                "remove_irregular_frequencies": false,
+                "solver_type": 0,
+                "thin_panels": [
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23
+                ],
+                "use_dipoles_implementation": true,
+                "use_higher_order": false,
+                "use_ode_influence_coefficients": false
+            },
+            "environment": {
+                "fluid_depth": 95.0,
+                "fluid_mass_volumic": 1000.0,
+                "gravity": 9.81,
+                "wave_measurement_point": [
+                    0.0,
+                    0.0
+                ]
+            },
+            "floating_bodies": {
+                "default": {
+                    "force_in_x_direction": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "force_in_y_direction": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "force_in_z_direction": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "heave": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "meshing": {
+                        "fineness": 0.4,
+                        "grading": 0.1,
+                        "maxh": 50,
+                        "minh": 0.35,
+                        "tolerance": 0,
+                        "use_tolerance": false
+                    },
+                    "moment_in_x_direction": [
+                        0.0,
+                        0.0,
+                        -7.5
+                    ],
+                    "moment_in_y_direction": [
+                        0.0,
+                        0.0,
+                        -7.5
+                    ],
+                    "moment_in_z_direction": [
+                        0.0,
+                        0.0,
+                        -7.5
+                    ],
+                    "pitch": [
+                        0.0,
+                        0.0,
+                        -7.5
+                    ],
+                    "roll": [
+                        0.0,
+                        0.0,
+                        -7.5
+                    ],
+                    "surge": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sway": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "yaw": [
+                        0.0,
+                        0.0,
+                        -7.5
+                    ]
+                }
+            },
+            "load_cases": {
+                "max_wave_directions": 0,
+                "max_wave_frequencies": 2.0,
+                "min_wave_directions": 0,
+                "min_wave_frequencies": 0.1,
+                "num_wave_directions": 1,
+                "num_wave_frequencies": 1
+            },
+            "postprocessing": {
+                "compute_irf": false,
+                "free_surface_dimension_x": 100,
+                "free_surface_dimension_y": 2,
+                "free_surface_num_points_x": 1,
+                "free_surface_num_points_y": 2,
+                "irf_duration": 10,
+                "irf_time_step": 0.1,
+                "kochin_max_directions": 180,
+                "kochin_min_directions": 0,
+                "kochin_num_directions": 18,
+                "show_pressure": true
+            }
+        },
+        "test09": {
+            "floating_bodies": {
+                "test09.dat": {
+                    "mesh_file": "MOLO_TEST/Test4/MOLO_2c.dat"
+                }
+            },
+            "simulation_dir": "MOLO_TEST/Test4/cli_results/test09"
+        },
+        "test21": {
+            "floating_bodies": {
+                "test21.dat": {
+                    "mesh_file": "automated_test/testruns/openwarp/test21.dat"
+                }
+            },
+            "simulation_dir": "automated_test/Test4/cli_results/test21"
+        }
+    },
+    "simulations_to_run": [
+        "test09"
+    ],
+    "verbosity": 1
+}
