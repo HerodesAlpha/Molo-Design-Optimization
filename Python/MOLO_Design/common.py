@@ -2,6 +2,23 @@ __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
+import json
+import os
+from pathlib import Path
+import pickle
+
+# import matplotlib.pyplot as plt
+import numpy as np
+from logutils.queue import QueueListener
+import multiprocessing
+import logging
+import helper
+import calculations
+import model_set_up as msu
+import nemoh
+
+from MOLO_Nemoh import nemoh_frontend as nf
+
 from pathlib import Path
 
 
@@ -12,8 +29,8 @@ class PhysicalQuantities():
         self._grav = 9.81
 
 
-class FileIO(object):
-    def __init__(self, root_dir, templates_dir, case_number=None):
+class FileIOClass(object):
+    def __init__(self, root_dir, case_number=None):
         if case_number == None:
             i = 0
             while 1:
@@ -30,7 +47,9 @@ class FileIO(object):
 
         self._gmsh_root = self._case_dir.joinpath('gmsh')
 
-        self._gmsh_exe = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
+        path_to_gmsh = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
+        if Path(path_to_gmsh).exists():
+            self._gmsh_exe = path_to_gmsh
 
         self._data_io_dir = self._case_dir.joinpath('data_io')
 
@@ -47,7 +66,7 @@ class FileIO(object):
             self._data_io_dir.mkdir(parents=True, exist_ok=False)
             self._stability_dir.mkdir(parents=True, exist_ok=False)
 
-        self._templates_dir = templates_dir
+        self._templates_dir = Path(os.getcwd()).joinpath('templates')
         if not self._templates_dir.exists():
             print('Templates folder missing')
 
@@ -94,3 +113,36 @@ class FileIO(object):
     @property
     def gmsh_exe(self):
         return self._gmsh_exe
+
+
+class SettingsClass(object):
+    def __init__(self, fio):
+        self._json_list = ['park', 'rna','tower', 'floater', 'analysis']
+
+        self.job_data = dict()
+        self._fio = fio
+
+        # Collect template data
+        for item in self._json_list:
+            with open(self._fio.templates_dir.joinpath('{}_template.json'.format(item)), 'r') as f:
+                self.job_data[item] = json.loads(f.read())
+
+        # Save updated template to template dir
+        for item in self._json_list:
+            with open(self._fio.templates_dir.joinpath('{}_template.json'.format(item)), 'w') as f:
+                f.write(json.dumps(self.job_data[item], indent=4, sort_keys=True))
+
+    def save_job_settings(self):
+        # Save updated template to analysis directory
+        for item in self._json_list:
+            with open(self._fio.data_io_dir.joinpath('{}_template.json'.format(item)), 'w') as f:
+                f.write(json.dumps(self.job_data[item], indent=4, sort_keys=True))
+
+    @property
+    def mesh_file(self):
+        return self.job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file']
+
+    @mesh_file.setter
+    def mesh_file(self, val):
+        self.job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file'] = val
+        self.save_job_settings()

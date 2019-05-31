@@ -13,7 +13,7 @@ import helper
 import calculations
 import model_set_up as ms
 import nemoh
-from common import FileIO
+from common import FileIOClass
 
 
 import stability
@@ -51,12 +51,12 @@ SYM = data["Analyses parameters"]["Use symmetri"]
 
 if create_model:
     CASE_NUMBER = None
-    fio = FileIO(ROOT, TEMPLATES_DIR, CASE_NUMBER)
+    fio = FileIOClass(ROOT, TEMPLATES_DIR, CASE_NUMBER)
     model_input = fio.data_io_dir.joinpath('model.json')
     with open(model_input, 'w') as f:
         f.write(json.dumps(data, indent=4, sort_keys=True))
 
-    unit_model, hs_floater = ms.launch(fio, model_input)
+    unit_model, hs_floater = ms.launch_monopole(fio, model_input)
     pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
     pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
@@ -68,7 +68,7 @@ if create_model:
 else:
     CASE_NUMBER = 2
     SYM = 1
-    fio = FileIO(ROOT, TEMPLATES_DIR, CASE_NUMBER)
+    fio = FileIOClass(ROOT, TEMPLATES_DIR, CASE_NUMBER)
     unit_model = pickle.load(open(fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
     hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 

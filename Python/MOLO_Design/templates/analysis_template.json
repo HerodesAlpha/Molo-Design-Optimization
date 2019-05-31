@@ -140,25 +140,17 @@
                 "show_pressure": true
             }
         },
-        "test09": {
+        "sim01": {
             "floating_bodies": {
-                "test09.dat": {
+                "sim01.dat": {
                     "mesh_file": "MOLO_TEST/Test4/MOLO_2c.dat"
                 }
             },
             "simulation_dir": "MOLO_TEST/Test4/cli_results/test09"
-        },
-        "test21": {
-            "floating_bodies": {
-                "test21.dat": {
-                    "mesh_file": "automated_test/testruns/openwarp/test21.dat"
-                }
-            },
-            "simulation_dir": "automated_test/Test4/cli_results/test21"
         }
     },
     "simulations_to_run": [
-        "test09"
+        "sim01"
     ],
     "verbosity": 1
 }

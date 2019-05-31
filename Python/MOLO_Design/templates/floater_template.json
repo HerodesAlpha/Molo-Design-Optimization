@@ -1,0 +1,22 @@
+{
+    "Ballast density": 2500,
+    "Ballast filling ratio": [
+        0.0,
+        [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        ]
+    ],
+    "Central column diameter": 6,
+    "Central column thickness": 0.04,
+    "Gap factor": 0.8,
+    "Lower flange thickness": 0.04,
+    "Number of radial columns": 3,
+    "Radial column diameter": 10,
+    "Radial column thickness": 0.04,
+    "Radial height": 18,
+    "Type": "Molo",
+    "Upper flange thickness": 0.04
+}

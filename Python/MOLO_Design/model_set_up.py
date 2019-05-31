@@ -132,7 +132,7 @@ def model01():
     return unit_model, floater_model, wtg_model
 
 
-def read_json(json_file):
+def create_mass_models(settings):
     twr_data_found = False
     rna_data_found = False
     floater_data_found = False
@@ -183,8 +183,8 @@ def read_json(json_file):
     return unit_model, floater_model, wtg_model
 
 
-def launch(fio, model_input):
-    unit_model, floater_model, wtg_model = read_json(model_input)
+def launch_monopole(fio, settings):
+    unit_model, floater_model, wtg_model = create_mass_models(settings)
 
     tb.write_gmsh(fio, floater_model)
     vertices, faces = mmio.load_MSH(fio.gmsh_dir.joinpath('MOLO_{}c.msh'.format(floater_model.nc)))
@@ -208,7 +208,38 @@ def launch(fio, model_input):
     # Update model with calculated draft
     unit_model.set_new_reduction_point([0,0,hs_floater.hs_data['draught']])
     #unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
-    print('\n\nAfter equilibrium calc giving {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
+    print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
+    # hs_floater.show()
+    # unit_model.print_vector_matrix_global()
+
+    return unit_model, hs_floater
+
+def launch_dipole(fio, model_input):
+    unit_model, floater_model, wtg_model = create_mass_models(model_input)
+
+    tb.write_gmsh(fio, floater_model)
+    vertices, faces = mmio.load_MSH(fio.gmsh_dir.joinpath('MOLO_{}c.msh'.format(floater_model.nc)))
+    start_mesh = Mesh(vertices, faces)
+    start_mesh.merge_duplicates()
+    start_mesh.heal_normals()
+    start_mesh.heal_mesh()
+    start_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
+    print('Before equilibrium calc')
+    unit_model.print_vector_matrix_global()
+    hs_floater = hs.Hydrostatics(start_mesh, verbose=True)
+    hs_floater.gravity = 9.81
+    hs_floater.rho_water = 1025.
+    hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
+    print('Mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
+    hs_floater.gravity_center = -unit_model.inertias.reduction_point
+    hs_floater.equilibrate()
+    #
+    tb.save_M_and_K(fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
+                    MMK=hs_floater.hs_data['stiffness_matrix'])
+    # Update model with calculated draft
+    unit_model.set_new_reduction_point([0,0,hs_floater.hs_data['draught']])
+    #unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
+    print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
     # hs_floater.show()
     # unit_model.print_vector_matrix_global()
 

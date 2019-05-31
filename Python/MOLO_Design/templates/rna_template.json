@@ -1,0 +1,11 @@
+{
+    "Ixx": 500000,
+    "Ixy": 0,
+    "Ixz": 0,
+    "Iyy": 2000000,
+    "Iyz": 0,
+    "Izz": 2000000,
+    "Mass": 500000,
+    "Rotor diameter": 167,
+    "Type": "Vestas 9.5"
+}

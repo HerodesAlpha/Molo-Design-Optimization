@@ -15,7 +15,9 @@ import helper
 import calculations
 import model_set_up as msu
 import nemoh
-from common import FileIO
+from common import FileIOClass
+from common import SettingsClass
+
 from MOLO_Nemoh import nemoh_frontend as nf
 
 
@@ -26,45 +28,23 @@ run_nemoh = True
 calc_gz = False
 postprocessing = True
 
-ROOT = Path(r'C:\analyses')
-
-TEMPLATES_DIR = Path(r'.\templates')
-
-model_template_json = TEMPLATES_DIR.joinpath('model_template.json')
-analysis_template_json = TEMPLATES_DIR.joinpath('analysis_template.json')
-
-with open(analysis_template_json, 'r') as f:
-    user_config = json.loads(f.read())
-
-with open(model_template_json, 'r') as f:
-    data = json.loads(f.read())
-
-data["Analyses parameters"]["Degrees of Freedom"] = [0, 0, 1, 1, 1, 0]
-data["Analyses parameters"]["Number of wave directions, Min and Max (degrees)"] = [3, 0, 90]
-data["Analyses parameters"]["Density of sea water"] = 1025
-data["Analyses parameters"]["Water depth"] = 100
-data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"] = [121, np.pi / 15, np.pi]
-data["Analyses parameters"]["Use symmetri"] = 1
-
-with open(model_template_json, 'w') as f:
-    f.write(json.dumps(data, indent=4, sort_keys=True))
-
-NEMOH_DOF = data["Analyses parameters"]["Degrees of Freedom"]
-NEMOH_DIR = data["Analyses parameters"]["Number of wave directions, Min and Max (degrees)"]
-RHO_SW = data["Analyses parameters"]["Density of sea water"]
-WATER_DEPTH = data["Analyses parameters"]["Water depth"]
-OMEGA_NEMOH_INP = data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"]
-SYM = data["Analyses parameters"]["Use symmetri"]
+ANALYSES_ROOT = Path(r'C:\analyses')
+CASE_NUMBER = None
+fio = FileIOClass(ANALYSES_ROOT, CASE_NUMBER)
+settings = SettingsClass(fio)
 
 if create_model:
-    CASE_NUMBER = None
-    fio = FileIO(ROOT, TEMPLATES_DIR, CASE_NUMBER)
 
-    model_input = fio.data_io_dir.joinpath('model.json')
-    with open(model_input, 'w') as f:
-        f.write(json.dumps(data, indent=4, sort_keys=True))
 
-    unit_model, hs_floater = msu.launch(fio, model_input)
+
+    # NEMOH_DOF = model_data["Analyses parameters"]["Degrees of Freedom"]
+    # NEMOH_DIR = model_data["Analyses parameters"]["Number of wave directions, Min and Max (degrees)"]
+    # RHO_SW = model_data["Analyses parameters"]["Density of sea water"]
+    # WATER_DEPTH = model_data["Analyses parameters"]["Water depth"]
+    # OMEGA_NEMOH_INP = model_data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"]
+    # SYM = model_data["Analyses parameters"]["Use symmetri"]
+
+    unit_model, hs_floater = msu.launch_monopole(fio, settings)
     pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
     pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
@@ -76,7 +56,6 @@ if create_model:
 else:
     CASE_NUMBER = 2
     SYM = 1
-    fio = FileIO(ROOT, TEMPLATES_DIR, CASE_NUMBER)
     unit_model = pickle.load(open(fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
     hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
@@ -87,7 +66,7 @@ if create_model and run_nemoh:
     queue = multiprocessing.Queue(-1)
     ql = QueueListener(queue, *logging.getLogger().handlers)
     ql.start()
-    nf.run(user_config,queue)
+    nf.run(analysis_data, queue)
     ql.stop()
     # nemoh.runNemoh(fio, hydro_mesh_symmetri, mesh_file, NEMOH_DIR, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP,
     #                NEMOH_DOF)
