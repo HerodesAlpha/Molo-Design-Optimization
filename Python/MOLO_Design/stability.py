@@ -38,6 +38,7 @@ def gz_curve(fio,hs_floater):
             #hs_floater._update_hydrostatic_properties()
 
             thetay += dthetay
+            print(thetay)
             x = -hs_floater.residual[2]
 
             if 1:
@@ -54,7 +55,7 @@ def gz_curve(fio,hs_floater):
                 hs_floater.viewer.renderer.AddViewProp(corner_annotation)
                 hs_floater.viewer.render_window.SetOffScreenRendering(1)
                 #hs_floater.viewer.ShowWindowOff()
-                hs_floater.viewer.show()
+                hs_floater.viewer.show_no_interactive()
                 ifile += 1
                 filename = 'gz_{:05d}.gif'.format(ifile)
                 hs_floater.viewer.save_png(filename)

@@ -419,12 +419,12 @@ class MMViewer:
         self.render_window_interactor.Start()
         self.render_window_interactor.Initialize()
 
-    def show_interactive(self):
+    def show_no_interactive(self):
         """Show the viewer"""
         self.renderer.ResetCamera()
         self.render_window.Render()
-        self.render_window_interactor.Start()
-        self.render_window_interactor.Initialize()
+
+
 
     def hide(self, index):
         if index > len(self.polydatas):

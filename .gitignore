@@ -32,6 +32,7 @@
 *.sql
 *.sqlite
 *.h5
+*.hd5
 
 # OS generated files #
 ######################
@@ -65,3 +66,8 @@ composer.lock
 /Python/MOLO_Nemoh/automated_test/*
 /Python/MOLO_Nemoh/MOLO_TEST/Test4/*
 /Python/MOLO_Nemoh/test_files/*
+
+
+# MOLO Output #
+#############
+*.tec
