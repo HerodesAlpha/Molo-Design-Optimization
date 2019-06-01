@@ -11,6 +11,7 @@
     ],
     "Central column diameter": 6,
     "Central column thickness": 0.04,
+    "Draught": 7,
     "Gap factor": 0.8,
     "Lower flange thickness": 0.04,
     "Number of radial columns": 3,

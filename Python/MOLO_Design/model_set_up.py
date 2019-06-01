@@ -133,39 +133,39 @@ def model01():
 
 
 def create_mass_models(settings):
-    twr_data_found = False
-    rna_data_found = False
-    floater_data_found = False
-    with open(json_file, 'r') as f:
-        data = json.loads(f.read())
-        for key in data:
-            if key == 'Tower':
-                if twr_data_found == True:
-                    print('Tower data given more than once!')
-                    exit()
-                else:
-                    dict_tower_data = data[key]
-                    twr_data_found = True
-            if key == 'Rotor-Nacelle-Assembly':
-                if twr_data_found == True:
-                    print('RNA data given more than once!')
-                    exit()
-                else:
-                    dict_rna_data = data[key]
-                    rna_data_found = True
-            if key == 'Floater':
-                if floater_data_found == True:
-                    print('Floater data given more than once!')
-                    exit()
-                else:
-                    dict_floater_data = data[key]
-                    floater_data_found = True
+    # twr_data_found = False
+    # rna_data_found = False
+    # floater_data_found = False
+    # with open(json_file, 'r') as f:
+    #     data = json.loads(f.read())
+    #     for key in data:
+    #         if key == 'Tower':
+    #             if twr_data_found == True:
+    #                 print('Tower data given more than once!')
+    #                 exit()
+    #             else:
+    #                 dict_tower_data = data[key]
+    #                 twr_data_found = True
+    #         if key == 'Rotor-Nacelle-Assembly':
+    #             if twr_data_found == True:
+    #                 print('RNA data given more than once!')
+    #                 exit()
+    #             else:
+    #                 dict_rna_data = data[key]
+    #                 rna_data_found = True
+    #         if key == 'Floater':
+    #             if floater_data_found == True:
+    #                 print('Floater data given more than once!')
+    #                 exit()
+    #             else:
+    #                 dict_floater_data = data[key]
+    #                 floater_data_found = True
 
     rho_st = 7850
     #
-    twr_data = model.TowerDataClass(dict_tower_data)
-    floater_data = model.FloaterDataClass(dict_floater_data)
-    rna_data = model.RNADataClass(dict_rna_data)
+    twr_data = model.TowerDataClass(settings.job_data['tower'])
+    floater_data = model.FloaterDataClass(settings.job_data['floater'])
+    rna_data = model.RNADataClass(settings.job_data['rna'])
 
     # Set global z
     interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf
@@ -186,8 +186,7 @@ def create_mass_models(settings):
 def launch_monopole(fio, settings):
     unit_model, floater_model, wtg_model = create_mass_models(settings)
 
-    tb.write_gmsh(fio, floater_model)
-    vertices, faces = mmio.load_MSH(fio.gmsh_dir.joinpath('MOLO_{}c.msh'.format(floater_model.nc)))
+    vertices, faces = mmio.load_MSH(tb.msh_file(fio, settings, floater_model))
     start_mesh = Mesh(vertices, faces)
     start_mesh.merge_duplicates()
     start_mesh.heal_normals()
@@ -206,27 +205,31 @@ def launch_monopole(fio, settings):
     tb.save_M_and_K(fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
-    unit_model.set_new_reduction_point([0,0,hs_floater.hs_data['draught']])
-    #unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
+    unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
+    # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
     # hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
     return unit_model, hs_floater
 
-def launch_dipole(fio, model_input):
-    unit_model, floater_model, wtg_model = create_mass_models(model_input)
 
-    tb.write_gmsh(fio, floater_model)
-    vertices, faces = mmio.load_MSH(fio.gmsh_dir.joinpath('MOLO_{}c.msh'.format(floater_model.nc)))
-    start_mesh = Mesh(vertices, faces)
-    start_mesh.merge_duplicates()
-    start_mesh.heal_normals()
-    start_mesh.heal_mesh()
-    start_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
-    print('Before equilibrium calc')
+def launch_dipole(fio, settings):
+    unit_model, floater_model, wtg_model = create_mass_models(settings)
+
+
+
+    stability_vertices, stability_panels = mmio.load_MSH(tb.msh_file(fio, settings, bool_thin=False))
+
+    stability_mesh = Mesh(stability_vertices, stability_panels)
+
+    stability_mesh.merge_duplicates()
+    stability_mesh.heal_normals()
+    stability_mesh.heal_mesh()
+    stability_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
+
     unit_model.print_vector_matrix_global()
-    hs_floater = hs.Hydrostatics(start_mesh, verbose=True)
+    hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)
     hs_floater.gravity = 9.81
     hs_floater.rho_water = 1025.
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
@@ -237,11 +240,18 @@ def launch_dipole(fio, model_input):
     tb.save_M_and_K(fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
-    unit_model.set_new_reduction_point([0,0,hs_floater.hs_data['draught']])
-    #unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
+    unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
+    settings.draught = hs_floater.hs_data['draught']
+    # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
-    # hs_floater.show()
+    hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
-    return unit_model, hs_floater
+    nemoh_vertices, nemoh_panels = mmio.load_MSH(tb.msh_file(fio, settings, bool_thin=True))
+    nemoh_vertices, nemoh_panels, cylinder_vertices, cylinder_panels = tb.prepare_dipol_mesh(nemoh_vertices,
+                                                                                             nemoh_panels,
+                                                                                             settings)
+    nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
+    nemoh_mesh.show()
 
+    return unit_model, hs_floater

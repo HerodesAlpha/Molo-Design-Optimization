@@ -16,6 +16,7 @@ drc = #dia_rc#;     // Diameter of radial columns
 dcc = #dia_hc#;     // Diameter of central column
 gaf = #gap#; 	    // Gap factor (ratio of drc)
 hgt = #hgt#;	    // Height of columns
+nel_rrc = #nel#;    // Number of elements around cylinder circ.
 
 // ----------------------------------------------------------------------------
 // 	DERIVED UNITS
@@ -24,7 +25,6 @@ hgt = #hgt#;	    // Height of columns
 xO = 0;		        // Model origin x-axis
 yO = 0;		        // Model origin y-axis
 zO = -hgt;	        // Model origin z-axis
-nel_rrc = 16;	    // Number of elements around cylinder circ.
 
 rrc = drc/2;
 rcc = dcc/2;

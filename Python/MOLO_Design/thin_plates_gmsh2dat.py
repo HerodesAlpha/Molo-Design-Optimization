@@ -2,62 +2,11 @@ from meshmagick import mmio
 from meshmagick.mesh import Mesh
 import numpy as np
 import json
+import tool_box as tb
 
 class BreakIt(Exception): pass
 
 
-class PanelData(object):
-    def __init__(self, vertices, faces):
-        self._ppoints = vertices
-        self._ppanels = faces
-        self._npoints = len(vertices)
-        self._npanel = len(faces)
-        _a1 = np.linalg.norm(np.cross(self._ppoints[self._ppanels[:, 1]] - self._ppoints[self._ppanels[:, 0]],
-                                      self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]]),
-                             axis=1) * 0.5
-        _a2 = np.linalg.norm(np.cross(self._ppoints[self._ppanels[:, 3]] - self._ppoints[self._ppanels[:, 0]],
-                                      self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]]),
-                             axis=1) * 0.5
-        self._ppanel_areas = _a1 + _a2
-
-        self._c1 = np.sum(self._ppoints[self._ppanels[:, :3]], axis=1) / 3.
-        self._c2 = (np.sum(self._ppoints[self._ppanels[:, 2:4]], axis=1) + self._ppoints[self._ppanels[:, 0]]) / 3.
-
-        self._ppanel_centers = (np.array(([_a1, ] * 3)).T * self._c1 + np.array(([_a2, ] * 3)).T * self._c2)
-        self._ppanel_centers /= np.array(([self._ppanel_areas, ] * 3)).T
-
-        self._ppanel_cross = np.cross(self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]],
-                                      self._ppoints[self._ppanels[:, 3]] - self._ppoints[self._ppanels[:, 1]])
-        self._norm = np.linalg.norm(self._ppanel_cross, axis=1)
-        self._ppanel_normals = np.true_divide(self._ppanel_cross, self._norm[:, np.newaxis])
-
-    @property
-    def ppoints(self):
-        return self._ppoints
-
-    @property
-    def ppanels(self):
-        return self._ppanels
-
-    @property
-    def ppanel_normals(self):
-        return self._ppanel_normals
-
-    @property
-    def ppanel_areas(self):
-        return self._ppanel_areas
-
-    @property
-    def ppanel_centers(self):
-        return self._ppanel_centers
-
-    @property
-    def npoints(self):
-        return self._ppoints.shape[0]
-
-    @property
-    def npanels(self):
-        return self._ppanels.shape[0]
 
 
 def printv(string):
@@ -66,6 +15,9 @@ def printv(string):
 
 
 np.set_printoptions(precision=3)
+
+
+
 vtol = 0.01
 drc = 7
 dcc = 6
@@ -83,7 +35,7 @@ limit = drc / 2 * (1 + vtol)
 vertices, faces = mmio.load_MSH('MOLO_2c_thin_small.msh')
 #start_mesh = Mesh(vertices, faces)
 #start_mesh.show()
-pd = PanelData(vertices, faces)
+pd = tb.PanelData(vertices, faces)
 
 is_flange_element = []
 dipol = []

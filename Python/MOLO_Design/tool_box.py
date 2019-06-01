@@ -276,7 +276,8 @@ def rotation_matrix(rotation):
     return np.dot(Rotate_Z_matrix, np.dot(Rotate_Y_matrix, Rotate_X_matrix))
 
 
-def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4, dens_cylinder_height=14):
+def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
+               dens_cylinder_height=14):  # TODO: Delete this function
     with open(r'.\templates\MOLO_{}c.geo.template'.format(floater_model.nc), 'r') as file:
         filedata = file.read()
 
@@ -305,8 +306,74 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4, dens_cylinde
     print('{}'.format(gmsh_geo_file))
     try:
         a = subprocess.check_output(
-            [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
-             '{}'.format(gmsh_msh_file)])
+                [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
+                 '{}'.format(gmsh_msh_file)])
+    except:
+        print(a)
+        exit()
+    finally:
+        return gmsh_msh_file
+
+
+
+
+
+def msh_file(fio, settings, bool_thin):
+    if bool_thin:
+        str_thin = '_thin'
+    else:
+        str_thin = ''
+
+    # str_thin = '_thin' if settings.job_data['analysis']['simulations']['default']['calculation'][
+    #     'use_dipoles_implementation'] else ''
+
+    mesh_name = 'MOLO_{}c{}'.format(settings.job_data['floater']['Number of radial columns'], str_thin)
+
+    with open(fio.templates_dir.joinpath('{}.geo.template'.format(mesh_name)), 'r') as file:
+        filedata = file.read()
+
+    # Replace the target string
+    filedata = filedata.replace('#dia_rc#', '{}'.format(settings.job_data['floater']['Radial column diameter']))
+    filedata = filedata.replace('#dia_hc#', '{}'.format(settings.job_data['floater']['Central column diameter']))
+    filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
+    filedata = filedata.replace('#t_lf#', '{}'.format(settings.job_data['floater']['Lower flange thickness']))
+
+    if bool_thin:
+        filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
+    else:
+        filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial height']))
+
+
+
+
+
+    # Set mesh density thin templates
+    filedata = filedata.replace('#nel#', '{}'.format(16))
+
+    # Set mesh density old templates
+    dens_t = 1
+    dens_quarter_cirlce = 4
+    dens_cylinder_height = 14
+    dens2 = dens_t + 1  # Thickness
+    dens5 = dens_quarter_cirlce + 1  #
+    dens9 = 2 * dens_quarter_cirlce + 1  #
+    dens15 = dens_cylinder_height + 1  # Column height
+    filedata = filedata.replace('#dens2#', '{}'.format(dens2))
+    filedata = filedata.replace('#dens5#', '{}'.format(dens5))
+    filedata = filedata.replace('#dens9#', '{}'.format(dens9))
+    filedata = filedata.replace('#dens15#', '{}'.format(dens15))
+
+    # Write gmsh geo file to analysis directory
+    gmsh_geo_file = fio.gmsh_dir.joinpath('{}.geo'.format(mesh_name))
+    with open(gmsh_geo_file, 'w') as file:
+        file.write(filedata)
+
+    # Create mesh
+    gmsh_msh_file = fio.gmsh_dir.joinpath('{}.msh'.format(mesh_name))
+    try:
+        a = subprocess.check_output(
+                [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
+                 '{}'.format(gmsh_msh_file)])
     except:
         print(a)
         exit()
@@ -366,3 +433,166 @@ def P2R(radii, angles):
 def R2P(x):
     return abs(x), np.angle(x)
 
+
+class PanelData(object):
+    def __init__(self, vertices, faces):
+        self._ppoints = vertices
+        self._ppanels = faces
+        self._npoints = len(vertices)
+        self._npanel = len(faces)
+        _a1 = np.linalg.norm(np.cross(self._ppoints[self._ppanels[:, 1]] - self._ppoints[self._ppanels[:, 0]],
+                                      self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]]),
+                             axis=1) * 0.5
+        _a2 = np.linalg.norm(np.cross(self._ppoints[self._ppanels[:, 3]] - self._ppoints[self._ppanels[:, 0]],
+                                      self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]]),
+                             axis=1) * 0.5
+        self._ppanel_areas = _a1 + _a2
+
+        self._c1 = np.sum(self._ppoints[self._ppanels[:, :3]], axis=1) / 3.
+        self._c2 = (np.sum(self._ppoints[self._ppanels[:, 2:4]], axis=1) + self._ppoints[self._ppanels[:, 0]]) / 3.
+
+        self._ppanel_centers = (np.array(([_a1, ] * 3)).T * self._c1 + np.array(([_a2, ] * 3)).T * self._c2)
+        self._ppanel_centers /= np.array(([self._ppanel_areas, ] * 3)).T
+
+        self._ppanel_cross = np.cross(self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]],
+                                      self._ppoints[self._ppanels[:, 3]] - self._ppoints[self._ppanels[:, 1]])
+        self._norm = np.linalg.norm(self._ppanel_cross, axis=1)
+        self._ppanel_normals = np.true_divide(self._ppanel_cross, self._norm[:, np.newaxis])
+
+    @property
+    def ppoints(self):
+        return self._ppoints
+
+    @property
+    def ppanels(self):
+        return self._ppanels
+
+    @property
+    def ppanel_normals(self):
+        return self._ppanel_normals
+
+    @property
+    def ppanel_areas(self):
+        return self._ppanel_areas
+
+    @property
+    def ppanel_centers(self):
+        return self._ppanel_centers
+
+    @property
+    def npoints(self):
+        return self._ppoints.shape[0]
+
+    @property
+    def npanels(self):
+        return self._ppanels.shape[0]
+
+
+def prepare_dipol_mesh(vertices, faces, settings):
+    def printv(string):
+        if 0:
+            print(string)
+
+    class BreakIt(Exception):
+        pass
+
+    vtol = 0.01
+    drc = settings.job_data['floater']['Radial column diameter']
+    dcc = settings.job_data['floater']['Central column diameter']
+    gaf = settings.job_data['floater']['Gap factor']
+    ncol = settings.job_data['floater']['Number of radial columns']
+
+    da = (1 + gaf) * drc
+    dtheta = 2 * np.pi / 3
+    theta = [i * dtheta for i in range(3)]
+    limit = drc / 2 * (1 + vtol)
+    pd = PanelData(vertices, faces)
+
+    is_flange_element = False
+    dipol = []
+    not_dipol = []
+    flipped = []
+    #
+    for i in range(pd.npanels):
+        found_inside = False
+        is_flange_element = False
+        xp = pd.ppanel_centers[i][0]
+        yp = pd.ppanel_centers[i][1]
+        xc = yc = 0
+
+        if abs(pd.ppanel_normals[i][2]) == 1:  # Flange element
+            printv('Process flange element {}'.format(i))
+            is_flange_element = True
+            # Check normal and flip if positive up
+            if pd.ppanel_normals[i][2] == 1:
+                flipped.append(i)
+                printv('   Flip normal')
+
+                faces[i] = faces[i][::-1]
+            # Next, find dipols, i.e. elements not inside the cylinders
+            # Assume dipol if not found inside cylinders
+
+            try:
+                for irad in range(3):
+                    dxc = np.cos(theta[irad]) * da
+                    dyc = np.sin(theta[irad]) * da
+                    for icol in range(ncol):
+                        xc = dxc * (icol + 1)
+                        yc = dyc * (icol + 1)
+                        if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < drc / 2:
+                            found_inside = True
+                            raise BreakIt
+            except BreakIt:
+                pass
+            if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2:
+                found_inside = True
+
+            if not found_inside:
+                printv('   Is dipol')
+                # print(i)
+                dipol.append(i)
+        else:  # Cylinder element
+            # Find the cylinder x,y to which the element belongs
+            printv('Process cylinder element {}'.format(i))
+            not_found = True
+            try:
+                for irad in range(3):
+                    dxc = np.cos(theta[irad]) * da
+                    dyc = np.sin(theta[irad]) * da
+                    for icol in range(ncol):
+                        xc = dxc * (icol + 1)
+                        yc = dyc * (icol + 1)
+                        dx = np.abs(xp - xc)
+                        dy = np.abs(yp - yc)
+                        if dx < limit and dy < limit:
+                            printv('   Found on radial {}, column {}'.format(irad + 1, icol + 1))
+                            not_found = False
+                            raise BreakIt
+            except BreakIt:
+                pass
+            if not_found:
+                xc = yc = 0  # Check center column
+                if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2 * (1 + vtol):
+                    printv('   Found on center column'.format(i))
+                    not_found = False
+            if not_found:
+                printv('   Not found on any column'.format(i))
+                exit()
+
+                # Check if normal is outwards from cylinder center
+            printv('   xp = {: 6.2f}, yp = {: 6.2f}'.format(xp, yp))
+            printv('   xc = {: 6.2f}, yc = {: 6.2f}'.format(xc, yc))
+            vec = np.asarray([xp - xc, yp - yc])
+            pn = pd.ppanel_normals[i][0:2]
+            if np.dot(vec, pn) < 0:  # dot product i positive for coordinates on the positive side of the plane
+                printv('   Flip normal')
+                faces[i] = faces[i][::-1]
+                flipped.append(i)
+
+        if not (is_flange_element and not found_inside):
+            not_dipol.append(i)
+
+
+    settings.job_data['analysis']['simulations']['default']['calculation'][
+        'thin_panels'] = dipol  # TODO: Check if index must start with 1
+    return vertices, faces, vertices, faces[not_dipol]

@@ -27,6 +27,20 @@ class PhysicalQuantities():
     def __init__(self):
         self._rho_sw = 1025
         self._grav = 9.81
+        self._rho_st = 7850
+
+    @property
+    def rho_sw(self):
+        return self._rho_sw
+
+    @property
+    def grav(self):
+        return self._grav
+
+    @property
+    def rho_st(self):
+        return self._rho_st
+
 
 
 class FileIOClass(object):
@@ -115,8 +129,9 @@ class FileIOClass(object):
         return self._gmsh_exe
 
 
-class SettingsClass(object):
+class SettingsClass(PhysicalQuantities,object):
     def __init__(self, fio):
+        super().__init__()
         self._json_list = ['park', 'rna','tower', 'floater', 'analysis']
 
         self.job_data = dict()
@@ -145,4 +160,13 @@ class SettingsClass(object):
     @mesh_file.setter
     def mesh_file(self, val):
         self.job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file'] = val
+        self.save_job_settings()
+
+    @property
+    def draught(self):
+        return self.job_data['floater']['Draught']
+
+    @draught.setter
+    def draught(self, val):
+        self.job_data['floater']['Draught'] = val
         self.save_job_settings()

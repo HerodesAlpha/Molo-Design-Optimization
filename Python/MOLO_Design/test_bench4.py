@@ -33,6 +33,8 @@ CASE_NUMBER = None
 fio = FileIOClass(ANALYSES_ROOT, CASE_NUMBER)
 settings = SettingsClass(fio)
 
+
+
 if create_model:
 
 
@@ -44,13 +46,13 @@ if create_model:
     # OMEGA_NEMOH_INP = model_data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"]
     # SYM = model_data["Analyses parameters"]["Use symmetri"]
 
-    unit_model, hs_floater = msu.launch_monopole(fio, settings)
+    unit_model, hs_floater = msu.launch_dipole(fio, settings)
     pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
-    pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
+    #pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
-    hydro_mesh_symmetri, mesh_file = nemoh.mesh(fio, hs_floater, SYM)
-
-    hydro_mesh_symmetri.show()
+    # hydro_mesh_symmetri, mesh_file = nemoh.mesh(fio, hs_floater, SYM)
+    #
+    # hydro_mesh_symmetri.show()
 
 
 else:
@@ -66,7 +68,7 @@ if create_model and run_nemoh:
     queue = multiprocessing.Queue(-1)
     ql = QueueListener(queue, *logging.getLogger().handlers)
     ql.start()
-    nf.run(analysis_data, queue)
+    nf.run(settings.job_data['analysis'], queue)
     ql.stop()
     # nemoh.runNemoh(fio, hydro_mesh_symmetri, mesh_file, NEMOH_DIR, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP,
     #                NEMOH_DOF)

@@ -29,8 +29,19 @@ class HydroCoefficients(PhysicalQuantities, object):
         # -------------------------------------------------------
         step += 1
         sys.stdout.write("\t({})Get panel data\n".format(step))
-        self._pd = nemoh.PanelData(fio, self._sym)
-        self._npanels = self._pd.ppanels.shape[0]
+        self._pathFile = fio.nemoh_results.joinpath('pressure.{:5d}.dat'.format(1))
+        with open(self._pathFile, 'r') as f:
+            _lines = f.readlines()
+        # Number of vertices and number of panels
+        ls = _lines[1].split(',')
+        self._npoints = int(ls[0][7::])
+        self._npanel = int(ls[1][3::])
+        self._ppoints = np.asarray([line.split() for line in _lines[2:self._npoints + 2]], dtype='float')[:, 0:3]
+        self._ppanels = np.asarray(
+            [line.split() for line in _lines[self._npoints + 2:self._npoints + 1 + self._npanel + 1]],
+            dtype='int') - 1
+        self._pd = tb.PanelData(self._ppoints, self._ppanels) # TODO: Use PanelData class in toolbox instead
+
         # -------------------------------------------------------
         step += 1
         sys.stdout.write("\t({})Get forces\n".format(step))
