@@ -5,7 +5,7 @@ __version__ = "2.0"
 import json
 from pathlib import Path
 import pickle
-
+import h5py
 #import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
@@ -19,6 +19,7 @@ from common import FileIOClass
 from common import SettingsClass
 
 from MOLO_Nemoh import nemoh_frontend as nf
+from MOLO_Nemoh import settings
 
 
 import stability
@@ -76,6 +77,9 @@ if __name__ == '__main__':
 
     if postprocessing:
         # Read results, perform postprocessing and write pdf
+        with h5py.File(fio.nemoh_results.joinpath('db.hdf5'), "a") as hdf5_db:
+
+
         w = nemoh.getOmega(fio.nemoh_results)
         dir = nemoh.getDirections(fio.nemoh_results)
 

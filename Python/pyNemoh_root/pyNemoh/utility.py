@@ -1242,7 +1242,7 @@ def determine_points_panels(dat_file):
         '''
         Determines the number of points and panels of a mesh file.
 
-        @param dat_file: the mesh file to parse
+        @param dat_file: the mesh file to parse|
         @return: the number of points and panels of a mesh file
         @raise Exception: if the file is not expected format
         '''
