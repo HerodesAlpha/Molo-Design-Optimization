@@ -574,6 +574,10 @@ class BaseStructure(object):
         """
         The raw froude krylov forces in complex number
         """
+        self.H5_RESULTS_FK_PRESSURE_RAW = self.H5_RESULTS + 'fk_pressure_raw'
+        """
+        The raw froude krylov pressure in complex number
+        """
         self.H5_RESULTS_KOCHIN = self.H5_RESULTS + 'kochin'
         """
         The kochin number
@@ -1270,6 +1274,12 @@ class BaseStructure(object):
         }
         """
         The raw froude krylov forces in complex number
+        """
+        self.H5_RESULTS_FK_PRESSURE_ATTR = {
+            "description": np.string_("The raw froude krylov pressure in complex number")
+        }
+        """
+        The raw froude krylov pressure in complex number
         """
         self.H5_RESULTS_KOCHIN_ATTR = {
             "description": np.string_("The kochin number")

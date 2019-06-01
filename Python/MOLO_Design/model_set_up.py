@@ -244,14 +244,25 @@ def launch_dipole(fio, settings):
     settings.draught = hs_floater.hs_data['draught']
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
-    hs_floater.show()
+    #hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
-    nemoh_vertices, nemoh_panels = mmio.load_MSH(tb.msh_file(fio, settings, bool_thin=True))
+    msh_file=tb.msh_file(fio, settings, bool_thin=True)
+    nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)
     nemoh_vertices, nemoh_panels, cylinder_vertices, cylinder_panels = tb.prepare_dipol_mesh(nemoh_vertices,
                                                                                              nemoh_panels,
                                                                                              settings)
+    #print(msh_file.stem)
     nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
-    nemoh_mesh.show()
+    #nemoh_mesh.show()
+
+    settings.simulation_dir = str(fio.nemoh_root)
+    mesh_dat=fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
+    settings.mesh_file = str(mesh_dat)
+
+
+    mmio.write_MAR(settings.mesh_file, nemoh_mesh.vertices, nemoh_mesh.faces)
+    print('Nemoh mesh written to {}'.format(settings.mesh_file))
+
 
     return unit_model, hs_floater

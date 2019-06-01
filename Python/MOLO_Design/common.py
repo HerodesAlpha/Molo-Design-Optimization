@@ -148,13 +148,31 @@ class SettingsClass(PhysicalQuantities,object):
                 f.write(json.dumps(self.job_data[item], indent=4, sort_keys=True))
 
     def save_job_settings(self):
-        # Save updated template to analysis directory
+        # Save updated settings to analysis directory
         for item in self._json_list:
-            with open(self._fio.data_io_dir.joinpath('{}_template.json'.format(item)), 'w') as f:
+            with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'w') as f:
                 f.write(json.dumps(self.job_data[item], indent=4, sort_keys=True))
+
+    def load_job_settings(self):
+        # Load current settings from analysis directory
+        for item in self._json_list:
+            with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
+                self.job_data[item] = json.loads(f.read())
+
+
+    @property
+    def simulation_dir(self):
+        self.load_job_settings()
+        return self.job_data['analysis']['simulations']['sim01']['simulation_dir']
+
+    @simulation_dir.setter
+    def simulation_dir(self, val):
+        self.job_data['analysis']['simulations']['sim01']['simulation_dir'] = val
+        self.save_job_settings()
 
     @property
     def mesh_file(self):
+        self.load_job_settings()
         return self.job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file']
 
     @mesh_file.setter
@@ -164,6 +182,7 @@ class SettingsClass(PhysicalQuantities,object):
 
     @property
     def draught(self):
+        self.load_job_settings()
         return self.job_data['floater']['Draught']
 
     @draught.setter

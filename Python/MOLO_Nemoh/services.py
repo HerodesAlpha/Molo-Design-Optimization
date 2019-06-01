@@ -27,8 +27,6 @@ __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-
-
 import collections
 import uuid
 from settings import *
@@ -49,8 +47,8 @@ try:
 except ImportError:
     # failed to import experimental pty support
     import contextlib
-    pass
 
+    pass
 
 import fnmatch
 import h5py
@@ -100,6 +98,7 @@ _CONFIG_FILE_NAME = 'config.txt'
 # The pre-defined stdout log file name.
 _LOG_FILE_NAME = 'log.txt'
 
+
 class ServiceError(Exception):
     '''
     This exception indicates a service error.
@@ -109,32 +108,32 @@ class ServiceError(Exception):
 
 
 def _set_log_level(log_level):
-        """
-        helper method to change level of logs depending of log_level
+    """
+    helper method to change level of logs depending of log_level
 
-        :param log_level: integer or string (10 for DEBUG, 20 for INFO)
+    :param log_level: integer or string (10 for DEBUG, 20 for INFO)
 
-        :return: A message indicating success or not
-        """
-        # setting logging level:
-        if log_level and str(log_level) in ["10", "20"]:
-            # Setting the root logger to that level
-            level = int(log_level)
-            logging.getLogger(__name__).info("Setting logging level to " +
-                                             logging.getLevelName(level))
-            logging.getLogger().setLevel(level)
-            out = "Logging successfully set to level " + logging.getLevelName(level)
-            logging.getLogger(__name__).info(out)
-            return out
+    :return: A message indicating success or not
+    """
+    # setting logging level:
+    if log_level and str(log_level) in ["10", "20"]:
+        # Setting the root logger to that level
+        level = int(log_level)
+        logging.getLogger(__name__).info("Setting logging level to " +
+                                         logging.getLevelName(level))
+        logging.getLogger().setLevel(level)
+        out = "Logging successfully set to level " + logging.getLevelName(level)
+        logging.getLogger(__name__).info(out)
+        return out
 
-        else:
-            # nofifying user and setting up loggers to debug by default
-            logger = logging.getLogger(__name__)
-            out = ("Logging level unknown! Should be 10 (DEBUG) or 20 (INFO). Keeping current level of " +
-                   logging.getLevelName(logging.getLogger().getEffectiveLevel()))
-            logger.warning(out)
+    else:
+        # nofifying user and setting up loggers to debug by default
+        logger = logging.getLogger(__name__)
+        out = ("Logging level unknown! Should be 10 (DEBUG) or 20 (INFO). Keeping current level of " +
+               logging.getLevelName(logging.getLogger().getEffectiveLevel()))
+        logger.warning(out)
 
-            return out
+        return out
 
 
 def _clear_log():
@@ -148,12 +147,12 @@ def _clear_log():
     while True:
         path = os.path.join(LOG_FILE, str(num))
         if num > MAX_NUM:
-            return num-1
+            return num - 1
         if os.path.exists(path):
             os.remove(path)
             num += 1
         else:
-            return num-1
+            return num - 1
 
     # return num-1
 
@@ -164,8 +163,6 @@ def apply_configuration(params):
     signature = __name__ + '.apply_configuration(params)'
     helper.log_entrance(logger, signature,
                         {'params': params})
-
-
 
     # Checking parameters
     helper.check_type_value(params, 'params', ConfigurationParameters, False)
@@ -196,9 +193,6 @@ def apply_configuration(params):
         raise ServiceError('Error occurs when generating mesh. Caused by:\n' + str(str(e)))
 
 
-
-
-
 def generate_mesh(meshing_dir, params):
     '''
     Launch Mesh Generator to generate mesh.
@@ -216,7 +210,7 @@ def generate_mesh(meshing_dir, params):
     signature = __name__ + '.generate_mesh()'
     helper.log_entrance(logger, signature,
                         {'meshing_dir': meshing_dir,
-                         'params': params})
+                         'params'     : params})
     # Checking parameters
     helper.check_not_none_nor_empty(meshing_dir, 'meshing_dir')
     helper.check_is_directory(meshing_dir, 'meshing_dir')
@@ -244,7 +238,7 @@ def generate_mesh(meshing_dir, params):
             logger.debug('Start mesh generator in subprocess.')
             subprocess.call(MESH_GENERATOR_BIN, cwd=meshing_dir, stdout=log_file)
             logger.debug('End mesh generator in subprocess.')
-        
+
         # Read and return the log file content
         with open(log_file_path, 'r') as log_file:
             ret = log_file.read().splitlines()
@@ -253,6 +247,7 @@ def generate_mesh(meshing_dir, params):
     except Exception as e:
         helper.log_exception(logger, signature, e)
         raise ServiceError('Error occurs when generating mesh. Caused by:\n' + str(str(e)))
+
 
 def simulate(simulation_dir, params, queue):
     '''
@@ -271,7 +266,7 @@ def simulate(simulation_dir, params, queue):
     signature = __name__ + '.simulate()'
     helper.log_entrance(logger, signature,
                         {'simulation_dir': simulation_dir,
-                         'params': params})
+                         'params'        : params})
     # Checking parameters
     helper.check_not_none_nor_empty(simulation_dir, 'simulation_dir')
     helper.check_is_directory(simulation_dir, 'simulation_dir')
@@ -304,7 +299,7 @@ def simulate(simulation_dir, params, queue):
     helper.check_not_none_nor_empty(params.compute_drift_forces, 'params.compute_drift_forces')
     helper.check_not_none_nor_empty(params.remove_irregular_frequencies, 'params.remove_irregular_frequencies')
     helper.check_not_none_nor_empty(params.compute_yaw_moment, 'params.compute_yaw_moment')
-    
+
     helper.check_type_value(params.floating_bodies, 'params.floating_bodies', list, True)
     if params.floating_bodies is not None:
         for body in params.floating_bodies:
@@ -323,39 +318,40 @@ def simulate(simulation_dir, params, queue):
         utility.touch(hdf5_path)
         with h5py.File(hdf5_path, "a") as hdf5_data:
             utility.write_calculations(params, hdf5_data)
-        
+
         # Launch preProcessor and Solver
         # A prepared 'results' folder is necessary for the Nemoh software suite
         utility.mkdir_p(os.path.join(simulation_dir, 'results'))
         simulation_log_path = os.path.join(simulation_dir, 'simulation_log.txt')
         custom_config = {
-            'HDF5_FILE': hdf5_path,
-            'NEMOH_CALCULATIONS_FILE': None,
-            'NEMOH_INPUT_FILE': None,
-            'MESH_TEC_FILE': os.path.join(simulation_dir, 'mesh', 'mesh.tec'),
-            'FK_FORCE_TEC_FILE': os.path.join(simulation_dir, 'results', 'fkforce.tec'),
-            'RADIATION_COEFFICIENTS_TEC_FILE': os.path.join(simulation_dir, 'results', 'radiationcoefficients.tec'),
-            'DIFFRACTION_FORCE_TEC_FILE': os.path.join(simulation_dir, 'results', 'diffractionforce.tec'),
-            'EXCITATION_FORCE_TEC_FILE': os.path.join(simulation_dir, 'results', 'excitationforce.tec'),
-            'IRF_TEC_FILE': os.path.join(simulation_dir, 'results', 'irf.tec'),
-            'WAVE_FIELD_TEC_FILE': os.path.join(simulation_dir, 'results', 'WaveField.tec'),
-            'GREEN_TABULATION_NUMX' : int(params.green_tabulation_numx),
-            'GREEN_TABULATION_NUMZ' : int(params.green_tabulation_numz),
-            'GREEN_TABULATION_SIMPSON_NPOINTS' : int(params.green_tabulation_simpson_npoints),
-            'USE_ODE_INFLUENCE_COEFFICIENTS': bool(int(params.use_ode_influence_coefficients)),
-            'USE_HIGHER_ORDER' : bool(int(params.use_higher_order)),
-            'NUM_PANEL_HIGHER_ORDER' : int(params.num_panel_higher_order),
-            'B_SPLINE_ORDER': int(params.b_spline_order),
-            'USE_DIPOLES_IMPLEMENTATION': bool(int(params.use_dipoles_implementation)),
-            'THIN_PANELS': [int(i) for i in params.thin_panels.split()],
-            'COMPUTE_DRIFT_FORCES' : bool(int(params.compute_drift_forces)),
-            'COMPUTE_YAW_MOMENT': bool(int(params.compute_yaw_moment)),
-            'REMOVE_IRREGULAR_FREQUENCIES' : bool(int(params.remove_irregular_frequencies))
+                'HDF5_FILE'                       : hdf5_path,
+                'NEMOH_CALCULATIONS_FILE'         : None,
+                'NEMOH_INPUT_FILE'                : None,
+                'MESH_TEC_FILE'                   : os.path.join(simulation_dir, 'mesh', 'mesh.tec'),
+                'FK_FORCE_TEC_FILE'               : os.path.join(simulation_dir, 'results', 'fkforce.tec'),
+                'RADIATION_COEFFICIENTS_TEC_FILE' : os.path.join(simulation_dir, 'results',
+                                                                 'radiationcoefficients.tec'),
+                'DIFFRACTION_FORCE_TEC_FILE'      : os.path.join(simulation_dir, 'results', 'diffractionforce.tec'),
+                'EXCITATION_FORCE_TEC_FILE'       : os.path.join(simulation_dir, 'results', 'excitationforce.tec'),
+                'IRF_TEC_FILE'                    : os.path.join(simulation_dir, 'results', 'irf.tec'),
+                'WAVE_FIELD_TEC_FILE'             : os.path.join(simulation_dir, 'results', 'WaveField.tec'),
+                'GREEN_TABULATION_NUMX'           : int(params.green_tabulation_numx),
+                'GREEN_TABULATION_NUMZ'           : int(params.green_tabulation_numz),
+                'GREEN_TABULATION_SIMPSON_NPOINTS': int(params.green_tabulation_simpson_npoints),
+                'USE_ODE_INFLUENCE_COEFFICIENTS'  : bool(int(params.use_ode_influence_coefficients)),
+                'USE_HIGHER_ORDER'                : bool(int(params.use_higher_order)),
+                'NUM_PANEL_HIGHER_ORDER'          : int(params.num_panel_higher_order),
+                'B_SPLINE_ORDER'                  : int(params.b_spline_order),
+                'USE_DIPOLES_IMPLEMENTATION'      : bool(int(params.use_dipoles_implementation)),
+                'THIN_PANELS'                     : [int(i) for i in params.thin_panels.split()],
+                'COMPUTE_DRIFT_FORCES'            : bool(int(params.compute_drift_forces)),
+                'COMPUTE_YAW_MOMENT'              : bool(int(params.compute_yaw_moment)),
+                'REMOVE_IRREGULAR_FREQUENCIES'    : bool(int(params.remove_irregular_frequencies))
         }
 
         logger.debug('Start preProcessor function.')
         ret = run_thread(preprocessor.run_as_process, (custom_config, queue), simulation_log_path)
-        
+
         output = ret["log"]
         if ret["exitcode"] != 0:
             logger.error('An error happened when running the preprocessor. The exit code is ' + str(ret["exitcode"]))
@@ -366,14 +362,14 @@ def simulate(simulation_dir, params, queue):
             logger.debug('Start solver function.')
 
             ret = run_thread(solver.run_as_process, (custom_config, queue), simulation_log_path)
-                
+
             output += ret["log"]
 
             if ret["exitcode"] != 0:
                 logger.error('An error happened when running the solver. The exit code is ' + str(ret["exitcode"]))
 
             else:
-                logger.debug('Solver successfully run')     
+                logger.debug('Solver successfully run')
                 logger.debug('End solver function.')
 
         helper.log_exit(logger, signature, output)
@@ -381,6 +377,7 @@ def simulate(simulation_dir, params, queue):
     except Exception as e:
         helper.log_exception(logger, signature, e)
         raise ServiceError('Error occurs when doing simulation. Caused by:\n' + str(str(e)))
+
 
 def postprocess(simulation_dir, params, queue):
     '''
@@ -399,7 +396,7 @@ def postprocess(simulation_dir, params, queue):
     signature = __name__ + '.postprocess()'
     helper.log_entrance(logger, signature,
                         {'simulation_dir': simulation_dir,
-                         'params': params})
+                         'params'        : params})
     # Checking parameters
     helper.check_not_none_nor_empty(simulation_dir, 'simulation_dir')
     helper.check_is_directory(simulation_dir, 'simulation_dir')
@@ -422,35 +419,36 @@ def postprocess(simulation_dir, params, queue):
         # Launch postProcessor
         postprocessing_log_path = os.path.join(simulation_dir, 'postprocessing_log.txt')
         custom_config = {
-            'HDF5_FILE': os.path.join(simulation_dir, 'db.hdf5'),
-            'NEMOH_CALCULATIONS_FILE': None,
-            'NEMOH_INPUT_FILE': None,
-            'MESH_TEC_FILE': os.path.join(simulation_dir, 'mesh', 'mesh.tec'),
-            'FK_FORCE_TEC_FILE': os.path.join(simulation_dir, 'results', 'fkforce.tec'),
-            'RADIATION_COEFFICIENTS_TEC_FILE': os.path.join(simulation_dir, 'results', 'radiationcoefficients.tec'),
-            'DIFFRACTION_FORCE_TEC_FILE': os.path.join(simulation_dir, 'results', 'diffractionforce.tec'),
-            'EXCITATION_FORCE_TEC_FILE': os.path.join(simulation_dir, 'results', 'excitationforce.tec'),
-            'IRF_TEC_FILE': os.path.join(simulation_dir, 'results', 'irf.tec'),
-            'WAVE_FIELD_TEC_FILE': os.path.join(simulation_dir, 'results', 'WaveField.tec'),
-            'GREEN_TABULATION_NUMX' : 328,
-            'GREEN_TABULATION_NUMZ' : 46,
-            'GREEN_TABULATION_SIMPSON_NPOINTS' : 251,
-            'USE_ODE_INFLUENCE_COEFFICIENTS': False,
-            'USE_HIGHER_ORDER' : False,
-            'NUM_PANEL_HIGHER_ORDER' : 1,
-            'B_SPLINE_ORDER': 1,
-            'USE_DIPOLES_IMPLEMENTATION': False,
-            'THIN_PANELS': [-1],
-            'COMPUTE_DRIFT_FORCES' : False,
-            'COMPUTE_YAW_MOMENT': False,
-            'REMOVE_IRREGULAR_FREQUENCIES' : False
+                'HDF5_FILE'                       : os.path.join(simulation_dir, 'db.hdf5'),
+                'NEMOH_CALCULATIONS_FILE'         : None,
+                'NEMOH_INPUT_FILE'                : None,
+                'MESH_TEC_FILE'                   : os.path.join(simulation_dir, 'mesh', 'mesh.tec'),
+                'FK_FORCE_TEC_FILE'               : os.path.join(simulation_dir, 'results', 'fkforce.tec'),
+                'RADIATION_COEFFICIENTS_TEC_FILE' : os.path.join(simulation_dir, 'results',
+                                                                 'radiationcoefficients.tec'),
+                'DIFFRACTION_FORCE_TEC_FILE'      : os.path.join(simulation_dir, 'results', 'diffractionforce.tec'),
+                'EXCITATION_FORCE_TEC_FILE'       : os.path.join(simulation_dir, 'results', 'excitationforce.tec'),
+                'IRF_TEC_FILE'                    : os.path.join(simulation_dir, 'results', 'irf.tec'),
+                'WAVE_FIELD_TEC_FILE'             : os.path.join(simulation_dir, 'results', 'WaveField.tec'),
+                'GREEN_TABULATION_NUMX'           : 328,
+                'GREEN_TABULATION_NUMZ'           : 46,
+                'GREEN_TABULATION_SIMPSON_NPOINTS': 251,
+                'USE_ODE_INFLUENCE_COEFFICIENTS'  : False,
+                'USE_HIGHER_ORDER'                : False,
+                'NUM_PANEL_HIGHER_ORDER'          : 1,
+                'B_SPLINE_ORDER'                  : 1,
+                'USE_DIPOLES_IMPLEMENTATION'      : False,
+                'THIN_PANELS'                     : [-1],
+                'COMPUTE_DRIFT_FORCES'            : False,
+                'COMPUTE_YAW_MOMENT'              : False,
+                'REMOVE_IRREGULAR_FREQUENCIES'    : False
         }
         logger.debug('Start postProcessor function.')
         ret = run_thread(postprocessor.run_as_process, (custom_config, queue), postprocessing_log_path)
-        
+
         if ret["exitcode"] != 0:
             logger.error('An error happened when running the postprocessor. The exit code is ' + str(ret["exitcode"]))
-            
+
         else:
             logger.debug('postProcessor successfully run')
             logger.debug('End postProcessor in subprocess.')
@@ -506,6 +504,7 @@ def visualize(simulation_dir):
         helper.log_exception(logger, signature, e)
         raise ServiceError('Error occurs when launching the ParaView. Caused by:\n' + str(str(e)))
 
+
 def prepare_paraview_script(script_path, files):
     '''
     Prepare a script to be run by ParaView from a template.
@@ -551,30 +550,30 @@ def run_thread(func, args, log_path):
         fd: a file descriptor
     """
 
-    if os.name =='nt':
+    if os.name == 'nt':
         # CaputureOutput was throwing errors in Windows, so using following methods
         with capture() as out:
-            p=Process(target=func, args=args)
-            p.daemon = True
-            p.start()
-            p.join()
-            output=out
-            if log_path is not None:
-                with open(log_path, 'a') as log_file:
-                    log_file.write(str(output))
-                    
-        logs_path = os.path.dirname(USER_DATA_DIRECTORY)+"\logs\logs.log"
-        return {"exitcode": p.exitcode, "log": "Logs for  %s is at : %s \n \n" % ( func.__module__ , logs_path )}
-    
-    with CaptureOutput() as capturer:
             p = Process(target=func, args=args)
             p.daemon = True
             p.start()
             p.join()
-            output = capturer.get_lines()
+            output = out
             if log_path is not None:
                 with open(log_path, 'a') as log_file:
-                    log_file.write(capturer.get_text())
+                    log_file.write(str(output))
+
+        logs_path = os.path.dirname(USER_DATA_DIRECTORY) + "\logs\logs.log"
+        return {"exitcode": p.exitcode, "log": "Logs for  %s is at : %s \n \n" % (func.__module__, logs_path)}
+
+    with CaptureOutput() as capturer:
+        p = Process(target=func, args=args)
+        p.daemon = True
+        p.start()
+        p.join()
+        output = capturer.get_lines()
+        if log_path is not None:
+            with open(log_path, 'a') as log_file:
+                log_file.write(capturer.get_text())
 
     return {"exitcode": p.exitcode, "log": output}
 
@@ -583,13 +582,13 @@ def run_thread(func, args, log_path):
 def capture():
     import sys
     from io import StringIO
-    oldout,olderr = sys.stdout, sys.stderr
+    oldout, olderr = sys.stdout, sys.stderr
     try:
-        out=[StringIO(), StringIO()]
-        sys.stdout,sys.stderr = out
+        out = [StringIO(), StringIO()]
+        sys.stdout, sys.stderr = out
         yield out
     finally:
-        sys.stdout,sys.stderr = oldout,olderr
+        sys.stdout, sys.stderr = oldout, olderr
         out[0] = out[0].getvalue()
         out[1] = out[1].getvalue()
 
@@ -604,6 +603,7 @@ def writeline_if_not_none(fout, data):
     # Since this is a inner function, no entrance/exit information would be logged.
     if data is not None:
         fout.write(str(data) + '\n')
+
 
 def prepare_dir(prefix):
     '''
@@ -622,7 +622,7 @@ def prepare_dir(prefix):
     helper.log_entrance(logger, signature, {'prefix': prefix})
     # Checking parameters
     helper.check_not_none_nor_empty(prefix, 'prefix')
-    
+
     try:
         # Create a directory for this run (sub-directory name in format simulation_YYYYMMDDhhmmss)
         # We should consider adding some more uuid suffix to allow more concurrent requests within 1 SINGLE second.
@@ -634,29 +634,31 @@ def prepare_dir(prefix):
         helper.log_exception(logger, signature, e)
         raise ServiceError('Error occurs when preparing the directory. Caused by:\n' + str(str(e)))
 
+
 def construct_postprocess_parameters(json_str):
-        # Since this is a internal method. The parameters won't be logged.
-        json_obj = json_str
-        if isinstance(json_obj, str):
-            json_obj = json.JSONDecoder().decode(json_str)
-        para = PostprocessingParameters(**json_obj)
-        return para
+    # Since this is a internal method. The parameters won't be logged.
+    json_obj = json_str
+    if isinstance(json_obj, str):
+        json_obj = json.JSONDecoder().decode(json_str)
+    para = PostprocessingParameters(**json_obj)
+    return para
+
 
 def construct_simulation_parameters(json_str):
-        '''
-        Construct the simulation parameters from json string or object.
-        @param json_str: the json string or object to parse
-        @return: the parsed SimulationParameters object
-        '''
-        # Since this is a internal method. The parameters won't be logged.
-        json_obj = json_str
-        if isinstance(json_obj, str):
-            json_obj = json.JSONDecoder().decode(json_str)
-        para = SimulationParameters(**json_obj)
-        if para.floating_bodies is not None:
-            new_bodies = []
-            for body in para.floating_bodies:
-                new_bodies.append(FloatingBody(**body))
-            del para.floating_bodies[:]
-            para.floating_bodies.extend(new_bodies)
-        return para
+    '''
+    Construct the simulation parameters from json string or object.
+    @param json_str: the json string or object to parse
+    @return: the parsed SimulationParameters object
+    '''
+    # Since this is a internal method. The parameters won't be logged.
+    json_obj = json_str
+    if isinstance(json_obj, str):
+        json_obj = json.JSONDecoder().decode(json_str)
+    para = SimulationParameters(**json_obj)
+    if para.floating_bodies is not None:
+        new_bodies = []
+        for body in para.floating_bodies:
+            new_bodies.append(FloatingBody(**body))
+        del para.floating_bodies[:]
+        para.floating_bodies.extend(new_bodies)
+    return para

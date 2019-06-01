@@ -883,6 +883,7 @@ def run(hdf5_data, custom_config):
     environment = utility.read_environment(hdf5_data)
 
     normal_velocity = np.zeros((mesh.n_panels*2**mesh.i_sym, (n_beta+n_radiation)*n_w), settings.NEMOH_COMPLEX)
+    fk_pressure = np.zeros((n_w, n_beta, mesh.n_panels*2**mesh.i_sym), settings.NEMOH_COMPLEX)
     fk_force = np.zeros((n_w, n_beta, n_integration), settings.NEMOH_COMPLEX)
 
     logger.info('Computing the body conditions for each radiation and diffraction problem (normal velocities)'
@@ -892,6 +893,7 @@ def run(hdf5_data, custom_config):
 
             result = compute_wave(mesh, w[i], beta[j], environment)
             pressure = result["pressure"]
+            fk_pressure[i, j, :]=pressure.flatten()
             n_vel = result["n_vel"]
             normal_velocity[:, j+ i*(n_beta+n_radiation)] = n_vel
             # Calculate the corresponding FK forces
@@ -981,6 +983,12 @@ def run(hdf5_data, custom_config):
     utility.set_hdf5_attributes(dset, structure.H5_RESULTS_FK_FORCES_RAW_ATTR)
     dset[:, :, :] = fk_force
     logger.info('Saved the raw imaginary fk forces numbers at' 
+                + str(structure.H5_RESULTS_FK_FORCES_RAW) + ' with characteristics: ' + str(dset))
+
+    dset = utility.require_dataset(hdf5_data, structure.H5_RESULTS_FK_PRESSURE_RAW, fk_pressure.shape, dtype='F')
+    utility.set_hdf5_attributes(dset, structure.H5_RESULTS_FK_PRESSURE_ATTR)
+    dset[:, :, :] = fk_pressure
+    logger.info('Saved the raw imaginary fk pressure numbers at'
                 + str(structure.H5_RESULTS_FK_FORCES_RAW) + ' with characteristics: ' + str(dset))
 
 
