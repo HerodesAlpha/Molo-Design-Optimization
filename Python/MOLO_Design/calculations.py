@@ -8,8 +8,8 @@ from sea_loads import HydroCoefficients
 
 
 class TransferFunctions(HydroCoefficients,object):
-    def __init__(self,dof, w, dir, fio, sym):
-        super().__init__(dof, w, dir, fio, sym)
+    def __init__(self,fio):
+        super().__init__(fio)
 
     def displacement(self, fe, m, ma, c, k, w):
         return np.absolute(fe / (-w ** 2 * (m + ma) + 1j * w * (c) + k))

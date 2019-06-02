@@ -20,28 +20,41 @@ from common import SettingsClass
 
 from MOLO_Nemoh import nemoh_frontend as nf
 from MOLO_Nemoh import settings
-
+from pyNemoh.structure import H5_STRUCTURE
+from pyNemoh.postprocessor import read_results
 
 import stability
 
 if __name__ == '__main__':
-    run_nemoh = True
-    create_model = True
+    run_nemoh = False
+    create_model = False
     calc_gz = False
-    postprocessing = False
+    postprocessing = True
 
     ANALYSES_ROOT = Path(r'C:\analyses')
     PARK_LABEL='site_01'
     WTG_LABEL = 'wtg_01'
 
     settings = SettingsClass(ANALYSES_ROOT,PARK_LABEL,WTG_LABEL)
-    #ettings.floater_data = {}
+    settings.floater_data = {
+                                "Type":                         "OY",
+                                "Central column diameter":      10,
+                                "Central column thickness":     0.04,
+                                "Draught":                      0,
+                                "Gap factor":                   0.8,
+                                "Lower flange thickness":       0.04,
+                                "Number of radial columns":     2,
+                                "Radial column diameter":       11,
+                                "Radial column thickness":      0.04,
+                                "Radial height":                18,
+                                "Upper flange thickness":       0.04
+    }
     settings.case_label = 'floater_data'
     settings.set_file_structure()
 
+    settings.simulation_dir = str(settings.fio.nemoh_root)
+
     fio = settings.fio
-
-
 
 
     if create_model:
@@ -55,7 +68,7 @@ if __name__ == '__main__':
         # OMEGA_NEMOH_INP = model_data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"]
         # SYM = model_data["Analyses parameters"]["Use symmetri"]
 
-        unit_model, hs_floater = msu.launch_dipole(fio, settings)
+        unit_model, hs_floater = msu.launch_dipole(settings)
         pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
         pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
@@ -83,82 +96,15 @@ if __name__ == '__main__':
         #                NEMOH_DOF)
 
     if postprocessing:
+        structure = H5_STRUCTURE()
         # Read results, perform postprocessing and write pdf
-        with h5py.File(fio.nemoh_results.joinpath('db.hdf5'), "a") as hdf5_db:
-            pass
+        with h5py.File(fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
+            for key in hdf5_db['results'].keys():
+                print(key)  # Names of the groups in HDF5 file.
+            #beta = hdf5_db['/results/case/beta'].value
+            #print(beta)
+            #results=read_results(hdf5_db)
+            print(hdf5_db['results']['fk_pressure_raw'][0])
 
+        hdp = calculations.TransferFunctions(fio)
 
-        w = nemoh.getOmega(fio.nemoh_results)
-        dir = nemoh.getDirections(fio.nemoh_results)
-
-        #hdp = sea_loads.HydroCoefficients(NEMOH_DOF, w, dir, fio, SYM)
-        hdp = calculations.TransferFunctions(NEMOH_DOF, w, dir, fio, SYM)
-        SELECT_DOF = 1
-        SELECT_AXIS = 2
-        SELECT_FREC = 1
-
-        # print('\nSection forces')
-        # for i in range(6):
-        #     print('\tDOF{}: {:8.1f}'.format(i + 1, np.sqrt(
-        #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
-        # write_report(root, hdp, case_label)
-
-        ifreq = 0
-        idir = 0
-        irad = 0
-        nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
-        iprob = 2
-        nfreq = len(w)
-        problem = (ifreq - 1) * nprob + iprob
-
-        # print('Problem: {}'.format(problem))
-
-        if 0:
-            # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
-            # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction',axis=2)
-            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
-
-        # print(hdp.ma[0,:,0,0])
-        # print(hdp._fe_amp[0,:,dof])
-
-        idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
-
-        for i, x in enumerate(idof):
-            w2 = hdp.k[x, x] / (hdp.m[x, x] + hdp.ma[ifreq, x, x])
-            print('T{}:\t{:5.1f} s'.format(x + 1, 2 * np.pi / np.sqrt(w2)))
-
-        np.set_printoptions(precision=3)
-        idof = 2
-        rao=hdp.getRAO(idof, idir)
-        #print(rao)
-        plt.plot(2 * np.pi / w, rao)
-        plt.show()
-
-        np.set_printoptions(precision=3)
-
-        if 0:
-            print('\n')
-
-
-
-
-            print('\nRadiation damping:\n{}'.format(hdp._c_hyd[ifreq]))
-            print('\nWater plane stiffness:\n{}'.format(hdp.k))
-            print('\nStatic mass:\n{}'.format(hdp.m))
-            print('\nAdded mass:\n{}'.format(hdp._ma[ifreq]))
-            print('\nExcitation force:\n{}'.format(np.abs(hdp._fe[idir, ifreq, :])))
-            # tmp = nemoh.get_section_forces(fio, problem, [-100,0,0], [1,0,0], sym=SYM)
-            # print('\nSection force:\n{}'.format(np.abs(tmp)))
-
-            f_fk = nemoh.p2f(hdp._p['Froude-Krylof'][ifreq, idir, :], hdp.pd)
-            f_diff = nemoh.p2f(hdp._p['Diffraction'][ifreq, idir, :], hdp.pd)
-            f_exc = f_fk + f_diff
-
-
-            print(np.abs(nemoh.get_section_forces(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))
-
-            print(abs(hdp.p2f(ifreq, pressure_index=0, pressure_type='Hydro static')) / 9.81)
-            #print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
-
-        part_list = unit_model.get_parts()
-        print(sum([part.mass for part in part_list]))

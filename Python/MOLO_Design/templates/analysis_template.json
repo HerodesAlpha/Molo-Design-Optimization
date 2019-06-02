@@ -123,8 +123,8 @@
                 "max_wave_frequencies": 2.0,
                 "min_wave_directions": 0,
                 "min_wave_frequencies": 0.1,
-                "num_wave_directions": 1,
-                "num_wave_frequencies": 1
+                "num_wave_directions": 2,
+                "num_wave_frequencies": 2
             },
             "postprocessing": {
                 "compute_irf": false,

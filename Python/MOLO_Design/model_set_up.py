@@ -214,12 +214,12 @@ def launch_monopole(fio, settings):
     return unit_model, hs_floater
 
 
-def launch_dipole(fio, settings):
+def launch_dipole(settings):
     unit_model, floater_model, wtg_model = create_mass_models(settings)
 
 
 
-    stability_vertices, stability_panels = mmio.load_MSH(tb.msh_file(fio, settings, bool_thin=False))
+    stability_vertices, stability_panels = mmio.load_MSH(tb.msh_file(settings.fio, settings, bool_thin=False))
 
     stability_mesh = Mesh(stability_vertices, stability_panels)
 
@@ -237,7 +237,7 @@ def launch_dipole(fio, settings):
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
     hs_floater.equilibrate()
     #
-    tb.save_M_and_K(fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
+    tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
     unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
@@ -247,7 +247,7 @@ def launch_dipole(fio, settings):
     #hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
-    msh_file=tb.msh_file(fio, settings, bool_thin=True)
+    msh_file=tb.msh_file(settings.fio, settings, bool_thin=True)
     nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)
     nemoh_vertices, nemoh_panels, cylinder_vertices, cylinder_panels = tb.prepare_dipol_mesh(nemoh_vertices,
                                                                                              nemoh_panels,
@@ -256,8 +256,8 @@ def launch_dipole(fio, settings):
     nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
     #nemoh_mesh.show()
 
-    settings.simulation_dir = str(fio.nemoh_root)
-    mesh_dat=fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
+
+    mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
     settings.mesh_file = str(mesh_dat)
 
 

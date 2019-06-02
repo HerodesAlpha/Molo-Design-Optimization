@@ -15,17 +15,16 @@ lc = 1e-2;	        //
 drc = #dia_rc#;     // Diameter of radial columns
 dcc = #dia_hc#;     // Diameter of central column
 gaf = #gap#; 	    // Gap factor (ratio of drc)
+ncol=3;		        // Number of columns
 hgt = #hgt#;	    // Height of columns
-nel_rrc = #nel#;    // Number of elements around cylinder circ.
+xO = 0;		        // Model origin x-axis
+yO = 0;		        // Model origin y-axis
+zO = -7;	        // Model origin z-axis
+nel_rrc = 16;	    // Number of elements around cylinder circ.
 
 // ----------------------------------------------------------------------------
 // 	DERIVED UNITS
 // ----------------------------------------------------------------------------
-
-xO = 0;		        // Model origin x-axis
-yO = 0;		        // Model origin y-axis
-zO = -hgt;	        // Model origin z-axis
-
 
 rrc = drc/2;
 rcc = dcc/2;
@@ -126,111 +125,3 @@ Transfinite Surface {1};
 
 Recombine Surface {1, 2, 3, 4, 5, 6};
 
-// ----------------------------------------------------------------------------
-// 	FIRST RADIAL COLUMN LOWER FLANGE
-// ----------------------------------------------------------------------------
-
-p11x = xO + 2*dx - rrc;
-p12x = xO + 2*dx;
-p13x = p12x;
-p13y = yO + rrc;
-p14x = p12x - rrc/2;
-p14y = yO + rrc/2;
-p15x = p12x - Sqrt(2)/2*rrc;
-p15y = yO + Sqrt(2)/2*rrc;
-p18x = xO + 2*dx - rrc;
-
-Point(12) = {  p12x,    yO,  zO, lc};
-Point(13) = {  p13x,    p13y,  zO, lc};
-Point(14) = {  p14x,    p14y,  zO, lc};
-Point(15) = {  p15x,    p15y,  zO, lc};
-Point(16) = {  p14x,    yO,  zO, lc};
-Point(17) = {  p12x,    p14y,  zO, lc};
-Point(18) = {  p18x,    yO,  zO, lc};
-
-Line(19) = {2, 18};
-Line(20) = {18, 16};
-Line(21) = {16, 12};
-Line(22) = {12, 17};
-Line(23) = {17, 13};
-Line(24) = {13, 6};
-Line(25) = {16, 14};
-Line(26) = {14, 17};
-Line(27) = {14, 15};
-Line(28) = {15, 11};
-Circle(29) = {18, 12, 15};
-Circle(30) = {15, 12, 13};
-
-Curve Loop(7) = {28, 5, -24, -30};
-Plane Surface(7) = {7};
-Curve Loop(8) = {4, -28, -29, -19};
-Plane Surface(8) = {8};
-Curve Loop(9) = {20, 25, 27, -29};
-Plane Surface(9) = {9};
-Curve Loop(10) = {21, 22, -26, -25};
-Plane Surface(10) = {10};
-Curve Loop(11) = {26, 23, -30, -27};
-Plane Surface(11) = {11};
-
-Transfinite Curve {21, 30, 29, 27, 26, 25, 23, 22, 20} = nop_flat1 Using Progression 1;
-Transfinite Curve {28, 24, 19} = nop_flat2 Using Progression 1;
-
-Transfinite Surface {7};
-Transfinite Surface {11};
-Transfinite Surface {10};
-Transfinite Surface {9};
-Transfinite Surface {8};
-
-Recombine Surface {7, 11, 10, 9, 8};
-
-Extrude {0, 0, dz} {
-  Curve{30}; Curve{29};
-}
-Extrude {0, 0, dz} {
-  Curve{14}; Curve{15};
-}
-Transfinite Curve {33, 32, 36} = nop_height1 Using Progression 1;
-Transfinite Curve {45, 41, 40} = nop_height2 Using Progression 1;
-Transfinite Surface {46};
-Transfinite Surface {42};
-Transfinite Surface {38};
-Transfinite Surface {34};
-Recombine Surface {46, 42, 38, 34};
-
-// ----------------------------------------------------------------------------
-// 	COPY COLUMNS ALONG RADIAL
-// ----------------------------------------------------------------------------
-
-Symmetry {1, 0, 0, -p12x} {
-  Duplicata { Surface{38}; Surface{7}; Surface{8}; Surface{9}; Surface{10}; Surface{11}; Surface{34}; }
-}
-Symmetry {1, 0, 0, -1.5*p12x} {
-  Duplicata { Surface{8}; Surface{38}; Surface{9}; Surface{7}; Surface{10}; Surface{34}; Surface{11}; Surface{67}; Surface{72}; Surface{77}; Surface{47}; Surface{62}; Surface{57}; Surface{52}; }
-}
-
-// ----------------------------------------------------------------------------
-// 	DELETE END FLANGE
-// ----------------------------------------------------------------------------
-
-Recursive Delete {
-  Surface{96}; Surface{81};
-}
-
-// ----------------------------------------------------------------------------
-// 	MIRROR RADIAL 1 TO RADIAL 2
-// ----------------------------------------------------------------------------
-
-Symmetry {-Sqrt(3)/2, 1/2, 0, 0} {
-  Duplicata { Surface{6}; Surface{62}; Surface{3}; Surface{57}; Surface{52}; Surface{47}; Surface{46}; Surface{4}; Surface{5}; Surface{42}; Surface{38}; Surface{34}; Surface{11}; Surface{10}; Surface{9}; Surface{8}; Surface{7}; Surface{2}; Surface{116}; Surface{1}; Surface{86}; Surface{67}; Surface{72}; Surface{77}; Surface{91}; Surface{101}; Surface{106}; Surface{111}; Surface{121}; Surface{126}; Surface{131}; Surface{136}; Surface{141}; Surface{146}; }
-}
-Symmetry {-Sqrt(3)/2, -1/2, 0, 0} {
-  Duplicata { Surface{180}; Surface{160}; Surface{275}; Surface{230}; Surface{235}; Surface{240}; Surface{245}; Surface{250}; Surface{255}; Surface{260}; Surface{265}; Surface{270}; Surface{225}; Surface{280}; Surface{285}; Surface{290}; Surface{295}; Surface{300}; Surface{305}; Surface{310}; Surface{315}; Surface{175}; Surface{150}; Surface{155}; Surface{165}; Surface{170}; Surface{185}; Surface{190}; Surface{195}; Surface{200}; Surface{205}; Surface{210}; Surface{215}; Surface{220}; }
-}
-
-// ----------------------------------------------------------------------------
-// 	MIRROR TO FULL
-// ----------------------------------------------------------------------------
-
-Symmetry {0, -1, 0, 0} {
-  Duplicata { Surface{285}; Surface{349}; Surface{344}; Surface{339}; Surface{334}; Surface{329}; Surface{324}; Surface{319}; Surface{315}; Surface{310}; Surface{305}; Surface{300}; Surface{295}; Surface{290}; Surface{354}; Surface{280}; Surface{275}; Surface{270}; Surface{265}; Surface{260}; Surface{255}; Surface{250}; Surface{245}; Surface{240}; Surface{235}; Surface{230}; Surface{225}; Surface{419}; Surface{484}; Surface{479}; Surface{474}; Surface{469}; Surface{464}; Surface{459}; Surface{454}; Surface{449}; Surface{444}; Surface{439}; Surface{434}; Surface{429}; Surface{424}; Surface{220}; Surface{414}; Surface{409}; Surface{404}; Surface{399}; Surface{394}; Surface{389}; Surface{384}; Surface{379}; Surface{374}; Surface{369}; Surface{364}; Surface{359}; Surface{9}; Surface{77}; Surface{72}; Surface{67}; Surface{62}; Surface{57}; Surface{52}; Surface{47}; Surface{46}; Surface{42}; Surface{38}; Surface{34}; Surface{11}; Surface{10}; Surface{86}; Surface{8}; Surface{7}; Surface{6}; Surface{5}; Surface{4}; Surface{3}; Surface{2}; Surface{1}; Surface{155}; Surface{215}; Surface{210}; Surface{205}; Surface{200}; Surface{195}; Surface{190}; Surface{185}; Surface{180}; Surface{175}; Surface{170}; Surface{165}; Surface{160}; Surface{150}; Surface{146}; Surface{141}; Surface{136}; Surface{131}; Surface{126}; Surface{121}; Surface{116}; Surface{111}; Surface{106}; Surface{101}; Surface{91}; }
-}

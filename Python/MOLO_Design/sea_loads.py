@@ -9,95 +9,86 @@ import helper
 import nemoh
 import tool_box as tb
 from common import PhysicalQuantities
-
+import h5py
 
 class HydroCoefficients(PhysicalQuantities, object):
     # TODO: Get added mass at zero and infinite frequency
-    def __init__(self, dof, w, dir, fio, sym):
+    def __init__(self, fio):
         super().__init__()
+        with h5py.File(fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
 
-        self._w = w
-        self._nw = len(w)
-        self._dof = dof
-        self._ndof = int(np.sum(dof))
-        self._dir = dir
-        self._ndir = len(dir)
-        self._sym = sym
+            #hdf5_db['results']['fk_pressure_raw'][0]
 
-        step = 0
-        sys.stdout.write("\nInit hydro:\n")
-        # -------------------------------------------------------
-        step += 1
-        sys.stdout.write("\t({})Get panel data\n".format(step))
-        self._pathFile = fio.nemoh_results.joinpath('pressure.{:5d}.dat'.format(1))
-        with open(self._pathFile, 'r') as f:
-            _lines = f.readlines()
-        # Number of vertices and number of panels
-        ls = _lines[1].split(',')
-        self._npoints = int(ls[0][7::])
-        self._npanel = int(ls[1][3::])
-        self._ppoints = np.asarray([line.split() for line in _lines[2:self._npoints + 2]], dtype='float')[:, 0:3]
-        self._ppanels = np.asarray(
-            [line.split() for line in _lines[self._npoints + 2:self._npoints + 1 + self._npanel + 1]],
-            dtype='int') - 1
-        self._pd = tb.PanelData(self._ppoints, self._ppanels) # TODO: Use PanelData class in toolbox instead
+            self._w = hdf5_db['results']['case']['w'][:]
+            self._nw = len(self._w)
+            self._dof = [1,1,1,1,1,1]
+            self._ndof = int(np.sum(self._dof))
+            self._dir = hdf5_db['results']['case']['beta'][:]
+            self._ndir = len(self._dir)
+            #self._sym = sym
 
-        # -------------------------------------------------------
-        step += 1
-        sys.stdout.write("\t({})Get forces\n".format(step))
-        self._fe = nemoh.get_fe(fio, dof, w, dir)
-        # -------------------------------------------------------
-        step += 1
-        sys.stdout.write("\t({})Get static mass and waterplane stiffness\n".format(step))
-        self._m, self._k = tb.load_M_and_K(fio.data_io_dir)
-        # -------------------------------------------------------
-        step += 1
-        sys.stdout.write("\t({})Get added mass and damping\n".format(step))
-        self._ma, self._c_hyd = nemoh.get_ab(fio, dof, w, dir)
-        # -------------------------------------------------------
-        nproblems = (len(dir) + sum(dof)) * len(w)
-        with open(fio.nemoh_root.joinpath('Normalvelocities.dat')) as f:
-            if not int(f.readline()) == nproblems:
-                print('nproblems mismatch')
-                exit()
-        # -------------------------------------------------------
-        step += 1
-        sys.stdout.write("\t({})Get pressures\n".format(step))
-        pressure_file = fio.data_io_dir.joinpath('hydro_pressures.pkl')
-        if pressure_file.is_file() and 1:
-            self._p = pickle.load(open(pressure_file, 'rb'))
-            sys.stdout.write("\t\tUnPickled from {}\n".format(pressure_file))
-            for key in self._p.keys():
-                print("\t\t\t{}".format(key))
+            step = 0
+            sys.stdout.write("\nInit hydro:\n")
+            # -------------------------------------------------------
 
-        else:
-            self._p = dict()
-            sys.stdout.write("\t\tHydro static\n")
-            self._p['Hydro static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
-            sys.stdout.write("\t\tFroude-Krylof \n")
-            self._p['Froude-Krylof'] = nemoh.get_fk_pressure(fio, ndir=len(dir), nomega=self._nw,
-                                                             npanels=self._pd.npanels)
-            sys.stdout.write("\t\tDiffraction\n")
-            self._p['Diffraction'] = np.zeros([self._nw, self._ndir, self._npanels], dtype=complex)
-            for iw in range(self._nw):
-                for ibeta in range(self._ndir):
-                    pn = nemoh.diffraction_problem_number(iw, ibeta, self._ndir, self._ndof)
-                    # print('\t\t\tProblem {}'.format(pn))
-                    self._p['Diffraction'][iw, ibeta, :] = nemoh.get_poten_pressure(fio, npoints=self._pd.npoints,
-                                                                                    ppanels=self._pd.ppanels,
-                                                                                    problem_number=pn)
-            sys.stdout.write("\t\tRadiation\n")
-            self._p['Radiation'] = np.zeros([self._nw, self._ndof, self._npanels], dtype=complex)
-            for iw in range(self._nw):
-                for iradiation in range(self._ndof):
-                    pn = nemoh.radiation_problem_number(iw, iradiation, self._ndir, self._ndof)
-                    # print('\t\t\tProblem {}'.format(pn))
-                    self._p['Radiation'][iw, iradiation, :] = nemoh.get_poten_pressure(fio, npoints=self._pd.npoints,
-                                                                                       ppanels=self._pd.ppanels,
-                                                                                       problem_number=pn)
-            pickle.dump(self._p, open(pressure_file, "wb"))
+            self._pd = tb.PanelData(self._ppoints, self._ppanels) # TODO: Get vertices and points
 
-        print('\n{} initialized\n'.format(self.__str__()))
+            # -------------------------------------------------------
+            step += 1
+            sys.stdout.write("\t({})Get forces\n".format(step))
+            self._fe = nemoh.get_fe(fio, dof, w, dir)
+            # -------------------------------------------------------
+            step += 1
+            sys.stdout.write("\t({})Get static mass and waterplane stiffness\n".format(step))
+            self._m, self._k = tb.load_M_and_K(fio.data_io_dir)
+            # -------------------------------------------------------
+            step += 1
+            sys.stdout.write("\t({})Get added mass and damping\n".format(step))
+            self._ma, self._c_hyd = nemoh.get_ab(fio, dof, w, dir)
+            # -------------------------------------------------------
+            nproblems = (len(dir) + sum(dof)) * len(w)
+            with open(fio.nemoh_root.joinpath('Normalvelocities.dat')) as f:
+                if not int(f.readline()) == nproblems:
+                    print('nproblems mismatch')
+                    exit()
+            # -------------------------------------------------------
+            step += 1
+            sys.stdout.write("\t({})Get pressures\n".format(step))
+            pressure_file = fio.data_io_dir.joinpath('hydro_pressures.pkl')
+            if pressure_file.is_file() and 1:
+                self._p = pickle.load(open(pressure_file, 'rb'))
+                sys.stdout.write("\t\tUnPickled from {}\n".format(pressure_file))
+                for key in self._p.keys():
+                    print("\t\t\t{}".format(key))
+
+            else:
+                self._p = dict()
+                sys.stdout.write("\t\tHydro static\n")
+                self._p['Hydro static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
+                sys.stdout.write("\t\tFroude-Krylof \n")
+                self._p['Froude-Krylof'] = nemoh.get_fk_pressure(fio, ndir=len(dir), nomega=self._nw,
+                                                                 npanels=self._pd.npanels)
+                sys.stdout.write("\t\tDiffraction\n")
+                self._p['Diffraction'] = np.zeros([self._nw, self._ndir, self._npanels], dtype=complex)
+                for iw in range(self._nw):
+                    for ibeta in range(self._ndir):
+                        pn = nemoh.diffraction_problem_number(iw, ibeta, self._ndir, self._ndof)
+                        # print('\t\t\tProblem {}'.format(pn))
+                        self._p['Diffraction'][iw, ibeta, :] = nemoh.get_poten_pressure(fio, npoints=self._pd.npoints,
+                                                                                        ppanels=self._pd.ppanels,
+                                                                                        problem_number=pn)
+                sys.stdout.write("\t\tRadiation\n")
+                self._p['Radiation'] = np.zeros([self._nw, self._ndof, self._npanels], dtype=complex)
+                for iw in range(self._nw):
+                    for iradiation in range(self._ndof):
+                        pn = nemoh.radiation_problem_number(iw, iradiation, self._ndir, self._ndof)
+                        # print('\t\t\tProblem {}'.format(pn))
+                        self._p['Radiation'][iw, iradiation, :] = nemoh.get_poten_pressure(fio, npoints=self._pd.npoints,
+                                                                                           ppanels=self._pd.ppanels,
+                                                                                           problem_number=pn)
+                pickle.dump(self._p, open(pressure_file, "wb"))
+
+            print('\n{} initialized\n'.format(self.__str__()))
 
     def show_pressure(self, ifreq, pressure_index, axis, pressure_type):
         xyz = np.zeros([self._pd._npanel, 3])
