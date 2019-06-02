@@ -28,12 +28,19 @@ if __name__ == '__main__':
     run_nemoh = True
     create_model = True
     calc_gz = False
-    postprocessing = True
+    postprocessing = False
 
     ANALYSES_ROOT = Path(r'C:\analyses')
-    CASE_NUMBER = None
-    fio = FileIOClass(ANALYSES_ROOT, CASE_NUMBER)
-    settings = SettingsClass(fio)
+    PARK_LABEL='site_01'
+    WTG_LABEL = 'wtg_01'
+
+    settings = SettingsClass(ANALYSES_ROOT,PARK_LABEL,WTG_LABEL)
+    #ettings.floater_data = {}
+    settings.case_label = 'floater_data'
+    settings.set_file_structure()
+
+    fio = settings.fio
+
 
 
 
@@ -70,7 +77,7 @@ if __name__ == '__main__':
         queue = multiprocessing.Queue(-1)
         ql = QueueListener(queue, *logging.getLogger().handlers)
         ql.start()
-        nf.run(settings.job_data['analysis'], queue)
+        nf.run(settings._job_data['analysis'], queue)
         ql.stop()
         # nemoh.runNemoh(fio, hydro_mesh_symmetri, mesh_file, NEMOH_DIR, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP,
         #                NEMOH_DOF)
@@ -78,6 +85,7 @@ if __name__ == '__main__':
     if postprocessing:
         # Read results, perform postprocessing and write pdf
         with h5py.File(fio.nemoh_results.joinpath('db.hdf5'), "a") as hdf5_db:
+            pass
 
 
         w = nemoh.getOmega(fio.nemoh_results)

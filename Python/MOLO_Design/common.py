@@ -42,47 +42,45 @@ class PhysicalQuantities():
         return self._rho_st
 
 
-
 class FileIOClass(object):
-    def __init__(self, root_dir, case_number=None):
-        if case_number == None:
+    def __init__(self, root_dir, park_label, wtg_label, case_label):
+        case_parent_dir=root_dir.joinpath(park_label).joinpath(wtg_label)
+        if case_label == None:
             i = 0
             while 1:
                 i += 1
-                if not root_dir.joinpath('case{:04d}'.format(i)).exists():
+                if not case_parent_dir.joinpath('case{:04d}'.format(i)).exists():
                     break
             self._case_label = 'case{:04d}'.format(i)
         else:
-            self._case_label = 'case{:04d}'.format(case_number)
+            self._case_label = case_label
 
-        self._case_dir = root_dir.joinpath(self._case_label)
+        self._case_dir = case_parent_dir.joinpath(self._case_label)
 
         self._nemoh_root = self._case_dir.joinpath('nemoh')
-
         self._gmsh_root = self._case_dir.joinpath('gmsh')
+        self._data_io_dir = self._case_dir.joinpath('data_io')
+        self._nemoh_results_dir = self._nemoh_root.joinpath('results')
+        self._nemoh_mesh_dir = self._nemoh_root.joinpath('mesh')
+        self._stability_dir = self._case_dir.joinpath('stability')
+
+        self._templates_dir=Path(os.getcwd()).joinpath('templates')
 
         path_to_gmsh = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
         if Path(path_to_gmsh).exists():
             self._gmsh_exe = path_to_gmsh
 
-        self._data_io_dir = self._case_dir.joinpath('data_io')
+        self.create_dir()
 
-        self._nemoh_results_dir = self._nemoh_root.joinpath('results')
-        self._nemoh_mesh_dir = self._nemoh_root.joinpath('mesh')
+    def create_dir(self):
+        self._nemoh_root.mkdir(parents=True, exist_ok=False)
+        self._nemoh_results_dir.mkdir(parents=True, exist_ok=False)
+        self._nemoh_mesh_dir.mkdir(parents=True, exist_ok=False)
+        self._gmsh_root.mkdir(parents=True, exist_ok=False)
+        self._data_io_dir.mkdir(parents=True, exist_ok=False)
+        self._stability_dir.mkdir(parents=True, exist_ok=False)
 
-        self._stability_dir = self._case_dir.joinpath('stability')
 
-        if case_number == None:
-            self._nemoh_root.mkdir(parents=True, exist_ok=False)
-            self._nemoh_results_dir.mkdir(parents=True, exist_ok=False)
-            self._nemoh_mesh_dir.mkdir(parents=True, exist_ok=False)
-            self._gmsh_root.mkdir(parents=True, exist_ok=False)
-            self._data_io_dir.mkdir(parents=True, exist_ok=False)
-            self._stability_dir.mkdir(parents=True, exist_ok=False)
-
-        self._templates_dir = Path(os.getcwd()).joinpath('templates')
-        if not self._templates_dir.exists():
-            print('Templates folder missing')
 
     @property
     def case_dir(self):
@@ -129,63 +127,121 @@ class FileIOClass(object):
         return self._gmsh_exe
 
 
-class SettingsClass(PhysicalQuantities,object):
-    def __init__(self, fio):
+class SettingsClass(PhysicalQuantities, object):
+    def __init__(self, analyses_root, park_label, wtg_label):
         super().__init__()
-        self._json_list = ['park', 'rna','tower', 'floater', 'analysis']
 
-        self.job_data = dict()
-        self._fio = fio
+        self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis']
+
+        self._job_data = dict()
+
+
+
+        self._analyses_root = analyses_root
+        self._park_label = park_label
+        self._wtg_label = wtg_label
+        self._case_label = None
+
+        self._fio = None
+
 
         # Collect template data
         for item in self._json_list:
-            with open(self._fio.templates_dir.joinpath('{}_template.json'.format(item)), 'r') as f:
-                self.job_data[item] = json.loads(f.read())
+            with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'r') as f:
+                self._job_data[item] = json.loads(f.read())
 
         # Save updated template to template dir
         for item in self._json_list:
-            with open(self._fio.templates_dir.joinpath('{}_template.json'.format(item)), 'w') as f:
-                f.write(json.dumps(self.job_data[item], indent=4, sort_keys=True))
+            with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'w') as f:
+                f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
+
+
+    def set_file_structure(self):
+        self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
+        self.save_job_settings()
 
     def save_job_settings(self):
         # Save updated settings to analysis directory
         for item in self._json_list:
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'w') as f:
-                f.write(json.dumps(self.job_data[item], indent=4, sort_keys=True))
+                f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
 
     def load_job_settings(self):
         # Load current settings from analysis directory
         for item in self._json_list:
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
-                self.job_data[item] = json.loads(f.read())
-
+                self._job_data[item] = json.loads(f.read())
 
     @property
     def simulation_dir(self):
         self.load_job_settings()
-        return self.job_data['analysis']['simulations']['sim01']['simulation_dir']
+        return self._job_data['analysis']['simulations']['sim01']['simulation_dir']
 
     @simulation_dir.setter
     def simulation_dir(self, val):
-        self.job_data['analysis']['simulations']['sim01']['simulation_dir'] = val
+        self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = val
         self.save_job_settings()
 
     @property
     def mesh_file(self):
         self.load_job_settings()
-        return self.job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file']
+        return self._job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file']
 
     @mesh_file.setter
     def mesh_file(self, val):
-        self.job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file'] = val
+        self._job_data['analysis']['simulations']['sim01']['floating_bodies']['sim01.dat']['mesh_file'] = val
         self.save_job_settings()
 
     @property
     def draught(self):
         self.load_job_settings()
-        return self.job_data['floater']['Draught']
+        return self._job_data['floater']['Draught']
 
     @draught.setter
     def draught(self, val):
-        self.job_data['floater']['Draught'] = val
+        self._job_data['floater']['Draught'] = val
         self.save_job_settings()
+
+    @property
+    def fio(self):
+        return self._fio
+
+    @property
+    def case_label(self):
+        return self._case_label
+
+    @case_label.setter
+    def case_label(self, type = None):
+        if type == None:
+            self._case_label = None
+        elif type == 'floater_data':
+            nrc = self._job_data['floater']['Number of radial columns']
+            rcd = self._job_data['floater']['Radial column diameter']
+            gf = self._job_data['floater']['Gap factor']
+            rh = self._job_data['floater']['Radial height']
+            mt =  self._job_data['floater']['Type']
+            self._case_label = '{}3{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt,nrc,rcd*10,gf*10,rh*10)
+        else:
+            print('Cannot set case_label, {} is not a valid type'.format(type))
+            exit()
+
+        self.set_file_structure()
+
+    @property
+    def floater_data(self):
+        self.load_job_settings()
+        return self._job_data['floater']
+
+    @floater_data.setter
+    def floater_data(self, val):
+        if type(val) is dict:
+            for key in val:
+                self._job_data['floater'][key]= val[key]
+        else:
+            print('Cannot set floater_data, {} is not dict'.format(val))
+            exit()
+
+
+    @property
+    def job_data(self):
+        return self._job_data
