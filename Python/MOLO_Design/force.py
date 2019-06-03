@@ -65,7 +65,7 @@ class show_force(object):
             exit()
 
         # Showing the viewer
-        self.viewer.show_interactive()
+        self.viewer.show()
         self.viewer.finalize()
 
         return

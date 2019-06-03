@@ -7,7 +7,7 @@ import os
 
 import numpy as np
 import pandas as pd
-
+import pickle
 import meshmagick.hydrostatics as hs
 import meshmagick.mmio as mmio
 import model
@@ -260,6 +260,7 @@ def launch_dipole(settings):
     mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
     settings.mesh_file = str(mesh_dat)
 
+    pickle.dump(nemoh_mesh, open(settings.fio.data_io_dir.joinpath('nemoh_mesh.pkl'), "wb"))
 
     mmio.write_MAR(settings.mesh_file, nemoh_mesh.vertices, nemoh_mesh.faces)
     print('Nemoh mesh written to {}'.format(settings.mesh_file))

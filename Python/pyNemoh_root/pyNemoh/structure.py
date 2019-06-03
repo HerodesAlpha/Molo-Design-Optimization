@@ -601,8 +601,8 @@ class BaseStructure(object):
 
         self.H5_RESULTS_PRESSURE = self.H5_RESULTS + 'pressure'
         """
-        The potential
-        Previous results/potential*.dat
+        The pressure
+        
         """
 
 
