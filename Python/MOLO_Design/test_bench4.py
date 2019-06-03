@@ -26,29 +26,41 @@ from pyNemoh.postprocessor import read_results
 import stability
 
 if __name__ == '__main__':
-    run_nemoh = False
-    create_model = False
+    create_model = True
     calc_gz = False
+    run_nemoh = True
     postprocessing = True
+
     h5_bs = BaseStructure()
     ANALYSES_ROOT = Path(r'C:\analyses')
-    PARK_LABEL='site_01'
+    PARK_LABEL = 'site_01'
     WTG_LABEL = 'wtg_01'
 
-    settings = SettingsClass(ANALYSES_ROOT,PARK_LABEL,WTG_LABEL)
+    settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
     settings.floater_data = {
-                                "Type":                         "OY",
-                                "Central column diameter":      10,
-                                "Central column thickness":     0.04,
-                                "Draught":                      0,
-                                "Gap factor":                   0.8,
-                                "Lower flange thickness":       0.04,
-                                "Number of radial columns":     2,
-                                "Radial column diameter":       11,
-                                "Radial column thickness":      0.04,
-                                "Radial height":                18,
-                                "Upper flange thickness":       0.04
+            "Type"                    : "OY",
+            "Central column diameter" : 7,
+            "Central column thickness": 0.04,
+            "Draught"                 : 0,
+            "Gap factor"              : 0.8,
+            "Lower flange thickness"  : 0.04,
+            "Number of radial columns": 3,
+            "Radial column diameter"  : 9,
+            "Radial column thickness" : 0.04,
+            "Radial height"           : 18,
+            "Upper flange thickness"  : 0.04
     }
+    settings.load_cases = {  # 121, np.pi / 15, np.pi
+            "num_wave_frequencies": 121,
+            "min_wave_frequencies": np.pi / 15,
+            "max_wave_frequencies": np.pi,
+
+            "num_wave_directions" : 3,
+            "min_wave_directions" : 0,
+            "max_wave_directions" : 90,
+
+    }
+
     settings.case_label = 'floater_data'
     settings.set_file_structure()
 
@@ -56,10 +68,7 @@ if __name__ == '__main__':
 
     fio = settings.fio
 
-
     if create_model:
-
-
 
         # NEMOH_DOF = model_data["Analyses parameters"]["Degrees of Freedom"]
         # NEMOH_DIR = model_data["Analyses parameters"]["Number of wave directions, Min and Max (degrees)"]
@@ -97,7 +106,6 @@ if __name__ == '__main__':
 
     if postprocessing:
 
-
         hdp = calculations.TransferFunctions(settings)
 
         SELECT_DOF = 1
@@ -110,21 +118,21 @@ if __name__ == '__main__':
         #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
         # write_report(root, hdp, case_label)
 
-        ifreq = 0
+        ifreq = 1
         idir = 0
-        irad = 0
-        #nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
+        irad = 3
+        # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
         iprob = 2
-        #nfreq  = len(w)
-        #problem = (ifreq - 1) * nprob + iprob
+        # nfreq  = len(w)
+        # problem = (ifreq - 1) * nprob + iprob
 
         # print('Problem: {}'.format(problem))
-        NEMOH_DOF=[1,1,1,1,1,1]
+        NEMOH_DOF = [1, 1, 1, 1, 1, 1]
 
         if 1:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
-            # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction',axis=2)
-            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
+            hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
+            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
 
         # print(hdp.ma[0,:,0,0])
         # print(hdp._fe_amp[0,:,dof])
@@ -137,7 +145,7 @@ if __name__ == '__main__':
 
         np.set_printoptions(precision=3)
         idof = 2
-        rao=hdp.getRAO(idof, idir)
+        rao = hdp.getRAO(idof, idir)
 
         plt.plot(2 * np.pi / w, rao)
         plt.show()
@@ -146,9 +154,6 @@ if __name__ == '__main__':
 
         if 1:
             print('\n')
-
-
-
 
             print('\nRadiation damping:\n{}'.format(hdp._c_hyd[ifreq]))
             print('\nWater plane stiffness:\n{}'.format(hdp.k))
@@ -162,11 +167,10 @@ if __name__ == '__main__':
             f_diff = nemoh.p2f(hdp._p['Diffraction'][ifreq, idir, :], hdp.pd)
             f_exc = f_fk + f_diff
 
-
             print(np.abs(nemoh.get_section_forces(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))
 
             print(abs(hdp.p2f(ifreq, pressure_index=0, pressure_type='Hydro static')) / 9.81)
-            #print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
+            # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
         part_list = unit_model.get_parts()
         print(sum([part.mass for part in part_list]))

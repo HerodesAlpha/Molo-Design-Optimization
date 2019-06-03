@@ -153,6 +153,7 @@ class SettingsClass(PhysicalQuantities, object):
 
     def set_file_structure(self):
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
+        print(self._job_data['analysis']['simulations'])
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()
 
@@ -234,7 +235,21 @@ class SettingsClass(PhysicalQuantities, object):
             for key in val:
                 self._job_data['floater'][key] = val[key]
         else:
-            print('Cannot set floater_data, {} is not dict'.format(val))
+            print('Cannot set floater, {} is not dict'.format(val))
+            exit()
+
+    @property
+    def load_cases(self):
+        self.load_job_settings()
+        return self._job_data['analysis']['simulations']['default']['load_cases']
+
+    @load_cases.setter
+    def load_cases(self, val):
+        if type(val) is dict:
+            for key in val:
+                self._job_data['analysis']['simulations']['default']['load_cases'][key] = val[key]
+        else:
+            print('Cannot set analysis_data, {} is not dict'.format(val))
             exit()
 
     @property
