@@ -264,8 +264,6 @@ def generate_mesh(raw_points):
     }
 
 
-    
-
 
 def write_mesh_l12(mesh, hdf5_data):
     """
@@ -893,6 +891,12 @@ def run(hdf5_data, custom_config):
 
             result = compute_wave(mesh, w[i], beta[j], environment)
             pressure = result["pressure"]
+
+            #--------------------------------------------------------------------------------------------------
+            # Eivind Sønju, 03.06.2019: Set FK pressure on dipol panels to diff. pressure ~ 0
+            dipol_index=[i for i, elem in enumerate(hdf5_data[structure.H5_SOLVER_THIN_PANELS][:], 0) if elem]
+            pressure[dipol_index] = 0
+            #--------------------------------------------------------------------------------------------------
             fk_pressure[i, j, :]=pressure.flatten()
             n_vel = result["n_vel"]
             normal_velocity[:, j+ i*(n_beta+n_radiation)] = n_vel

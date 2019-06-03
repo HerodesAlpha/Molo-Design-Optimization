@@ -578,7 +578,7 @@ def run(hdf5_data, custom_config):
                 ' at ' + structure.H5_RESULTS_RADIATION_DAMPING + ' with characteristics ' +
                 str(dset))
 
-    excitation_forces = result.diffraction_force + result.froudkrylov_force
+    excitation_forces = result.diffraction_force + result.froudkrylov_force #TODO: Save diffraction in its one slot
     dset = utility.require_dataset(hdf5_data, structure.H5_RESULTS_EXCITATION_FORCES, excitation_forces.shape, dtype='F')
     utility.set_hdf5_attributes(dset, structure.H5_RESULTS_EXCITATION_FORCES_ATTR)
     dset[:, :, :] = excitation_forces

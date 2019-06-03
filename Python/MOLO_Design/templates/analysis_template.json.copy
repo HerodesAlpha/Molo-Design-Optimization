@@ -68,10 +68,18 @@
                         0.0,
                         0.0
                     ],
+                    "meshing": {
+                        "fineness": 0.4,
+                        "grading": 0.1,
+                        "maxh": 50,
+                        "minh": 0.35,
+                        "tolerance": 0,
+                        "use_tolerance": false
+                    },
                     "moment_in_x_direction": [
                         0.0,
                         0.0,
-                        0.0
+                        -7.5
                     ],
                     "moment_in_y_direction": [
                         0.0,

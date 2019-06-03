@@ -210,7 +210,7 @@ class SettingsClass(PhysicalQuantities, object):
     @case_label.setter
     def case_label(self, type=None):
         if type == None:
-            self._case_label = None
+            self._case_label = None # Auto numbering
         elif type == 'floater_data':
             nrc = self._job_data['floater']['Number of radial columns']
             rcd = self._job_data['floater']['Radial column diameter']
@@ -219,10 +219,9 @@ class SettingsClass(PhysicalQuantities, object):
             mt = self._job_data['floater']['Type']
             self._case_label = '{}{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt, nrc, rcd * 10, gf * 10, rh * 10)
         else:
-            print('Cannot set case_label, \"{}\" is not a valid type\nUse \'floater_data\' or None (auto)'.format(type))
-            exit()
+            self._case_label = type
 
-        self.set_file_structure()
+
 
     @property
     def floater_data(self):

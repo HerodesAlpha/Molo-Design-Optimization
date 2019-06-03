@@ -51,17 +51,17 @@ if __name__ == '__main__':
             "Upper flange thickness"  : 0.04
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 121,
-            "min_wave_frequencies": np.pi / 15,
-            "max_wave_frequencies": np.pi,
-
+            "num_wave_frequencies": 81,
+            "min_wave_frequencies": 0.251327412,  # (rad/s)
+            "max_wave_frequencies": 1.570796327,
             "num_wave_directions" : 3,
-            "min_wave_directions" : 0,
+            "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
-
     }
 
     settings.case_label = 'floater_data'
+    # settings.case_label = None
+    # settings.case_label = 'case0001'
     settings.set_file_structure()
 
     settings.simulation_dir = str(settings.fio.nemoh_root)
@@ -118,9 +118,9 @@ if __name__ == '__main__':
         #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
         # write_report(root, hdp, case_label)
 
-        ifreq = 1
+        ifreq = 2
         idir = 0
-        irad = 3
+        irad = 5
         # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
         iprob = 2
         # nfreq  = len(w)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         if 1:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
+            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=1)
 
         # print(hdp.ma[0,:,0,0])
         # print(hdp._fe_amp[0,:,dof])
@@ -145,9 +145,9 @@ if __name__ == '__main__':
 
         np.set_printoptions(precision=3)
         idof = 2
-        rao = hdp.getRAO(idof, idir)
+        rao = hdp.get_rao(idof, idir)
 
-        plt.plot(2 * np.pi / w, rao)
+        plt.plot(2 * np.pi / hdp.w, rao)
         plt.show()
 
         np.set_printoptions(precision=3)
@@ -159,7 +159,7 @@ if __name__ == '__main__':
             print('\nWater plane stiffness:\n{}'.format(hdp.k))
             print('\nStatic mass:\n{}'.format(hdp.m))
             print('\nAdded mass:\n{}'.format(hdp._ma[ifreq]))
-            print('\nExcitation force:\n{}'.format(np.abs(hdp._fe[idir, ifreq, :])))
+            print('\nExcitation force:\n{}'.format(np.abs(hdp._fe[ifreq, idir, :])))
             # tmp = nemoh.get_section_forces(fio, problem, [-100,0,0], [1,0,0], sym=SYM)
             # print('\nSection force:\n{}'.format(np.abs(tmp)))
 

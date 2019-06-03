@@ -111,8 +111,8 @@ class HydroCoefficients(PhysicalQuantities, object):
 
     def p2f(self, ifreq, pressure_index, pressure_type):
         # Pressure to force
-        f_normal = np.zeros((self._npanels), dtype=np.complex)
-        f = np.zeros((self._npanels, 3), dtype=np.complex)
+        f_normal = np.zeros((self._pd.npanels), dtype=np.complex)
+        f = np.zeros((self._pd.npanels, 3), dtype=np.complex)
         for i, panel in enumerate(self._pd.ppanels):
             f_normal[i] = self._p[pressure_type][ifreq, pressure_index, i] * self._pd.ppanel_areas[i]
             for j in range(3):

@@ -11,14 +11,14 @@ class TransferFunctions(HydroCoefficients,object):
     def __init__(self,fio):
         super().__init__(fio)
 
-    def displacement(self, fe, m, ma, c, k, w):
+    def rao(self, fe, m, ma, c, k, w):
         return np.absolute(fe / (-w ** 2 * (m + ma) + 1j * w * (c) + k))
 
 
-    def getRAO(self, idof, idir):
-        fe = self._fe[idir, :, idof]
+    def get_rao(self, idof, idir):
+        fe = self._fe[:, idir, idof]
         m = self._m[idof][idof]
         ma = self._ma[:, idof, idof]
         c = self._c_hyd[:, idof, idof]
         k = self._k[idof][idof]
-        return self.displacement(fe, m, ma, c, k, self._w)
+        return self.rao(fe, m, ma, c, k, self._w)

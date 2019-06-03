@@ -122,7 +122,7 @@ if postprocessing:
 
     np.set_printoptions(precision=3)
     idof = 2
-    rao=hdp.getRAO(idof, idir)
+    rao=hdp.get_rao(idof, idir)
     #print(rao)
     plt.plot(2 * np.pi / w, rao)
     plt.show()
