@@ -315,9 +315,6 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
         return gmsh_msh_file
 
 
-
-
-
 def msh_file(fio, settings, bool_thin):
     if bool_thin:
         str_thin = '_thin'
@@ -327,9 +324,12 @@ def msh_file(fio, settings, bool_thin):
     # str_thin = '_thin' if settings.job_data['analysis']['simulations']['default']['calculation'][
     #     'use_dipoles_implementation'] else ''
 
-    mesh_name = 'MOLO_{}c{}'.format(settings.job_data['floater']['Number of radial columns'], str_thin)
+    if settings.mesh_name == None:
+        settings.mesh_name = 'MOLO_{}c'.format(settings.job_data['floater']['Number of radial columns'])
 
-    with open(fio.templates_dir.joinpath('{}.geo.template'.format(mesh_name)), 'r') as file:
+    this_mesh_name = '{}{}'.format(settings.mesh_name, str_thin)
+
+    with open(fio.templates_dir.joinpath('{}.geo.template'.format(this_mesh_name)), 'r') as file:
         filedata = file.read()
 
     # Replace the target string
@@ -342,10 +342,6 @@ def msh_file(fio, settings, bool_thin):
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
     else:
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial height']))
-
-
-
-
 
     # Set mesh density thin templates
     filedata = filedata.replace('#nel#', '{}'.format(16))
@@ -364,12 +360,12 @@ def msh_file(fio, settings, bool_thin):
     filedata = filedata.replace('#dens15#', '{}'.format(dens15))
 
     # Write gmsh geo file to analysis directory
-    gmsh_geo_file = fio.gmsh_dir.joinpath('{}.geo'.format(mesh_name))
+    gmsh_geo_file = fio.gmsh_dir.joinpath('{}.geo'.format(this_mesh_name))
     with open(gmsh_geo_file, 'w') as file:
         file.write(filedata)
 
     # Create mesh
-    gmsh_msh_file = fio.gmsh_dir.joinpath('{}.msh'.format(mesh_name))
+    gmsh_msh_file = fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
     try:
         a = subprocess.check_output(
                 [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
@@ -509,8 +505,8 @@ def prepare_dipol_mesh(vertices, faces, settings):
     pd = PanelData(vertices, faces)
 
     is_flange_element = False
-    dipol = []
-    not_dipol = []
+    dipol_index = []
+    not_dipol_index = []
     flipped = []
     #
     for i in range(pd.npanels):
@@ -550,7 +546,9 @@ def prepare_dipol_mesh(vertices, faces, settings):
             if not found_inside:
                 printv('   Is dipol')
                 # print(i)
-                dipol.append(i)
+                dipol_index.append(i)
+            else:
+                not_dipol_index.append(i)
         else:  # Cylinder element
             # Find the cylinder x,y to which the element belongs
             printv('Process cylinder element {}'.format(i))
@@ -589,10 +587,14 @@ def prepare_dipol_mesh(vertices, faces, settings):
                 faces[i] = faces[i][::-1]
                 flipped.append(i)
 
-        if not (is_flange_element and not found_inside):
-            not_dipol.append(i)
 
+            not_dipol_index.append(i)
+
+    if not (len(not_dipol_index) + len(dipol_index)) == len(faces):  # TODO: Fix dipol filter
+        print(' prepare_dipol_mesh failed\n\tnot_dipol - {}\n\tdipol     - {}\n\ttotal     - {}'.format(
+            len(not_dipol_index), len(dipol_index), len(faces)))
+        exit()
 
     settings.job_data['analysis']['simulations']['default']['calculation'][
-        'thin_panels'] = dipol  # TODO: Check if index must start with 1
-    return vertices, faces, vertices, faces[not_dipol]
+        'thin_panels'] = dipol_index  # TODO: Check if index must start with 1
+    return vertices, faces, not_dipol_index, dipol_index

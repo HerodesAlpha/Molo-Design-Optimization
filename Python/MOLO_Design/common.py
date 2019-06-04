@@ -55,6 +55,8 @@ class FileIOClass(object):
         else:
             self._case_label = case_label
 
+        self._mesh_name = None
+
         self._case_dir = case_parent_dir.joinpath(self._case_label)
 
         self._nemoh_root = self._case_dir.joinpath('nemoh')
@@ -132,6 +134,8 @@ class SettingsClass(PhysicalQuantities, object):
 
         self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis']
 
+        self._mesh_name = None
+
         self._job_data = dict()
 
         self._analyses_root = analyses_root
@@ -150,6 +154,12 @@ class SettingsClass(PhysicalQuantities, object):
         for item in self._json_list:
             with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'w') as f:
                 f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
+
+        self._create_model = False
+        self._calc_gz = False
+        self._run_nemoh = False
+        self._postprocessing = False
+
 
     def set_file_structure(self):
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
@@ -254,3 +264,45 @@ class SettingsClass(PhysicalQuantities, object):
     @property
     def job_data(self):
         return self._job_data
+
+
+    @property
+    def mesh_name(self):
+        return self._mesh_name
+
+    @mesh_name.setter
+    def mesh_name(self, val):
+        self._mesh_name = val
+
+    @property
+    def create_model(self):
+        return self._create_model
+
+    @create_model.setter
+    def create_model(self, val):
+        self._create_model = val
+
+    @property
+    def calc_gz(self):
+        return self._calc_gz
+
+    @calc_gz.setter
+    def calc_gz(self, val):
+        self._calc_gz = val
+
+    @property
+    def run_nemoh(self):
+        return self._run_nemoh
+
+    @run_nemoh.setter
+    def run_nemoh(self, val):
+        self._run_nemoh = val
+
+    @property
+    def postprocessing(self):
+        return self._postprocessing
+
+    @postprocessing.setter
+    def postprocessing(self, val):
+        self._postprocessing = val
+

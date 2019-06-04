@@ -26,17 +26,21 @@ from pyNemoh.postprocessor import read_results
 import stability
 
 if __name__ == '__main__':
-    create_model = True
-    calc_gz = False
-    run_nemoh = True
-    postprocessing = True
-
-    h5_bs = BaseStructure()
     ANALYSES_ROOT = Path(r'C:\analyses')
     PARK_LABEL = 'site_01'
     WTG_LABEL = 'wtg_01'
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
+
+    settings.create_model = True
+    settings.calc_gz = False
+    settings.run_nemoh = False
+    settings.postprocessing = True
+
+    h5_bs = BaseStructure()
+
+
+
     settings.floater_data = {
             "Type"                    : "OY",
             "Central column diameter" : 7,
@@ -51,7 +55,7 @@ if __name__ == '__main__':
             "Upper flange thickness"  : 0.04
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 81,
+            "num_wave_frequencies": 61,
             "min_wave_frequencies": 0.251327412,  # (rad/s)
             "max_wave_frequencies": 1.570796327,
             "num_wave_directions" : 3,
@@ -61,14 +65,17 @@ if __name__ == '__main__':
 
     settings.case_label = 'floater_data'
     # settings.case_label = None
-    # settings.case_label = 'case0001'
+    # settings.case_label = 'debug01'
     settings.set_file_structure()
+
+    # settings.mesh_name = 'debug_3c'
+
 
     settings.simulation_dir = str(settings.fio.nemoh_root)
 
     fio = settings.fio
 
-    if create_model:
+    if settings.create_model:
 
         # NEMOH_DOF = model_data["Analyses parameters"]["Degrees of Freedom"]
         # NEMOH_DIR = model_data["Analyses parameters"]["Number of wave directions, Min and Max (degrees)"]
@@ -92,10 +99,10 @@ if __name__ == '__main__':
         unit_model = pickle.load(open(fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
         hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
-    if create_model and calc_gz:
+    if settings.create_model and settings.calc_gz:
         stability.gz_curve(fio, hs_floater)
 
-    if create_model and run_nemoh:
+    if settings.create_model and settings.run_nemoh:
         queue = multiprocessing.Queue(-1)
         ql = QueueListener(queue, *logging.getLogger().handlers)
         ql.start()
@@ -104,7 +111,7 @@ if __name__ == '__main__':
         # nemoh.runNemoh(fio, hydro_mesh_symmetri, mesh_file, NEMOH_DIR, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP,
         #                NEMOH_DOF)
 
-    if postprocessing:
+    if settings.postprocessing:
 
         hdp = calculations.TransferFunctions(settings)
 
@@ -118,9 +125,9 @@ if __name__ == '__main__':
         #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
         # write_report(root, hdp, case_label)
 
-        ifreq = 2
+        ifreq = 4
         idir = 0
-        irad = 5
+        irad = 3
         # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
         iprob = 2
         # nfreq  = len(w)
@@ -131,8 +138,8 @@ if __name__ == '__main__':
 
         if 1:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
-            hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=1)
+            hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=1)
+            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
 
         # print(hdp.ma[0,:,0,0])
         # print(hdp._fe_amp[0,:,dof])
@@ -148,11 +155,11 @@ if __name__ == '__main__':
         rao = hdp.get_rao(idof, idir)
 
         plt.plot(2 * np.pi / hdp.w, rao)
-        plt.show()
+        #plt.show()
 
         np.set_printoptions(precision=3)
 
-        if 1:
+        if 0:
             print('\n')
 
             print('\nRadiation damping:\n{}'.format(hdp._c_hyd[ifreq]))

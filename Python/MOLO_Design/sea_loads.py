@@ -60,7 +60,7 @@ class HydroCoefficients(PhysicalQuantities, object):
             step += 1
             sys.stdout.write("\t({})Get pressures\n".format(step))
             pressure_file = settings.fio.data_io_dir.joinpath('hydro_pressures.pkl')
-            if pressure_file.is_file() and 1:
+            if pressure_file.is_file() and 0:
                 self._p = pickle.load(open(pressure_file, 'rb'))
                 sys.stdout.write("\t\tUnPickled from {}\n".format(pressure_file))
                 for key in self._p.keys():

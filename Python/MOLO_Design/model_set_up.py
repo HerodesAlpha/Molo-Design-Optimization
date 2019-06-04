@@ -249,12 +249,16 @@ def launch_dipole(settings):
 
     msh_file=tb.msh_file(settings.fio, settings, bool_thin=True)
     nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)
-    nemoh_vertices, nemoh_panels, cylinder_vertices, cylinder_panels = tb.prepare_dipol_mesh(nemoh_vertices,
+    nemoh_vertices, nemoh_panels, not_dipol_index, dipol_index = tb.prepare_dipol_mesh(nemoh_vertices,
                                                                                              nemoh_panels,
                                                                                              settings)
     #print(msh_file.stem)
     nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
-    #nemoh_mesh.show()
+
+    # nemo_mesh_not_dipol= Mesh(nemoh_vertices, nemoh_panels[not_dipol_index])
+    # nemo_mesh_dipol= Mesh(nemoh_vertices, nemoh_panels[dipol_index])
+    # nemo_mesh_not_dipol.show()
+    # nemo_mesh_dipol.show()
 
 
     mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
