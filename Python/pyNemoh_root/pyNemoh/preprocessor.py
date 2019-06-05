@@ -734,6 +734,7 @@ def run(hdf5_data, custom_config):
     dset = hdf5_data.get(structure.H5_SHOW_PRESSURE)
     utility.check_dataset_type(dset, name='The switch for showing pressure', location=structure.H5_SHOW_PRESSURE)
     switch_potential = dset[0] >= 1
+    #switch_potential=1 # TODO: Temporary fix, now static
 
     dset = hdf5_data.get(structure.H5_KOCHIN_NUMBER)
     utility.check_dataset_type(dset, name='The number of direction for the computation of far field coefficients (Kochin function)',

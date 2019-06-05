@@ -1,0 +1,38 @@
+// Gmsh project created on Wed Jun 05 08:58:30 2019
+//+
+SetFactory("OpenCASCADE");
+Box(1) = {-0.5, -0.5, -10, 1, 1, .1};
+//+
+Transfinite Curve {12, 2, 10, 6, 8, 9, 4, 11} = 11 Using Progression 1;
+//+
+Transfinite Curve {1, 5, 3, 7} = 2 Using Progression 1;
+//+
+Transfinite Surface {6};
+//+
+Transfinite Surface {5};
+//+
+Transfinite Surface {6};
+//+
+Transfinite Surface {5};
+//+
+Transfinite Surface {2};
+//+
+Transfinite Surface {3};
+//+
+Transfinite Surface {3};
+//+
+Transfinite Surface {2};
+//+
+Transfinite Surface {4};
+//+
+Transfinite Surface {1};
+//+
+Transfinite Surface {3};
+//+
+Transfinite Surface {6};
+//+
+Transfinite Surface {1};
+//+
+Transfinite Surface {5};
+//+
+Recombine Surface {3, 6, 2, 5, 1, 4};

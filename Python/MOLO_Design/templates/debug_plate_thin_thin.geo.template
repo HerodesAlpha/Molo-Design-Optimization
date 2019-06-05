@@ -1,0 +1,10 @@
+// Gmsh project created on Wed Jun 05 09:10:51 2019
+SetFactory("OpenCASCADE");
+//+
+Rectangle(1) = {-0.5, -0.5, -10, 1, 1, 0};
+//+
+Transfinite Curve {4, 3, 2, 1} = 11 Using Progression 1;
+//+
+Transfinite Surface {1};
+//+
+Recombine Surface {1};

@@ -595,6 +595,10 @@ def prepare_dipol_mesh(vertices, faces, settings):
             len(not_dipol_index), len(dipol_index), len(faces)))
         exit()
 
-    settings.job_data['analysis']['simulations']['default']['calculation'][
-        'thin_panels'] = dipol_index  # TODO: Check if index must start with 1
+    if len(dipol_index)>0:
+        settings.job_data['analysis']['simulations']['default']['calculation'][
+            'thin_panels'] = dipol_index  # TODO: Check if index must start with 1
+    else:
+        settings.job_data['analysis']['simulations']['default']['calculation'][
+            'thin_panels'] ='0'
     return vertices, faces, not_dipol_index, dipol_index

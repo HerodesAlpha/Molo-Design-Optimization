@@ -235,13 +235,16 @@ def launch_dipole(settings):
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
     print('Mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
-    hs_floater.equilibrate()
+    # TODO: THIS IS TEMP SPEEDUP. FIX IT !!
+    #hs_floater.equilibrate()
+    hs_floater.set_draught(6.02)
     #
     tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
     unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
     settings.draught = hs_floater.hs_data['draught']
+
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
     #hs_floater.show()
@@ -254,6 +257,8 @@ def launch_dipole(settings):
                                                                                              settings)
     #print(msh_file.stem)
     nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
+    nemoh_mesh.heal_normals()
+    #nemoh_mesh.show()
 
     # nemo_mesh_not_dipol= Mesh(nemoh_vertices, nemoh_panels[not_dipol_index])
     # nemo_mesh_dipol= Mesh(nemoh_vertices, nemoh_panels[dipol_index])

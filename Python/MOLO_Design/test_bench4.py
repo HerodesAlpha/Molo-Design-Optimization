@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     settings.create_model = True
     settings.calc_gz = False
-    settings.run_nemoh = False
+    settings.run_nemoh = True
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -55,20 +55,22 @@ if __name__ == '__main__':
             "Upper flange thickness"  : 0.04
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 61,
-            "min_wave_frequencies": 0.251327412,  # (rad/s)
-            "max_wave_frequencies": 1.570796327,
-            "num_wave_directions" : 3,
+            "num_wave_frequencies": 1,
+            "min_wave_frequencies": 1,  # (rad/s)
+            "max_wave_frequencies": 1,
+            "num_wave_directions" : 1,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
 
-    settings.case_label = 'floater_data'
+    # settings.case_label = 'floater_data'
     # settings.case_label = None
-    # settings.case_label = 'debug01'
+    settings.case_label = 'debug_plate_thin'
     settings.set_file_structure()
 
     # settings.mesh_name = 'debug_3c'
+    # settings.mesh_name = 'debug_plate_thick'
+    settings.mesh_name = 'debug_plate_thin'
 
 
     settings.simulation_dir = str(settings.fio.nemoh_root)
@@ -125,9 +127,9 @@ if __name__ == '__main__':
         #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
         # write_report(root, hdp, case_label)
 
-        ifreq = 4
+        ifreq = 0
         idir = 0
-        irad = 3
+        irad = 2
         # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
         iprob = 2
         # nfreq  = len(w)
@@ -138,8 +140,8 @@ if __name__ == '__main__':
 
         if 1:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
-            hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=1)
-            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
+            # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=1)
+            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
 
         # print(hdp.ma[0,:,0,0])
         # print(hdp._fe_amp[0,:,dof])
@@ -155,11 +157,11 @@ if __name__ == '__main__':
         rao = hdp.get_rao(idof, idir)
 
         plt.plot(2 * np.pi / hdp.w, rao)
-        #plt.show()
+        plt.show()
 
         np.set_printoptions(precision=3)
 
-        if 0:
+        if 1:
             print('\n')
 
             print('\nRadiation damping:\n{}'.format(hdp._c_hyd[ifreq]))

@@ -821,6 +821,21 @@ class Hydrostatics(object):
                 dz = math.copysign(z_relax, dz)
             iter += 1
 
+    def set_draught(self, draught):
+        """
+        Displaces the mesh at a prescribed draught
+
+        Parameters
+        ----------
+        draught : float
+        mass : float
+
+        """
+
+
+        self.hs_data['draught']=draught
+
+
     def equilibrate(self, init_disp=True):
         """Performs 3D equilibrium search.
         
