@@ -65,15 +65,20 @@ if __name__ == '__main__':
 
     # settings.case_label = 'floater_data'
     # settings.case_label = None
-    settings.case_label = 'debug_plate_thin'
+    # settings.case_label = 'debug_plate_thin'
+    settings.case_label = 'debug_plate_thick'
     settings.set_file_structure()
 
     # settings.mesh_name = 'debug_3c'
-    # settings.mesh_name = 'debug_plate_thick'
-    settings.mesh_name = 'debug_plate_thin'
+    settings.mesh_name = settings.case_label
+    #settings.mesh_name = 'debug_plate_thin'
+    settings.use_dipols = False
 
 
     settings.simulation_dir = str(settings.fio.nemoh_root)
+
+    settings.do_equilibriate=False
+    settings.draught=6.02
 
     fio = settings.fio
 
@@ -93,6 +98,8 @@ if __name__ == '__main__':
         # hydro_mesh_symmetri, mesh_file = nemoh.mesh(fio, hs_floater, SYM)
         #
         # hydro_mesh_symmetri.show()
+
+        settings.thin_panels = []
 
 
     else:
@@ -157,7 +164,7 @@ if __name__ == '__main__':
         rao = hdp.get_rao(idof, idir)
 
         plt.plot(2 * np.pi / hdp.w, rao)
-        plt.show()
+        # plt.show()
 
         np.set_printoptions(precision=3)
 

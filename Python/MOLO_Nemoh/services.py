@@ -295,7 +295,7 @@ def simulate(simulation_dir, params, queue):
     helper.check_not_none_nor_empty(params.num_panel_higher_order, 'params.num_panel_higher_order')
     helper.check_not_none_nor_empty(params.b_spline_order, 'params.b_spline_order')
     helper.check_not_none_nor_empty(params.use_dipoles_implementation, 'params.use_dipoles_implementation')
-    helper.check_not_none_nor_empty(params.thin_panels, 'params.thin_panels')
+    #helper.check_not_none_nor_empty(params.thin_panels, 'params.thin_panels')
     helper.check_not_none_nor_empty(params.compute_drift_forces, 'params.compute_drift_forces')
     helper.check_not_none_nor_empty(params.remove_irregular_frequencies, 'params.remove_irregular_frequencies')
     helper.check_not_none_nor_empty(params.compute_yaw_moment, 'params.compute_yaw_moment')

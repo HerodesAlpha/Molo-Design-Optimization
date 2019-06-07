@@ -135,6 +135,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis']
 
         self._mesh_name = None
+        self._do_equilibrate = True
 
         self._job_data = dict()
 
@@ -155,11 +156,14 @@ class SettingsClass(PhysicalQuantities, object):
             with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'w') as f:
                 f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
 
+        self._thin_panels = self._job_data['analysis']['simulations']['default']['calculation']['thin_panels']
+        self._use_dipols = self._job_data['analysis']['simulations']['default']['calculation'][
+            'use_dipoles_implementation']
+
         self._create_model = False
         self._calc_gz = False
         self._run_nemoh = False
         self._postprocessing = False
-
 
     def set_file_structure(self):
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
@@ -220,7 +224,7 @@ class SettingsClass(PhysicalQuantities, object):
     @case_label.setter
     def case_label(self, type=None):
         if type == None:
-            self._case_label = None # Auto numbering
+            self._case_label = None  # Auto numbering
         elif type == 'floater_data':
             nrc = self._job_data['floater']['Number of radial columns']
             rcd = self._job_data['floater']['Radial column diameter']
@@ -230,8 +234,6 @@ class SettingsClass(PhysicalQuantities, object):
             self._case_label = '{}{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt, nrc, rcd * 10, gf * 10, rh * 10)
         else:
             self._case_label = type
-
-
 
     @property
     def floater_data(self):
@@ -264,7 +266,6 @@ class SettingsClass(PhysicalQuantities, object):
     @property
     def job_data(self):
         return self._job_data
-
 
     @property
     def mesh_name(self):
@@ -306,3 +307,31 @@ class SettingsClass(PhysicalQuantities, object):
     def postprocessing(self, val):
         self._postprocessing = val
 
+    @property
+    def do_equilibrate(self):
+        return self._do_equilibrate
+
+    @do_equilibrate.setter
+    def do_equilibrate(self, val):
+        self._do_equilibrate = val
+
+    @property
+    def thin_panels(self):
+        return self._thin_panels
+
+    @thin_panels.setter
+    def thin_panels(self, val):
+        self._thin_panels = val
+        self._job_data['analysis']['simulations']['default']['calculation']['thin_panels'] = self._thin_panels
+        self.save_job_settings()
+
+    @property
+    def use_dipols(self):
+        return self._use_dipols
+
+    @use_dipols.setter
+    def use_dipols(self, val):
+        self._use_dipols = val
+        self._job_data['analysis']['simulations']['default']['calculation'][
+            'use_dipoles_implementation'] = self._use_dipols
+        self.save_job_settings()

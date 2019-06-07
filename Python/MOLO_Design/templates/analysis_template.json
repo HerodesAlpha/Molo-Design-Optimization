@@ -19,20 +19,7 @@
                 "num_panel_higher_order": 1,
                 "remove_irregular_frequencies": false,
                 "solver_type": 0,
-                "thin_panels": [
-                    12,
-                    13,
-                    14,
-                    15,
-                    16,
-                    17,
-                    18,
-                    19,
-                    20,
-                    21,
-                    22,
-                    23
-                ],
+                "thin_panels": "",
                 "use_dipoles_implementation": true,
                 "use_higher_order": false,
                 "use_ode_influence_coefficients": false

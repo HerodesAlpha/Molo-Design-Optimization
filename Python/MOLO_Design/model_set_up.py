@@ -236,8 +236,9 @@ def launch_dipole(settings):
     print('Mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
     # TODO: THIS IS TEMP SPEEDUP. FIX IT !!
-    #hs_floater.equilibrate()
-    hs_floater.set_draught(6.02)
+    if settings.do_equilibrate:
+        hs_floater.equilibrate()
+
     #
     tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
