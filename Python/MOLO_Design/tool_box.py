@@ -315,8 +315,8 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
         return gmsh_msh_file
 
 
-def msh_file(fio, settings, bool_thin):
-    if bool_thin:
+def msh_file(settings):
+    if settings.use_dipols:
         str_thin = '_thin'
     else:
         str_thin = ''
@@ -329,7 +329,7 @@ def msh_file(fio, settings, bool_thin):
 
     this_mesh_name = '{}{}'.format(settings.mesh_name, str_thin)
 
-    with open(fio.templates_dir.joinpath('{}.geo.template'.format(this_mesh_name)), 'r') as file:
+    with open(settings.fio.templates_dir.joinpath('{}.geo.template'.format(this_mesh_name)), 'r') as file:
         filedata = file.read()
 
     # Replace the target string
@@ -338,7 +338,7 @@ def msh_file(fio, settings, bool_thin):
     filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
     filedata = filedata.replace('#t_lf#', '{}'.format(settings.job_data['floater']['Lower flange thickness']))
 
-    if bool_thin:
+    if settings.use_dipols:
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
     else:
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial height']))
@@ -360,15 +360,15 @@ def msh_file(fio, settings, bool_thin):
     filedata = filedata.replace('#dens15#', '{}'.format(dens15))
 
     # Write gmsh geo file to analysis directory
-    gmsh_geo_file = fio.gmsh_dir.joinpath('{}.geo'.format(this_mesh_name))
+    gmsh_geo_file = settings.fio.gmsh_dir.joinpath('{}.geo'.format(this_mesh_name))
     with open(gmsh_geo_file, 'w') as file:
         file.write(filedata)
 
     # Create mesh
-    gmsh_msh_file = fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
+    gmsh_msh_file = settings.fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
     try:
         a = subprocess.check_output(
-                [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
+                [settings.fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
                  '{}'.format(gmsh_msh_file)])
     except:
         print(a)
@@ -595,10 +595,4 @@ def prepare_dipol_mesh(vertices, faces, settings):
             len(not_dipol_index), len(dipol_index), len(faces)))
         exit()
 
-    if len(dipol_index)>0:
-        settings.job_data['analysis']['simulations']['default']['calculation'][
-            'thin_panels'] = dipol_index  # TODO: Check if index must start with 1
-    else:
-        settings.job_data['analysis']['simulations']['default']['calculation'][
-            'thin_panels'] ='0'
     return vertices, faces, not_dipol_index, dipol_index

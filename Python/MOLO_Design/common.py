@@ -4,20 +4,8 @@ __version__ = "2.0"
 
 import json
 import os
-from pathlib import Path
-import pickle
 
 # import matplotlib.pyplot as plt
-import numpy as np
-from logutils.queue import QueueListener
-import multiprocessing
-import logging
-import helper
-import calculations
-import model_set_up as msu
-import nemoh
-
-from MOLO_Nemoh import nemoh_frontend as nf
 
 from pathlib import Path
 
@@ -68,9 +56,9 @@ class FileIOClass(object):
 
         self._templates_dir = Path(os.getcwd()).joinpath('templates')
 
-        path_to_gmsh = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
-        if Path(path_to_gmsh).exists():
-            self._gmsh_exe = path_to_gmsh
+        path_to_gmsh_exe = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
+        if Path(path_to_gmsh_exe).exists():
+            self._gmsh_exe = path_to_gmsh_exe
 
         self.create_dir()
 
@@ -314,6 +302,15 @@ class SettingsClass(PhysicalQuantities, object):
     @do_equilibrate.setter
     def do_equilibrate(self, val):
         self._do_equilibrate = val
+
+
+    @property
+    def use_symmmetri(self):
+        return self._use_symmmetri
+
+    @use_symmmetri.setter
+    def use_symmmetri(self, val):
+        self._use_symmmetri = val
 
     @property
     def thin_panels(self):

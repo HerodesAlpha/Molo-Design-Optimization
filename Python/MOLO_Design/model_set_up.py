@@ -251,11 +251,22 @@ def launch_dipole(settings):
     #hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
-    msh_file=tb.msh_file(settings.fio, settings, bool_thin=True)
+    msh_file=tb.msh_file(settings)
     nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)
-    nemoh_vertices, nemoh_panels, not_dipol_index, dipol_index = tb.prepare_dipol_mesh(nemoh_vertices,
+
+    if settings.use_dipols:
+        nemoh_vertices, nemoh_panels, not_dipol_index, dipol_index = tb.prepare_dipol_mesh(nemoh_vertices,
                                                                                              nemoh_panels,
                                                                                              settings)
+        if len(dipol_index)>0:
+            settings.thin_panels = dipol_index  # index must start with 0
+        else:
+            settings.thin_panels ='0'
+
+
+
+
+
     #print(msh_file.stem)
     nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
     nemoh_mesh.heal_normals()
@@ -267,12 +278,31 @@ def launch_dipole(settings):
     # nemo_mesh_dipol.show()
 
 
+    if settings.use_symmmetri:
+        nemoh_mesh = nemoh_mesh.de_symmetrize_xz()
+        nemoh_mesh.merge_duplicates()
+
+
+
+
+
     mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
     settings.mesh_file = str(mesh_dat)
 
     pickle.dump(nemoh_mesh, open(settings.fio.data_io_dir.joinpath('nemoh_mesh.pkl'), "wb"))
 
     mmio.write_MAR(settings.mesh_file, nemoh_mesh.vertices, nemoh_mesh.faces)
+
+    if settings.use_symmmetri:
+        with open(mesh_dat, 'r') as f:
+            lines = f.readlines()
+        # print(lines[:4])
+        lines[0] = lines[0].replace('0', '1')
+        # print(lines[:4])
+        with open(mesh_dat, 'w') as f:
+            f.writelines(lines)
+
+
     print('Nemoh mesh written to {}'.format(settings.mesh_file))
 
 

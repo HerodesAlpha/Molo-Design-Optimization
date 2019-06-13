@@ -69,6 +69,8 @@ if __name__ == '__main__':
     settings.mesh_name = settings.case_label
     #settings.mesh_name = 'debug_plate_thin'
     settings.use_dipols = False
+    settings.use_symmmetri = True
+
 
 
     settings.simulation_dir = str(settings.fio.nemoh_root)

@@ -98,7 +98,7 @@ contains
         PCOS=param%SolverVar%VSXM1*XN(IFP)+param%SolverVar%VSYM1*YN(IFP)+param%SolverVar%VSZM1*ZN(IFP)
         PSIN=param%SolverVar%VSXM2*XN(IFP)+param%SolverVar%VSYM2*YN(IFP)+param%SolverVar%VSZM2*ZN(IFP)
 
-        compute_green_dipoles_wrapper = CMPLX(PCOS,PSIN) ! * (-4*PI) Eivind Sønju 07.06.2019
+        compute_green_dipoles_wrapper = CMPLX(PCOS,PSIN) * (-4*PI)
 
 
     end function
@@ -272,7 +272,7 @@ contains
 
                     PCOS=VSXM1*XN(ISP)+VSYM1*YN(ISP)+VSZM1*ZN(ISP)
                     PSIN=VSXM2*XN(ISP)+VSYM2*YN(ISP)+VSZM2*ZN(ISP)
-                    ZIJ(ISP, IMX + 1 ) = ZIJ(ISP, IMX + 1 ) + NVEL(IFP) * CMPLX(PCOS,PSIN) ! * (-4*PI) Eivind Sønju 07.06.2019
+                    ZIJ(ISP, IMX + 1 ) = ZIJ(ISP, IMX + 1 ) + NVEL(IFP) * CMPLX(PCOS,PSIN) * (-4*PI)
 
 
                 ELSE
@@ -291,7 +291,7 @@ contains
 
                     PCOS=VSXM1*XN(IFP)+VSYM1*YN(IFP)+VSZM1*ZN(IFP)
                     PSIN=VSXM2*XN(IFP)+VSYM2*YN(IFP)+VSZM2*ZN(IFP)
-                    ZIJ(ISP, IFP) =  ZIJ(ISP, IFP) +  CMPLX(PCOS,PSIN) ! * (-4*PI) Eivind Sønju 07.06.2019
+                    ZIJ(ISP, IFP) =  ZIJ(ISP, IFP) +  CMPLX(PCOS,PSIN) * (-4*PI)
 
                     IF(ISP == IFP) THEN
 
@@ -304,7 +304,7 @@ contains
                     ! No need to recompute green function here. It has already beeen computed
                     ! in previous instructions.
 
-                    ZIJ(ISP, IMX + 1 ) = ZIJ(ISP, IMX + 1 ) + NVEL(IFP) * CMPLX(SP1+SM1,SP2+SM2) ! * (-4*PI) Eivind Sønju 07.06.2019
+                    ZIJ(ISP, IMX + 1 ) = ZIJ(ISP, IMX + 1 ) + NVEL(IFP) * CMPLX(SP1+SM1,SP2+SM2) * (-4*PI)
 
                 END IF
 

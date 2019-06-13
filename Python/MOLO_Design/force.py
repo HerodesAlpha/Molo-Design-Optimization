@@ -5,10 +5,7 @@ __version__ = "2.0"
 
 import numpy as np
 
-import helper
-import nemoh
 from meshmagick.MMviewer import MMViewer
-from meshmagick.mesh import Mesh
 
 
 class Force(object):

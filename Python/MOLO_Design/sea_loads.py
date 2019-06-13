@@ -2,15 +2,16 @@ __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-import pickle
-from meshmagick.mesh import Mesh
+import h5py
 from pylab import *
+import pickle
 import force
 import nemoh
 import tool_box as tb
 from common import PhysicalQuantities
-import h5py
+from meshmagick.mesh import Mesh
 from pyNemoh.structure import BaseStructure
+
 
 class HydroCoefficients(PhysicalQuantities, object):
     # TODO: Get added mass at zero and infinite frequency

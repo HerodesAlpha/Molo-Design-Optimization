@@ -3,13 +3,13 @@ __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
 import numpy as np
-import nemoh
+
 from sea_loads import HydroCoefficients
 
 
 class TransferFunctions(HydroCoefficients,object):
-    def __init__(self,fio):
-        super().__init__(fio)
+    def __init__(self,settings):
+        super().__init__(settings)
 
     def rao(self, fe, m, ma, c, k, w):
         return np.absolute(fe / (-w ** 2 * (m + ma) + 1j * w * (c) + k))
