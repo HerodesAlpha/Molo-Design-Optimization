@@ -183,43 +183,11 @@ def create_mass_models(settings):
     return unit_model, floater_model, wtg_model
 
 
-def launch_monopole(fio, settings):
-    unit_model, floater_model, wtg_model = create_mass_models(settings)
-
-    vertices, faces = mmio.load_MSH(tb.msh_file(fio, settings, floater_model))
-    start_mesh = Mesh(vertices, faces)
-    start_mesh.merge_duplicates()
-    start_mesh.heal_normals()
-    start_mesh.heal_mesh()
-    start_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
-    print('Before equilibrium calc')
-    unit_model.print_vector_matrix_global()
-    hs_floater = hs.Hydrostatics(start_mesh, verbose=True)
-    hs_floater.gravity = 9.81
-    hs_floater.rho_water = 1025.
-    hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
-    print('Mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
-    hs_floater.gravity_center = -unit_model.inertias.reduction_point
-    hs_floater.equilibrate()
-    #
-    tb.save_M_and_K(fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
-                    MMK=hs_floater.hs_data['stiffness_matrix'])
-    # Update model with calculated draft
-    unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
-    # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
-    print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
-    # hs_floater.show()
-    # unit_model.print_vector_matrix_global()
-
-    return unit_model, hs_floater
-
-
 def launch_dipole(settings):
     unit_model, floater_model, wtg_model = create_mass_models(settings)
 
-
-
-    stability_vertices, stability_panels = mmio.load_MSH(tb.msh_file(settings.fio, settings, bool_thin=False))
+    msh_file = tb.msh_file(settings, mesh_type='stability')
+    stability_vertices, stability_panels = mmio.load_MSH(msh_file)
 
     stability_mesh = Mesh(stability_vertices, stability_panels)
 
@@ -251,7 +219,7 @@ def launch_dipole(settings):
     #hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
-    msh_file=tb.msh_file(settings)
+    msh_file=tb.msh_file(settings, mesh_type='nemoh')
     nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)
 
     if settings.use_dipols:
@@ -283,13 +251,14 @@ def launch_dipole(settings):
         nemoh_mesh.merge_duplicates()
 
 
-
+    #nemoh_mesh.show()
 
 
     mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
     settings.mesh_file = str(mesh_dat)
 
-    pickle.dump(nemoh_mesh, open(settings.fio.data_io_dir.joinpath('nemoh_mesh.pkl'), "wb"))
+    pickle.dump(nemoh_mesh.vertices, open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), "wb"))
+    pickle.dump(nemoh_mesh.faces, open(settings.fio.data_io_dir.joinpath('nemoh_mesh_faces.pkl'), "wb"))
 
     mmio.write_MAR(settings.mesh_file, nemoh_mesh.vertices, nemoh_mesh.faces)
 

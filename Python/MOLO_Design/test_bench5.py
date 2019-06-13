@@ -58,15 +58,15 @@ if __name__ == '__main__':
             "max_wave_directions" : 90,
     }
 
-    # settings.case_label = 'floater_data'
+    settings.case_label = 'floater_data'
     # settings.case_label = None
     # settings.case_label = 'debug_plate_thin'
-    settings.case_label = 'debug2_plate_thin'
+    # settings.case_label = 'debug2_plate_thin'
     # settings.case_label = 'debug_plate_thick'
     settings.set_file_structure()
 
-    # settings.mesh_name = 'debug_3c'
-    settings.mesh_name = settings.case_label
+    settings.mesh_name = None
+    # settings.mesh_name = settings.case_label
     #settings.mesh_name = 'debug_plate_thin'
     settings.use_dipols = False
     settings.use_symmmetri = True

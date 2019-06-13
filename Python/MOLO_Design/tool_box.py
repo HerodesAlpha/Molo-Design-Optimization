@@ -315,11 +315,10 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
         return gmsh_msh_file
 
 
-def msh_file(settings):
-    if settings.use_dipols:
-        str_thin = '_thin'
-    else:
-        str_thin = ''
+def msh_file(settings, mesh_type=None):
+    if  mesh_type==None:
+        print('mesh type is either \'stability\' or \'nemoh\'')
+
 
     # str_thin = '_thin' if settings.job_data['analysis']['simulations']['default']['calculation'][
     #     'use_dipoles_implementation'] else ''
@@ -327,7 +326,7 @@ def msh_file(settings):
     if settings.mesh_name == None:
         settings.mesh_name = 'MOLO_{}c'.format(settings.job_data['floater']['Number of radial columns'])
 
-    this_mesh_name = '{}{}'.format(settings.mesh_name, str_thin)
+    this_mesh_name = '{}_{}'.format(settings.mesh_name, mesh_type)
 
     with open(settings.fio.templates_dir.joinpath('{}.geo.template'.format(this_mesh_name)), 'r') as file:
         filedata = file.read()
@@ -338,15 +337,16 @@ def msh_file(settings):
     filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
     filedata = filedata.replace('#t_lf#', '{}'.format(settings.job_data['floater']['Lower flange thickness']))
 
-    if settings.use_dipols:
+    if mesh_type=='nemoh':
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
+        filedata = filedata.replace('#zO#', '{}'.format(-settings.job_data['floater']['Draught']))
     else:
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial height']))
 
-    # Set mesh density thin templates
+    # Number of elements around cylinder circ
     filedata = filedata.replace('#nel#', '{}'.format(16))
 
-    # Set mesh density old templates
+    # Set mesh density stability (old) templates
     dens_t = 1
     dens_quarter_cirlce = 4
     dens_cylinder_height = 14
@@ -366,6 +366,7 @@ def msh_file(settings):
 
     # Create mesh
     gmsh_msh_file = settings.fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
+    a=''
     try:
         a = subprocess.check_output(
                 [settings.fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',

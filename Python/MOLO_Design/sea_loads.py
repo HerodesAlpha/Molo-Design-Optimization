@@ -34,8 +34,21 @@ class HydroCoefficients(PhysicalQuantities, object):
             sys.stdout.write("\nInit hydro:\n")
             # -------------------------------------------------------
 
-            self._nemoh_mesh = pickle.load(open(settings.fio.data_io_dir.joinpath('nemoh_mesh.pkl'), 'rb'))
-            self._pd = tb.PanelData(self._nemoh_mesh.vertices, self._nemoh_mesh.faces) # TODO: Get vertices and points
+            self._nemoh_mesh_vertices = pickle.load(open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), 'rb'))
+            self._nemoh_mesh_faces = pickle.load(open(settings.fio.data_io_dir.joinpath('nemoh_mesh_faces.pkl'), 'rb'))
+
+            # Reshape vertices and faces to full model
+            if settings.use_symmmetri == True:
+                a = self._nemoh_mesh_vertices
+                b = a.copy()
+                b[:,1] = -b[:,1]
+                self._nemoh_mesh_vertices = np.vstack((a,b))
+                a = self._nemoh_mesh_faces
+                b = a.copy()
+                b = b + int(self._nemoh_mesh_vertices.shape[0]/2)
+                self._nemoh_mesh_faces = np.vstack((a, b))
+
+            self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces) # TODO: Get vertices and points
 
             # -------------------------------------------------------
             step += 1
