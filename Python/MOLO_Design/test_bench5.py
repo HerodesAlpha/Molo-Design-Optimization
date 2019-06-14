@@ -18,7 +18,7 @@ import stability
 from MOLO_Nemoh import nemoh_frontend as nf
 from common import SettingsClass
 from pyNemoh.structure import BaseStructure
-
+import warnings
 
 if __name__ == '__main__':
     ANALYSES_ROOT = Path(r'C:\analyses')
@@ -75,8 +75,8 @@ if __name__ == '__main__':
 
     settings.simulation_dir = str(settings.fio.nemoh_root)
 
-    settings.do_equilibriate=False
-    settings.draught=6.02
+    settings.do_equilibriate=True
+    # settings.draught=6.02
 
     fio = settings.fio
 
@@ -101,8 +101,6 @@ if __name__ == '__main__':
 
 
     else:
-        CASE_NUMBER = 2
-        SYM = 1
         unit_model = pickle.load(open(fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
         hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
@@ -146,16 +144,24 @@ if __name__ == '__main__':
         if 1:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=1)
-            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
+            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
+            pass
 
         # print(hdp.ma[0,:,0,0])
         # print(hdp._fe_amp[0,:,dof])
 
         idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
 
+        # warnings.filterwarnings("ignore", category=RuntimeWarning)
         for i, x in enumerate(idof):
             w2 = hdp.k[x, x] / (hdp.m[x, x] + hdp.ma[ifreq, x, x])
-            print('T{}:\t{:5.1f} s'.format(x + 1, 2 * np.pi / np.sqrt(w2)))
+            if w2:
+                T = 2 * np.pi / np.sqrt(w2)
+            else:
+                T = np.inf
+            print('T{}:\t{:5.1f} s'.format(x + 1, T))
+
+        # warnings.filterwarnings("default")
 
         np.set_printoptions(precision=3)
         idof = 2
@@ -177,14 +183,21 @@ if __name__ == '__main__':
             # tmp = nemoh.get_section_forces(fio, problem, [-100,0,0], [1,0,0], sym=SYM)
             # print('\nSection force:\n{}'.format(np.abs(tmp)))
 
-            f_fk = nemoh.p2f(hdp._p['Froude-Krylof'][ifreq, idir, :], hdp.pd)
-            f_diff = nemoh.p2f(hdp._p['Diffraction'][ifreq, idir, :], hdp.pd)
+            f_fk = hdp.p2f('Froude-Krylof',ifreq, idir)
+            f_diff = hdp.p2f('Diffraction',ifreq, idir)
             f_exc = f_fk + f_diff
 
-            print(np.abs(nemoh.get_section_forces(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))
+            print(np.abs(nemoh.get_section_forces(f_exc, hdp.pd.ppanel_centers, [-1000, 0, 0], [1, 0, 0])))
 
-            print(abs(hdp.p2f(ifreq, pressure_index=0, pressure_type='Hydro static')) / 9.81)
+
+
+
             # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
+        f_static = hdp.p2f('Hydro_static')
+        sum_f33_static=np.abs(nemoh.get_section_forces(f_static, hdp.pd.ppanel_centers, [-1000, 0, 0], [1, 0, 0]))[2]
+
+        print('\nTotal hydrostatic force:\t{:5.2f} tonne'.format(sum_f33_static/9810))
+
         part_list = unit_model.get_parts()
-        print(sum([part.mass for part in part_list]))
+        print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list])/1000))

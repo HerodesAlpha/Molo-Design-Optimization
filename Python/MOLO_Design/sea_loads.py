@@ -40,13 +40,14 @@ class HydroCoefficients(PhysicalQuantities, object):
             # Reshape vertices and faces to full model
             if settings.use_symmmetri == True:
                 a = self._nemoh_mesh_vertices
-                b = a.copy()
-                b[:,1] = -b[:,1]
-                self._nemoh_mesh_vertices = np.vstack((a,b))
+                b = a.copy(); b[:,1] = -b[:,1] # Create new set of nodes mirrored about xz
+                self._nemoh_mesh_vertices = np.vstack((a,b)) # Append the new set to the old set
                 a = self._nemoh_mesh_faces
-                b = a.copy()
-                b = b + int(self._nemoh_mesh_vertices.shape[0]/2)
+                b = a.copy(); b = b + int(self._nemoh_mesh_vertices.shape[0]/2) # Create a new set of faces from the old
+                # set and renumber by adding int(nvertices)
+                b[:,:] = b[:,::-1] # Flip normals on mirrored faces (reverse nodes)
                 self._nemoh_mesh_faces = np.vstack((a, b))
+                del a; del b
 
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces) # TODO: Get vertices and points
 
@@ -83,7 +84,7 @@ class HydroCoefficients(PhysicalQuantities, object):
             else:
                 self._p = dict()
                 sys.stdout.write("\t\tHydro static\n")
-                self._p['Hydro static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
+                self._p['Hydro_static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2] # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab.. Dont use for hydro stat. pressure
                 sys.stdout.write("\t\tFroude-Krylof \n")
                 self._p['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
 
@@ -123,14 +124,22 @@ class HydroCoefficients(PhysicalQuantities, object):
         h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
         h.show()
 
-    def p2f(self, ifreq, pressure_index, pressure_type):
-        # Pressure to force
-        f_normal = np.zeros((self._pd.npanels), dtype=np.complex)
-        f = np.zeros((self._pd.npanels, 3), dtype=np.complex)
-        for i, panel in enumerate(self._pd.ppanels):
-            f_normal[i] = self._p[pressure_type][ifreq, pressure_index, i] * self._pd.ppanel_areas[i]
+
+
+    def p2f(self,pressure_type, ifreq=None, idir = None):
+
+        if pressure_type=='Hydro_static':
+            p_cmplx=self._p[pressure_type]
+        else:
+            p_cmplx=self._p[pressure_type][ifreq, idir, :]
+
+        npanels = self.pd.ppanels.shape[0]
+        f_normal = np.zeros((npanels), dtype=np.complex)
+        f = np.zeros((npanels, 3), dtype=np.complex)
+        for i, panel in enumerate(self.pd.ppanels):
+            f_normal[i] = p_cmplx[i] * self.pd.ppanel_areas[i]
             for j in range(3):
-                f[i, j] = -f_normal[i] * self._pd.ppanel_normals[i, j]
+                f[i, j] = -f_normal[i] * self.pd.ppanel_normals[i, j]
         return f
 
     @property

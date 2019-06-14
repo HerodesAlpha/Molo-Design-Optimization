@@ -251,7 +251,7 @@ def launch_dipole(settings):
         nemoh_mesh.merge_duplicates()
 
 
-    #nemoh_mesh.show()
+    nemoh_mesh.show()
 
 
     mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
