@@ -148,6 +148,8 @@ class SettingsClass(PhysicalQuantities, object):
         self._use_dipols = self._job_data['analysis']['simulations']['default']['calculation'][
             'use_dipoles_implementation']
 
+        self._thin_panel_offset = self._job_data['floater']['Thin panel offset']
+        self._flange_thickness = self._job_data['floater']['Lower flange thickness']
         self._create_model = False
         self._calc_gz = False
         self._run_nemoh = False
@@ -155,7 +157,7 @@ class SettingsClass(PhysicalQuantities, object):
 
     def set_file_structure(self):
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
-        print(self._job_data['analysis']['simulations'])
+        #print(self._job_data['analysis']['simulations'])
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()
 
@@ -332,3 +334,24 @@ class SettingsClass(PhysicalQuantities, object):
         self._job_data['analysis']['simulations']['default']['calculation'][
             'use_dipoles_implementation'] = self._use_dipols
         self.save_job_settings()
+
+    @property
+    def thin_panel_offset(self):
+        return self._thin_panel_offset
+
+    @thin_panel_offset.setter
+    def thin_panel_offset(self, val):
+        self._thin_panel_offset = val
+        self._job_data['floater']['Thin panel offset'] = self._thin_panel_offset
+        self.save_job_settings()
+
+    @property
+    def flange_thickness(self):
+        return self._flange_thickness
+
+    @flange_thickness.setter
+    def flange_thickness(self, val):
+        self._flange_thickness = val
+        self._job_data['floater']['Lower flange thickness'] = self._flange_thickness
+        self.save_job_settings()
+

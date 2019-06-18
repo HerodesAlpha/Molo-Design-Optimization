@@ -699,7 +699,7 @@ def run(hdf5_data, custom_config):
     utility.check_dataset_type(dset, name='The maximum wave frequency', location=structure.H5_MAX_WAVE_FREQUENCIES)
     w_max = dset[0]
 
-    w = np.zeros(n_w, settings.NEMOH_FLOAT)
+    w = np.zeros(n_w, settings.NEMOH_FLOAT) #TODO: Allow varying spaced frequencies
     if n_w > 1:
         for j in range(n_w):
             w[j] = w_min+(w_max-w_min)*j/(n_w-1)

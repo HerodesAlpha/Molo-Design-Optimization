@@ -13,7 +13,7 @@ from meshmagick.mesh import Mesh
 from pyNemoh.structure import BaseStructure
 
 
-class HydroCoefficients(PhysicalQuantities, object):
+class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     # TODO: Get added mass at zero and infinite frequency
     def __init__(self, settings):
         super().__init__()
@@ -49,12 +49,27 @@ class HydroCoefficients(PhysicalQuantities, object):
                 self._nemoh_mesh_faces = np.vstack((a, b))
                 del a; del b
 
+                #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
+                ind = self._nemoh_mesh_vertices[:,2] <= np.min(self._nemoh_mesh_vertices[:,2])*0.99
+                self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
+                #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
+                del ind
+
+
+
+
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces) # TODO: Get vertices and points
 
             # -------------------------------------------------------
             step += 1
             sys.stdout.write("\t({})Get forces\n".format(step))
             self._fe = hdf5_db[h5_bs.H5_RESULTS_EXCITATION_FORCES][:]
+            # self._fe = np.zeros([self._nw,self._nbeta,6,6],dtype=complex)
+            # I = np.identity(6)
+            # fe_diag=hdf5_db[h5_bs.H5_RESULTS_EXCITATION_FORCES][:]
+            # for i in range(self._nw):
+            #     for j in range(self._nbeta):
+            #         self._fe[i,j,:,:] = fe_diag[i,j,:]*I
             # -------------------------------------------------------
             step += 1
             sys.stdout.write("\t({})Get static mass and waterplane stiffness\n".format(step))
@@ -63,6 +78,8 @@ class HydroCoefficients(PhysicalQuantities, object):
             step += 1
             sys.stdout.write("\t({})Get added mass and damping\n".format(step))
             self._ma = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS][:]
+            # self._ma_inf = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS_INFINITE][:] TODO: Calc added mass inf
+            # self._ma_zero = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS_ZERO][:]
             self._c_hyd = hdf5_db[h5_bs.H5_RESULTS_RADIATION_DAMPING][:]
             #self._ma, self._c_hyd = nemoh.get_ab(fio, dof, w, dir)
             # -------------------------------------------------------
@@ -168,6 +185,14 @@ class HydroCoefficients(PhysicalQuantities, object):
     def get_dir_index(self, sel_dir):
         return int(sel_dir)
 
+    # @property
+    # def ma_inf(self):
+    #     return self._ma_inf
+
+    # @property
+    # def ma_zero(self):
+    #     return self._ma_zero
+
     @property
     def ma(self):
         return self._ma
@@ -183,6 +208,11 @@ class HydroCoefficients(PhysicalQuantities, object):
     @property
     def fe(self):
         return self._fe
+
+
+    @property
+    def c_hyd(self):
+        return self._c_hyd
 
     @property
     def pd(self):

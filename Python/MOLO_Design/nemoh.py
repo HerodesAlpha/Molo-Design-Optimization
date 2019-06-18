@@ -582,14 +582,33 @@ class PanelData(object):
         return self._ppanels.shape[0]
 
 
-def get_section_forces(gpf, ppanel_centers, section_point, section_normal):
+def get_section_values(forces, coordinates, section_point, section_normal, moment_ref = None):
     # Filter forces
-    vec = ppanel_centers - section_point
+
+    if moment_ref == None :
+        moment_ref = 'section'
+    elif not (moment_ref == 'origin' or moment_ref == 'section'):
+        print('moment_axis = {}is not an option'.format(moment_ref))
+
+    vec = coordinates - section_point
     dot = np.dot(vec, section_normal) # dot product i positive for coordinates on the positive side of the plane
-    ind = dot >= 0
-    gsf = gpf[ind, :] # Global Section Forces
-    gsm = np.cross(ppanel_centers[ind],gsf)
-    return sum(np.concatenate((gsf, gsm), axis=1))
+    index = dot >= 0
+    if 1 in index:
+        section_forces = forces[index, :]
+        if moment_ref  == 'origin' :
+            section_moments = np.cross(coordinates[index], section_forces) # Calculate moment about origin
+        else:
+            section_moments = np.cross(vec[index], section_forces) # Calculate moment about section
+
+
+
+
+
+
+
+        return sum(np.concatenate((section_forces, section_moments), axis=1))
+    else:
+        return np.zeros(6)
 
 
 def diffraction_problem_number(iw, ibeta, Nbeta, Nradiation):

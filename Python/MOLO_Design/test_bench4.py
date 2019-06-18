@@ -87,7 +87,7 @@ if __name__ == '__main__':
         # OMEGA_NEMOH_INP = model_data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"]
         # SYM = model_data["Analyses parameters"]["Use symmetri"]
 
-        unit_model, hs_floater = msu.launch_dipole(settings)
+        unit_model, hs_floater = msu.init_models(settings)
         pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
         pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
             f_diff = nemoh.p2f(hdp._p['Diffraction'][ifreq, idir, :], hdp.pd)
             f_exc = f_fk + f_diff
 
-            print(np.abs(nemoh.get_section_forces(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))
+            print(np.abs(nemoh.get_section_values(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))
 
             print(abs(hdp.p2f(ifreq, pressure_index=0, pressure_type='Hydro static')) / 9.81)
             # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)

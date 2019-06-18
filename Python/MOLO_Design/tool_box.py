@@ -316,9 +316,8 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
 
 
 def msh_file(settings, mesh_type=None):
-    if  mesh_type==None:
+    if mesh_type == None:
         print('mesh type is either \'stability\' or \'nemoh\'')
-
 
     # str_thin = '_thin' if settings.job_data['analysis']['simulations']['default']['calculation'][
     #     'use_dipoles_implementation'] else ''
@@ -337,9 +336,10 @@ def msh_file(settings, mesh_type=None):
     filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
     filedata = filedata.replace('#t_lf#', '{}'.format(settings.job_data['floater']['Lower flange thickness']))
 
-    if mesh_type=='nemoh':
+    if mesh_type == 'nemoh':
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
         filedata = filedata.replace('#zO#', '{}'.format(-settings.job_data['floater']['Draught']))
+        filedata = filedata.replace('#vdist#', '{}'.format(settings.job_data['floater']['Thin panel offset']))
     else:
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial height']))
 
@@ -366,7 +366,7 @@ def msh_file(settings, mesh_type=None):
 
     # Create mesh
     gmsh_msh_file = settings.fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
-    a=''
+    a = ''
     try:
         a = subprocess.check_output(
                 [settings.fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
@@ -588,12 +588,26 @@ def prepare_dipol_mesh(vertices, faces, settings):
                 faces[i] = faces[i][::-1]
                 flipped.append(i)
 
-
             not_dipol_index.append(i)
 
     if not (len(not_dipol_index) + len(dipol_index)) == len(faces):  # TODO: Fix dipol filter
         print(' prepare_dipol_mesh failed\n\tnot_dipol - {}\n\tdipol     - {}\n\ttotal     - {}'.format(
-            len(not_dipol_index), len(dipol_index), len(faces)))
+                len(not_dipol_index), len(dipol_index), len(faces)))
         exit()
 
     return vertices, faces, not_dipol_index, dipol_index
+
+
+def matprint(mat, fmt="f", prec="1"):
+    if mat.ndim == 1:
+        col_maxes = max([len(("{:1." + prec + fmt + "}").format(x)) for x in mat.T])
+        for y in mat:
+
+            print(("{:" + str(col_maxes) + "." + prec + fmt + "}").format(y), end="  ")
+        print("")
+    else:
+        col_maxes = [max([len(("{:1." + prec + fmt + "}").format(x)) for x in col]) for col in mat.T]
+        for x in mat:
+            for i, y in enumerate(x):
+                print(("{:" + str(col_maxes[i]) + "." + prec + fmt + "}").format(y), end="  ")
+            print("")

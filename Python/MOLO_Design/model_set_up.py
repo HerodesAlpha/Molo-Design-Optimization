@@ -183,7 +183,7 @@ def create_mass_models(settings):
     return unit_model, floater_model, wtg_model
 
 
-def launch_dipole(settings):
+def init_models(settings):
     unit_model, floater_model, wtg_model = create_mass_models(settings)
 
     msh_file = tb.msh_file(settings, mesh_type='stability')
@@ -251,7 +251,7 @@ def launch_dipole(settings):
         nemoh_mesh.merge_duplicates()
 
 
-    nemoh_mesh.show()
+    #nemoh_mesh.show()
 
 
     mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))

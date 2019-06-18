@@ -20,7 +20,7 @@ xO = 0;		// Model origin x-axis
 yO = 0;		// Model origin y-axis
 zO = #zO#;	// Model origin z-axis
 nel_rrc = #nel#;    // Number of elements around cylinder circ.
-vdist = 0.5;
+vdist = #vdist#;
 
 // ----------------------------------------------------------------------------
 // 	DERIVED UNITS

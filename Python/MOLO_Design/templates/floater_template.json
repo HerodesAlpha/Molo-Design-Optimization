@@ -18,6 +18,7 @@
     "Radial column diameter": 10,
     "Radial column thickness": 0.04,
     "Radial height": 18,
+    "Thin panel offset": 0.5,
     "Type": "Molo",
     "Upper flange thickness": 0.04
 }
