@@ -998,7 +998,8 @@ class Mesh(object):
                         i_v0 = i_v1
                     except KeyError:
                         if boundary[0] != boundary[-1]:
-                            print('Boundary is not closed !!!')
+                            pass
+                            # print('Boundary is not closed !!!') # Eivind Sønju 19.06.2019 Suppress warning, we know what we are doing ...
                         else:
                             boundaries.append(boundary)
                         break

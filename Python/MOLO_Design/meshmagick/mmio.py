@@ -1472,8 +1472,8 @@ def write_MAR(filename, vertices, faces):
 
     ofile.close()
 
-    print('WARNING: if you described only one part of the mesh using symmetry for Nemoh, you may manually modify the ' \
-          'file header accordingly')
+    # print('WARNING: if you described only one part of the mesh using symmetry for Nemoh, you may manually modify the ' \
+    #      'file header accordingly')
 
 
 def write_RAD(filename, vertices, faces):

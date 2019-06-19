@@ -6,7 +6,7 @@ import logging
 import multiprocessing
 import pickle
 from pathlib import Path
-
+import scipy
 import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
@@ -28,78 +28,84 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
+    settings.create_model = True
     settings.calc_gz = False
     settings.run_nemoh = False
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
 
+    filling_ratio = [0, 0, 0]
+
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 8,
+            "Central column diameter" : 9,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.04,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 10,
+            "Radial column diameter"  : 9,
             "Radial column thickness" : 0.04,
             "Radial height"           : 14,
-            "Upper flange thickness"  : 0.04
+            "Upper flange thickness"  : 0.04,
+            "Ballast filling ratio"   : [0,
+                                         filling_ratio
+                                         ]
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 61,
-            "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
+            "num_wave_frequencies": 41,
+            "min_wave_frequencies": 2 * np.pi / 25,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 5,
-            "num_wave_directions" : 3,
+            "num_wave_directions" : 1,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
 
     settings.case_label = 'floater_data'
-    # settings.case_label = None
-    # settings.case_label = 'debug_plate_thin'
-    # settings.case_label = 'debug2_plate_thin'
-    # settings.case_label = 'debug_plate_thick'
     settings.set_file_structure()
 
     settings.mesh_name = None
-    # settings.mesh_name = settings.case_label
-    # settings.mesh_name = 'debug_plate_thin'
     settings.use_dipols = False
     settings.use_symmmetri = True
 
     settings.simulation_dir = str(settings.fio.nemoh_root)
 
     settings.do_equilibriate = True
-    # settings.draught=6.02
-
     fio = settings.fio
 
     if settings.create_model:
-
-        # NEMOH_DOF = model_data["Analyses parameters"]["Degrees of Freedom"]
-        # NEMOH_DIR = model_data["Analyses parameters"]["Number of wave directions, Min and Max (degrees)"]
-        # RHO_SW = model_data["Analyses parameters"]["Density of sea water"]
-        # WATER_DEPTH = model_data["Analyses parameters"]["Water depth"]
-        # OMEGA_NEMOH_INP = model_data["Analyses parameters"]["Number of wave frequencies, Min, and Max (rad/s)"]
-        # SYM = model_data["Analyses parameters"]["Use symmetri"]
 
         unit_model, hs_floater = msu.init_models(settings)
         pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
         pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
-        # hydro_mesh_symmetri, mesh_file = nemoh.mesh(fio, hs_floater, SYM)
-        #
-        # hydro_mesh_symmetri.show()
-
         settings.thin_panels = []
 
+        m, k = tb.load_M_and_K(settings.fio.data_io_dir)
+        # m=m[0:5,0:5]
+        # k=k[0:5,0:5]
+        # Set values close to zero to zero
+        for i in range(6):
+            for j in range(6):
+                if abs(m[i, j]) < 0:
+                    m[i, j] = 0
+                if abs(k[i, j]) < 0:
+                    k[i, j] = 0
+                #if (i == 0 and j == 0) or (i == 1 and j == 1) or (i == 5 and j == 5):
+                #    k[i, j] = 1
+
+        print('\nEigenvalue sollution WITHOUT added mass')
+        print('\nMass matrix (heave, pitch and roll):')
+        tb.matprint(m)
+        print('\nStiffness matrix (heave, pitch and roll):')
+        tb.matprint(k)
+        print('')
+        tb.eigenvalprint(m, k)
 
     else:
-        unit_model = pickle.load(open(fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
-        hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
+        unit_model = pickle.load(open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
+        hs_floater = pickle.load(open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
     if settings.create_model and settings.calc_gz:
         stability.gz_curve(fio, hs_floater)
@@ -149,26 +155,28 @@ if __name__ == '__main__':
 
         idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
 
+        print('Eigenvalue sollution WITH added mass')
+        tb.eigenvalprint(hdp.m + hdp.ma[ifreq, :, :], hdp.k)
+        #
         # warnings.filterwarnings("ignore", category=RuntimeWarning)
-        for i, x in enumerate(idof):
-            w2 = hdp.k[x, x] / (hdp.m[x, x] + hdp.ma[ifreq, x, x])
-            if w2:
-                T = 2 * np.pi / np.sqrt(w2)
-            else:
-                T = np.inf
-            print('T{}{}:\t{:5.1f} s'.format(x + 1, x + 1, T))
+        # lamb = scipy.linalg.eigvalsh(hdp.k, hdp.m + hdp.ma[ifreq, :, :])
+        # vT = 2 * np.pi / np.sqrt(lamb)
+        # warnings.filterwarnings("default")
+
+        # for x, T in enumerate(vT):
+        #     print('Eigenval {}:\t{:5.1f} s'.format(x + 1, T))
         # available_dofs=np.array([2,4])
         # k=hdp.k[available_dofs,available_dofs]
         # m= hdp.m[available_dofs,available_dofs]+hdp.ma[ifreq,available_dofs,available_dofs]
         # print(np.linalg.eig(k,m))
-        # warnings.filterwarnings("default")
+
         if True:
             print('\n')
 
             print('\nRadiation damping:')
             tb.matprint(hdp.c_hyd[ifreq])
             print('\nWater plane stiffness:')
-            tb.matprint(hdp.k, fmt='e')
+            tb.matprint(hdp.k)
             print('\nStatic mass [tonne]:')
             tb.matprint(hdp.m / 1000)
             print('\nAdded mass [tonne]:')

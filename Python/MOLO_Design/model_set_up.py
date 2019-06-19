@@ -196,18 +196,21 @@ def init_models(settings):
     stability_mesh.heal_mesh()
     stability_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
 
-    unit_model.print_vector_matrix_global()
+    #unit_model.print_vector_matrix_global()
     hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)
-    hs_floater.gravity = 9.81
-    hs_floater.rho_water = 1025.
+    hs_floater.gravity = settings.grav
+    hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
-    print('Mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
+    print('\nMass given to hydro is {:5.2f} t'.format(hs_floater.mass))
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
     # TODO: THIS IS TEMP SPEEDUP. FIX IT !!
-    if settings.do_equilibrate:
-        hs_floater.equilibrate()
+    # if settings.do_equilibrate:
+    #     hs_floater.equilibrate()
+    hs_floater.set_displacement(hs_floater.mass)
 
     #
+    #hs_floater.show()
+    print(hs_floater.get_hydrostatic_report())
     tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
@@ -215,7 +218,7 @@ def init_models(settings):
     settings.draught = hs_floater.hs_data['draught']
 
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
-    print('\n\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
+    print('\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
     #hs_floater.show()
     # unit_model.print_vector_matrix_global()
 
@@ -272,7 +275,7 @@ def init_models(settings):
             f.writelines(lines)
 
 
-    print('Nemoh mesh written to {}'.format(settings.mesh_file))
+    print('\nNemoh mesh written to {}'.format(settings.mesh_file))
 
 
     return unit_model, hs_floater

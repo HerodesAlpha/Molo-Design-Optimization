@@ -10,6 +10,9 @@ from math import cos, sin
 
 import numpy as np
 from numpy import pi, sin, cos
+import warnings
+import scipy
+
 
 
 class TotalMassMatrixClass(object):
@@ -396,8 +399,10 @@ def save_M_and_K(wdir, M, MMK):
 
 
 def load_M_and_K(wdir):
-    M = pickle.load(open(os.path.join(wdir, 'M.pkl'), 'rb'))
-    K = pickle.load(open(os.path.join(wdir, 'K.pkl'), 'rb'))
+    with open(os.path.join(wdir, 'M.pkl'), 'rb') as f:
+        M = pickle.load(f)
+    with open(os.path.join(wdir, 'K.pkl'), 'rb') as f:
+        K = pickle.load(f)
 
     return M, K
 
@@ -611,3 +616,11 @@ def matprint(mat, fmt="f", prec="1"):
             for i, y in enumerate(x):
                 print(("{:" + str(col_maxes[i]) + "." + prec + fmt + "}").format(y), end="  ")
             print("")
+
+def eigenvalprint(m,k):
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+    l = scipy.linalg.eigvals(k, m)
+    vT = 2 * np.pi / np.sqrt(l)
+    for x, T in enumerate(vT):
+        print('Eigenval {}:\t{:5.1f} s'.format(x + 1, T))
+    warnings.filterwarnings("default")

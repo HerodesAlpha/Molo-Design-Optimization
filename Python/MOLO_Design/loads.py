@@ -34,8 +34,10 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             sys.stdout.write("\nInit hydro:\n")
             # -------------------------------------------------------
 
-            self._nemoh_mesh_vertices = pickle.load(open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), 'rb'))
-            self._nemoh_mesh_faces = pickle.load(open(settings.fio.data_io_dir.joinpath('nemoh_mesh_faces.pkl'), 'rb'))
+            with open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), 'rb') as f:
+                self._nemoh_mesh_vertices = pickle.load(f)
+            with open(settings.fio.data_io_dir.joinpath('nemoh_mesh_faces.pkl'), 'rb') as f:
+                self._nemoh_mesh_faces = pickle.load(f)
 
             # Reshape vertices and faces to full model
             if settings.use_symmmetri == True:

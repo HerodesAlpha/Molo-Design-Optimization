@@ -42,5 +42,16 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
             x = daf @ f[i, :]
             container[i, :] = x
 
+    # def H(self, f, m, ma, c, k, vw):
+    #     container = np.zeros([len(vw), 6], dtype=complex)
+    #     for iw, w in enumerate(vw):
+    #         for i in [2,4]:
+    #             this_ma=ma[iw, i, i]
+    #             denom = np.asarray(-w ** 2 * (m[i,i] + ma[iw, i, i]) + 1j * w * c[iw, i, i] + k[i,i], dtype=complex)
+    #             daf = 1/denom
+    #             # daf =np.asarray([[1/x for x in col]for col in denom])
+    #             x = daf * f[iw, i]
+    #             container[iw, i] = x
+
         return container
 
