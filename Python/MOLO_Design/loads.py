@@ -127,7 +127,8 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                         # print('\t\t\tProblem {}'.format(pn))
                         self._p['Radiation'][iw, iradiation, :] = pressure[pn-1,:]
 
-                pickle.dump(self._p, open(pressure_file, "wb"))
+                with open(pressure_file, "wb") as f:
+                    pickle.dump(self._p,f )
 
             print('\n{} initialized\n'.format(self.__str__()))
 

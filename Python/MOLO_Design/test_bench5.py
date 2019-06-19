@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
         ifreq = 0
         idir = 0
-        irad = 2
+        irad = 4
         # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
         iprob = 2
         # nfreq  = len(w)
@@ -144,10 +144,10 @@ if __name__ == '__main__':
         # print('Problem: {}'.format(problem))
         NEMOH_DOF = [1, 1, 1, 1, 1, 1]
 
-        if False:
+        if True:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=2)
+            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
             pass
 
         # print(hdp.ma[0,:,0,0])
@@ -225,7 +225,7 @@ if __name__ == '__main__':
         # plt.show()
         #
         # plt.plot(2 * np.pi / hdp.w, abs(hdp.fe[:, idir, idof]))
-        plt.show()
+        # plt.show()
 
         # np.set_printoptions(precision=3)
 
@@ -251,5 +251,5 @@ if __name__ == '__main__':
         # print(hdp.ma_zero)
         # print(hdp.ma_inf)
 
-    # this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
-    # this_mesh.show()
+        #this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
+        #this_mesh.show()
