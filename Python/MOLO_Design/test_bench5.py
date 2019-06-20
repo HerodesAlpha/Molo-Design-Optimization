@@ -28,39 +28,37 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = True
+    settings.create_model = False
     settings.calc_gz = False
-    settings.run_nemoh = True
+    settings.run_nemoh = False
     settings.postprocessing = True
-
 
     h5_bs = BaseStructure()
 
     filling_ratio = [0.0, 0.0, 0.0]
 
-
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 7.0,
+            "Central column diameter" : 7.1,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.04,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 7.0,
+            "Radial column diameter"  : 7.1,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
             "Upper flange thickness"  : 0.04,
             "Ballast filling ratio"   : [0,
                                          filling_ratio
                                          ],
-            "Thin panel offset": 1.0
+            "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 1,
-            "min_wave_frequencies": 2 * np.pi / 35,  # (rad/s)
-            "max_wave_frequencies": 2 * np.pi / 5,
-            "num_wave_directions" : 1,
+            "num_wave_frequencies": 81,
+            "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
+            "max_wave_frequencies": 2 * np.pi / 4,
+            "num_wave_directions" : 2,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
@@ -74,12 +72,13 @@ if __name__ == '__main__':
     settings.use_dipols = False
     settings.use_symmmetri = True
 
-
-
     settings.do_equilibriate = True
     fio = settings.fio
 
     if settings.create_model:
+        print('\n--------------------------------------------------------------------------------------------')
+        print('CREATE MODEL')
+        print('--------------------------------------------------------------------------------------------')
 
         unit_model, hs_floater = msu.init_models(settings)
         pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
@@ -97,8 +96,8 @@ if __name__ == '__main__':
         #             m[i, j] = 0
         #         if abs(k[i, j]) < 0:
         #             k[i, j] = 0
-                #if (i == 0 and j == 0) or (i == 1 and j == 1) or (i == 5 and j == 5):
-                #    k[i, j] = 1
+        # if (i == 0 and j == 0) or (i == 1 and j == 1) or (i == 5 and j == 5):
+        #    k[i, j] = 1
 
         print('\nEigenvalue sollution WITHOUT added mass (given as lambda^0.5)')
         print('\nMass matrix:')
@@ -113,9 +112,15 @@ if __name__ == '__main__':
         hs_floater = pickle.load(open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
     if settings.create_model and settings.calc_gz:
+        print('\n--------------------------------------------------------------------------------------------')
+        print('STABILITY ANALYSIS')
+        print('--------------------------------------------------------------------------------------------')
         stability.gz_curve(fio, hs_floater)
 
     if settings.create_model and settings.run_nemoh:
+        print('\n--------------------------------------------------------------------------------------------')
+        print('NEMOH ANALYSIS')
+        print('--------------------------------------------------------------------------------------------')
         settings.remove_old_db()
         queue = multiprocessing.Queue(-1)
         ql = QueueListener(queue, *logging.getLogger().handlers)
@@ -184,14 +189,14 @@ if __name__ == '__main__':
             print('\n')
             tb.matprint(np.abs(nemoh.get_section_values(f_exc, hdp.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
         # np.set_printoptions(precision=3)
-        idof = 2
+
         idir = 0
 
         # --------------------------------------------------------------------------------------------------------------
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
-        if True:
-            h = hdp.get_h(idir)
+        if False:
+            h = hdp.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / hdp.w
             axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')
@@ -215,25 +220,68 @@ if __name__ == '__main__':
 
         # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
-        f_static = hdp.p2f('Hydro_static')
-        sum_f33_static = np.abs(nemoh.get_section_values(f_static, hdp.pd.ppanel_centers, [-1000, 0, 0], [1, 0, 0]))[2]
+        print('\n--------------------------------------------------------------------------------------------')
+        print('SECTION FORCES')
+        print('--------------------------------------------------------------------------------------------')
 
-        print('\nTotal hydrostatic force:\t{:5.2f} tonne'.format(sum_f33_static / 9810))
+        section_point = [0, 0, 0]
+        section_normal = [1, 0, 0]
 
+        # Collect all forces acting on the section
+
+        # Hydro static / Buoyancy
+        f_hydro_static = nemoh.get_section_values(hdp.p2f('Hydro_static'), hdp.pd.ppanel_centers, section_point,
+                                                  section_normal)
+
+        # Gravity
         part_list = unit_model.get_parts()
+        point_mass_gravity_force = np.asarray([[0, 0, part.mass] for part in part_list]) * settings.grav
+        point_mass_centers = np.asarray([-part.reduction_point for part in part_list])
+        f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
+                                             section_normal)
+
+        # Froude-Krylof and diffraction
+        f_fk = np.zeros([hdp.nw, 6], dtype=complex)
+        f_diff = np.zeros([hdp.nw, 6], dtype=complex)
+
+        for ifreq in range(hdp.nw):
+            f_fk[ifreq, :] = nemoh.get_section_values(hdp.p2f('Froude-Krylof', ifreq, idir), hdp.pd.ppanel_centers,
+                                                      section_point,
+                                                      section_normal)
+            f_diff[ifreq, :] = nemoh.get_section_values(hdp.p2f('Diffraction', ifreq, idir), hdp.pd.ppanel_centers,
+                                                        section_point,
+                                                        section_normal)
+
+        # Prepare RAO's for motion dependent response variables
+        rao = hdp.get_rao(idir)
+
+        # Radiation
+        f_rad = np.zeros([hdp.nw, 6], dtype=complex)
+
+        for ifreq in range(hdp.nw):
+
+            for irad in range(6):
+                this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad]
+                f_rad[ifreq, :] += nemoh.get_section_values(this_f_rad, hdp.pd.ppanel_centers,
+                                                            section_point,
+                                                            section_normal)
+
+
+
+        f_tot_dyn = f_fk + f_diff + f_rad
+
+        plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 4]))
+        plt.show()
+
+
         print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
 
-        f_grav = np.asarray([[0, 0, part.mass] for part in part_list]) * settings.grav
-        mass_centers = np.asarray([-part.reduction_point for part in part_list])
-        f_grav_s = np.abs(
-                nemoh.get_section_values(f_grav, mass_centers, [0, 1, 0], [0, 1, 0], moment_ref='section'),
-        )
-        print('\nGravity force Fz\t{:5.2f} MN'.format(f_grav_s[2] / 1000000))
-        print('Gravity force Mx\t{:5.2f} MNm'.format(f_grav_s[3] / 1000000))
-        print('Gravity force My\t{:5.2f} MNm'.format(f_grav_s[4] / 1000000))
+        print('\nFz\t{: 7.2f} MN'.format(f_gravity[2] / 1000000))
+        print('Mx\t{: 7.2f} MNm'.format(f_gravity[3] / 1000000))
+        print('my\t{: 7.2f} MNm'.format(f_gravity[4] / 1000000))
 
         # print(hdp.ma_zero)
         # print(hdp.ma_inf)
 
-        #this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
-        #this_mesh.show()
+        # this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
+        # this_mesh.show()

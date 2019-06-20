@@ -14,7 +14,7 @@ class PhysicalQuantities():
     # This is the only place allowed to put these quantities
     def __init__(self):
         self._rho_sw = 1025
-        self._grav = 9.81
+        self._grav = -9.81
         self._rho_st = 7850
 
     @property
@@ -177,7 +177,10 @@ class SettingsClass(PhysicalQuantities, object):
     def remove_old_db(self):
         db_file=self._fio.nemoh_root.joinpath('db.hdf5')
         if db_file.is_file():
+
             db_file.unlink()
+            print('\ndb.hdf5 deleted from {}\n'.format(str(self._fio.nemoh_root)))
+
 
 
 

@@ -24,15 +24,15 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
     #     k = self._k[idof][idof]
     #     return self.rao(fe, m, ma, c, k, self._w)
 
-    def get_h(self, idir):
+    def get_rao(self, idir):
         fe = self._fe[:, idir, :]
         m = self._m
         ma = self._ma
         c = self._c_hyd
         k = self._k
-        return self.H(fe, m, ma, c, k, self._w)
+        return self.rao(fe, m, ma, c, k, self._w)
 
-    def H(self, f, m, ma, c, k, vw):
+    def rao(self, f, m, ma, c, k, vw):
         container = np.zeros([len(vw), 6], dtype=complex)
         for i, w in enumerate(vw):
             this_ma=ma[i, :, :]

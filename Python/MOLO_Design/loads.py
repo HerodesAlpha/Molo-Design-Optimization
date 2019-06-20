@@ -223,6 +223,10 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     def pd(self):
         return self._pd
 
+    @property
+    def nw(self):
+        return self._nw
+
 
 def spec_wave(hs, wp, w, gamma=None):
     sig_a = 0.07
