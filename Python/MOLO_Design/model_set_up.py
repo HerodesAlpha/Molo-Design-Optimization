@@ -183,7 +183,7 @@ def create_mass_models(settings):
     return unit_model, floater_model, wtg_model
 
 
-def init_models(settings):
+def init_models(settings): #
     unit_model, floater_model, wtg_model = create_mass_models(settings)
 
     msh_file = tb.msh_file(settings, mesh_type='stability')

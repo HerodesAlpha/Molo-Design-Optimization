@@ -173,6 +173,14 @@ class SettingsClass(PhysicalQuantities, object):
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
                 self._job_data[item] = json.loads(f.read())
 
+
+    def remove_old_db(self):
+        db_file=self._fio.nemoh_root.joinpath('db.hdf5')
+        if db_file.is_file():
+            db_file.unlink()
+
+
+
     # @property
     # def simulation_dir(self):
     #     self.load_job_settings()

@@ -145,10 +145,10 @@ CONTAINS
             T2UNY=ZN(I)*T1UNX-XN(I)*T1UNZ
             T2UNZ=XN(I)*T1UNY-YN(I)*T1UNX
             PSCA=-YN(I)*YAVER
-            IF(PSCA .GT. 1.0e-3)THEN
-                WRITE(*,*)
-                WRITE(*,'(A,I7,A)') 'Warning: normal vector of panel ',i,' points towards the x axis'
-            ENDIF
+            !IF(PSCA .GT. 1.0e-3)THEN
+            !    WRITE(*,*)
+            !    WRITE(*,'(A,I7,A)') 'Warning: normal vector of panel ',i,' points towards the x axis'
+            !ENDIF
             XI1=T1UNX*(X(K)-XAVER)+T1UNY*(Y(K)-YAVER)+T1UNZ*(Z(K)-ZAVER)
             XI2=T1UNX*(X(L)-XAVER)+T1UNY*(Y(L)-YAVER)+T1UNZ*(Z(L)-ZAVER)
             XI3=T1UNX*(X(M)-XAVER)+T1UNY*(Y(M)-YAVER)+T1UNZ*(Z(M)-ZAVER)

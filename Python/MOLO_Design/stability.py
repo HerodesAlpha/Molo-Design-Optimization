@@ -25,11 +25,9 @@ def gz_curve(fio,hs_floater):
 
     x = 0
 
+
     with imageio.get_writer(fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
         while not x < 0:
-
-
-
             rot_matrix = hs_floater.mesh.rotate([thetax, dthetay, 0.])
             hs_floater._gravity_center = np.dot(rot_matrix, hs_floater._gravity_center)
             hs_floater._rotation = np.dot(rot_matrix, hs_floater._rotation)
@@ -43,7 +41,7 @@ def gz_curve(fio,hs_floater):
 
             if 1:
                 vtk_polydata = hs_floater.mesh._vtk_polydata()
-                hs_floater.viewer = MMViewer()
+                hs_floater.viewer = MMViewer(use_interactor=False)
                 hs_floater.viewer.add_polydata(vtk_polydata)
                 hs_floater.viewer.plane_on()
                 corner_annotation = vtk.vtkCornerAnnotation()
@@ -57,7 +55,10 @@ def gz_curve(fio,hs_floater):
                 #hs_floater.viewer.ShowWindowOff()
                 hs_floater.viewer.show_no_interactive()
                 ifile += 1
-                filename = 'gz_{:05d}.gif'.format(ifile)
+
+                #fio.stability_dir.joinpath('stability.mp4')
+
+                filename = str(fio.stability_dir.joinpath('gz_{:05d}.gif'.format(ifile)))
                 hs_floater.viewer.save_png(filename)
                 image = imageio.imread(filename)
                 writer.append_data(image)
@@ -71,7 +72,6 @@ def gz_curve(fio,hs_floater):
 
 
             print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay*180/np.pi, val=-hs_floater.residual/1000000))
-
 
 
 

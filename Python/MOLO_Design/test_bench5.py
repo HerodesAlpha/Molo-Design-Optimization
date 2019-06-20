@@ -30,32 +30,35 @@ if __name__ == '__main__':
 
     settings.create_model = True
     settings.calc_gz = False
-    settings.run_nemoh = False
+    settings.run_nemoh = True
     settings.postprocessing = True
+
 
     h5_bs = BaseStructure()
 
-    filling_ratio = [0, 0, 0]
+    filling_ratio = [0.0, 0.0, 0.0]
+
 
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 9,
+            "Central column diameter" : 7.0,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.04,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 9,
+            "Radial column diameter"  : 7.0,
             "Radial column thickness" : 0.04,
-            "Radial height"           : 14,
+            "Radial height"           : 15,
             "Upper flange thickness"  : 0.04,
             "Ballast filling ratio"   : [0,
                                          filling_ratio
-                                         ]
+                                         ],
+            "Thin panel offset": 1.0
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 41,
-            "min_wave_frequencies": 2 * np.pi / 25,  # (rad/s)
+            "num_wave_frequencies": 1,
+            "min_wave_frequencies": 2 * np.pi / 35,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 5,
             "num_wave_directions" : 1,
             "min_wave_directions" : 0,  # deg
@@ -64,12 +67,14 @@ if __name__ == '__main__':
 
     settings.case_label = 'floater_data'
     settings.set_file_structure()
+    settings.simulation_dir = str(settings.fio.nemoh_root)
+    settings.save_job_settings()
 
     settings.mesh_name = None
     settings.use_dipols = False
     settings.use_symmmetri = True
 
-    settings.simulation_dir = str(settings.fio.nemoh_root)
+
 
     settings.do_equilibriate = True
     fio = settings.fio
@@ -86,19 +91,19 @@ if __name__ == '__main__':
         # m=m[0:5,0:5]
         # k=k[0:5,0:5]
         # Set values close to zero to zero
-        for i in range(6):
-            for j in range(6):
-                if abs(m[i, j]) < 0:
-                    m[i, j] = 0
-                if abs(k[i, j]) < 0:
-                    k[i, j] = 0
+        # for i in range(6):
+        #     for j in range(6):
+        #         if abs(m[i, j]) < 0:
+        #             m[i, j] = 0
+        #         if abs(k[i, j]) < 0:
+        #             k[i, j] = 0
                 #if (i == 0 and j == 0) or (i == 1 and j == 1) or (i == 5 and j == 5):
                 #    k[i, j] = 1
 
-        print('\nEigenvalue sollution WITHOUT added mass')
-        print('\nMass matrix (heave, pitch and roll):')
+        print('\nEigenvalue sollution WITHOUT added mass (given as lambda^0.5)')
+        print('\nMass matrix:')
         tb.matprint(m)
-        print('\nStiffness matrix (heave, pitch and roll):')
+        print('\nStiffness matrix:')
         tb.matprint(k)
         print('')
         tb.eigenvalprint(m, k)
@@ -111,6 +116,7 @@ if __name__ == '__main__':
         stability.gz_curve(fio, hs_floater)
 
     if settings.create_model and settings.run_nemoh:
+        settings.remove_old_db()
         queue = multiprocessing.Queue(-1)
         ql = QueueListener(queue, *logging.getLogger().handlers)
         ql.start()
@@ -147,7 +153,7 @@ if __name__ == '__main__':
         if True:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
+            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
             pass
 
         # print(hdp.ma[0,:,0,0])
@@ -157,18 +163,6 @@ if __name__ == '__main__':
 
         print('Eigenvalue sollution WITH added mass')
         tb.eigenvalprint(hdp.m + hdp.ma[ifreq, :, :], hdp.k)
-        #
-        # warnings.filterwarnings("ignore", category=RuntimeWarning)
-        # lamb = scipy.linalg.eigvalsh(hdp.k, hdp.m + hdp.ma[ifreq, :, :])
-        # vT = 2 * np.pi / np.sqrt(lamb)
-        # warnings.filterwarnings("default")
-
-        # for x, T in enumerate(vT):
-        #     print('Eigenval {}:\t{:5.1f} s'.format(x + 1, T))
-        # available_dofs=np.array([2,4])
-        # k=hdp.k[available_dofs,available_dofs]
-        # m= hdp.m[available_dofs,available_dofs]+hdp.ma[ifreq,available_dofs,available_dofs]
-        # print(np.linalg.eig(k,m))
 
         if True:
             print('\n')
@@ -183,9 +177,6 @@ if __name__ == '__main__':
             tb.matprint(hdp.ma[ifreq] / 1000)
             print('\nExcitation force:')
             tb.matprint(np.abs(hdp.fe[ifreq, idir, :]))
-            # tmp = nemoh.get_section_forces(fio, problem, [-100,0,0], [1,0,0], sym=SYM)
-            # print('\nSection force:\n{}'.format(np.abs(tmp)))
-
             f_fk = hdp.p2f('Froude-Krylof', ifreq, idir)
             f_diff = hdp.p2f('Diffraction', ifreq, idir)
             f_exc = f_fk + f_diff
@@ -196,33 +187,26 @@ if __name__ == '__main__':
         idof = 2
         idir = 0
 
-        # rao = hdp.get_rao(idof, idir)
-        h = hdp.get_h(idir)
-
-        fig, axs = plt.subplots(3, 2)
-        x = 2 * np.pi / hdp.w
-
-
-        def y(idof):
-            abs(h[:, idof])
-
-
-        axs[0, 0].plot(x, abs(h[:, 2]), 'tab:orange')
-        axs[0, 0].set_title('Rao heave')
-        axs[0, 1].plot(x, abs(h[:, 4]), 'tab:orange')
-        axs[0, 1].set_title('Rao pitch')
-        axs[1, 0].plot(x, hdp.ma[:, 2, 2] + hdp.m[2, 2], 'tab:green')
-        axs[1, 0].set_title('m+ma heave')
-        axs[1, 1].plot(x, hdp.ma[:, 4, 4] + hdp.m[4, 4], 'tab:green')
-
-        axs[1, 1].set_title('m+ma pitch')
-        axs[2, 0].plot(x, abs(hdp._fe[:, idir, 2]), 'tab:blue')
-        axs[2, 0].set_title('fe heave')
-        axs[2, 1].plot(x, abs(hdp._fe[:, idir, 4]), 'tab:blue')
-        axs[2, 1].set_title('fe pitch')
-
-        # plt.plot(2 * np.pi / hdp.w, abs(h[:, idof]))
-        # plt.show()
+        # --------------------------------------------------------------------------------------------------------------
+        # PLOT RESULTS
+        # --------------------------------------------------------------------------------------------------------------
+        if True:
+            h = hdp.get_h(idir)
+            fig, axs = plt.subplots(3, 2)
+            w = 2 * np.pi / hdp.w
+            axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')
+            axs[0, 0].set_title('Rao heave')
+            axs[0, 1].plot(w, abs(h[:, 4]), 'tab:orange')
+            axs[0, 1].set_title('Rao pitch')
+            axs[1, 0].plot(w, hdp.ma[:, 2, 2] + hdp.m[2, 2], 'tab:green')
+            axs[1, 0].set_title('m+ma heave')
+            axs[1, 1].plot(w, hdp.ma[:, 4, 4] + hdp.m[4, 4], 'tab:green')
+            axs[1, 1].set_title('m+ma pitch')
+            axs[2, 0].plot(w, abs(hdp._fe[:, idir, 2]), 'tab:blue')
+            axs[2, 0].set_title('fe heave')
+            axs[2, 1].plot(w, abs(hdp._fe[:, idir, 4]), 'tab:blue')
+            axs[2, 1].set_title('fe pitch')
+            plt.show()
         #
         # plt.plot(2 * np.pi / hdp.w, abs(hdp.fe[:, idir, idof]))
         # plt.show()

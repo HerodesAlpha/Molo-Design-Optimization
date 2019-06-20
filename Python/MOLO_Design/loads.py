@@ -15,6 +15,7 @@ from pyNemoh.structure import BaseStructure
 
 class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     # TODO: Get added mass at zero and infinite frequency
+    # TODO: Correct radiotion pressure due to artificial distance between upper and lower face of lower flange.
     def __init__(self, settings):
         super().__init__()
         h5_bs = BaseStructure()
@@ -52,10 +53,11 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 del a; del b
 
                 #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                ind = self._nemoh_mesh_vertices[:,2] <= np.min(self._nemoh_mesh_vertices[:,2])*0.99
-                self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
-                #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                del ind
+                if False:
+                    ind = self._nemoh_mesh_vertices[:,2] <= np.min(self._nemoh_mesh_vertices[:,2])*0.99
+                    self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
+                    #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
+                    del ind
 
 
 
@@ -140,7 +142,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         nemoh_mesh = Mesh(self._pd.ppoints, self._pd.ppanels)
         p=self._p[pressure_type][ifreq, pressure_index,:]
         n=self._pd.ppanel_normals
-        vec = (n * np.real(p)[:, np.newaxis]) * xyz
+        vec = (n * np.imag(p)[:, np.newaxis]) * xyz
         h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
         h.show()
 

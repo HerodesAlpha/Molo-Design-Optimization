@@ -622,5 +622,7 @@ def eigenvalprint(m,k):
     l = scipy.linalg.eigvals(k, m)
     vT = 2 * np.pi / np.sqrt(l)
     for x, T in enumerate(vT):
+        if np.isreal(T):
+            T = np.real(T)
         print('Eigenval {}:\t{:5.1f} s'.format(x + 1, T))
     warnings.filterwarnings("default")

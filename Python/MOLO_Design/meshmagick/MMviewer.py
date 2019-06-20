@@ -21,7 +21,7 @@ __year__ = datetime.now().year
 class MMViewer:
     """This class implements a viewer based on VTK"""
 
-    def __init__(self):
+    def __init__(self, use_interactor=None):
 
         # Building renderer
         self.renderer = vtk.vtkRenderer()
@@ -44,11 +44,12 @@ class MMViewer:
 
 
 
+        if use_interactor == None or True:
         # Building interactor
-        self.render_window_interactor = vtk.vtkRenderWindowInteractor()
-        self.render_window_interactor.SetRenderWindow(self.render_window)
-        self.render_window_interactor.GetInteractorStyle().SetCurrentStyleToTrackballCamera()
-        self.render_window_interactor.AddObserver('KeyPressEvent', self.on_key_press, 0.0)
+            self.render_window_interactor = vtk.vtkRenderWindowInteractor()
+            self.render_window_interactor.SetRenderWindow(self.render_window)
+            self.render_window_interactor.GetInteractorStyle().SetCurrentStyleToTrackballCamera()
+            self.render_window_interactor.AddObserver('KeyPressEvent', self.on_key_press, 0.0)
 
         # Building axes view
         axes = vtk.vtkAxesActor()
