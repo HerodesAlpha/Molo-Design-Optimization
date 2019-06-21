@@ -108,27 +108,28 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
                 self._p['Hydro_static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
 
+
                 sys.stdout.write("\t\tHydro static dz(RAO)\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
 
-                # Set rigid body motion postion vector transferfunction for each panel
-                self._pos = np.zeros([self._nw, self._ndof, self._pd.npanels, 3], dtype=complex)
-                pc = self._pd.ppanel_centers
-                direction = np.diag(3)
-                for i in range(self._nw):
-                    for j1 in range(2):
-                        for j2 in range(3):
-                            j = 3*j1 + j2
-                            for k in range(self._pd.npanels):
-                                if not j1: # Consider translation
-
-                                    self._pos[i,j,k,:] = [1,1,1] # Pos in x,y and z duo to rao
-
-                                else:# Consider rotation
-
-                                    if j2 == 0: # about x
-                                        self._pos[i,j,k,:] = pc[i,k,2] - pc[i,k,1]
-                                    pass
+                # # Set rigid body motion postion vector transferfunction for each panel
+                # self._pos = np.zeros([self._nw, self._ndof, self._pd.npanels, 3], dtype=complex)
+                # pc = self._pd.ppanel_centers
+                # direction = np.diag(3)
+                # for i in range(self._nw):
+                #     for j1 in range(2):
+                #         for j2 in range(3):
+                #             j = 3*j1 + j2
+                #             for k in range(self._pd.npanels):
+                #                 if not j1: # Consider translation
+                #
+                #                     self._pos[i,j,k,:] = [1,1,1] # Pos in x,y and z duo to rao
+                #
+                #                 else:# Consider rotation
+                #
+                #                     if j2 == 0: # about x
+                #                         self._pos[i,j,k,:] = pc[i,k,2] - pc[i,k,1]
+                #                     pass
 
                 # dz = self._pd.ppanel_centers @ 1
                 self._p['Hydro_static_dz'] = (self._rho_sw * self._grav)

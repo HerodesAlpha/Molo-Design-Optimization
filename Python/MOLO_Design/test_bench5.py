@@ -20,6 +20,7 @@ from common import SettingsClass
 from pyNemoh.structure import BaseStructure
 import warnings
 from meshmagick.mesh import Mesh
+import force
 
 if __name__ == '__main__':
     ANALYSES_ROOT = Path(r'C:\analyses')
@@ -74,6 +75,8 @@ if __name__ == '__main__':
 
     settings.do_equilibriate = True
     fio = settings.fio
+
+    settings.thin_panel_offset = 0.2
 
     if settings.create_model:
         print('\n--------------------------------------------------------------------------------------------')
@@ -227,55 +230,74 @@ if __name__ == '__main__':
         section_point = [0, 0, 0]
         section_normal = [1, 0, 0]
 
-        # Collect all forces acting on the section
-
-        # Hydro static / Buoyancy
-        f_hydro_static = nemoh.get_section_values(hdp.p2f('Hydro_static'), hdp.pd.ppanel_centers, section_point,
-                                                  section_normal)
-
-        # Gravity
-        part_list = unit_model.get_parts()
-        point_mass_gravity_force = np.asarray([[0, 0, part.mass] for part in part_list]) * settings.grav
-        point_mass_centers = np.asarray([-part.reduction_point for part in part_list])
-        f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
-                                             section_normal)
-
-        # Froude-Krylof and diffraction
-        f_fk = np.zeros([hdp.nw, 6], dtype=complex)
-        f_diff = np.zeros([hdp.nw, 6], dtype=complex)
-
-        for ifreq in range(hdp.nw):
-            f_fk[ifreq, :] = nemoh.get_section_values(hdp.p2f('Froude-Krylof', ifreq, idir), hdp.pd.ppanel_centers,
-                                                      section_point,
-                                                      section_normal)
-            f_diff[ifreq, :] = nemoh.get_section_values(hdp.p2f('Diffraction', ifreq, idir), hdp.pd.ppanel_centers,
-                                                        section_point,
-                                                        section_normal)
-
         # Prepare RAO's for motion dependent response variables
         rao = hdp.get_rao(idir)
 
-        # Calculate radiation force transferfunctions R = H * eta
-        f_rad = np.zeros([hdp.nw, 6], dtype=complex)
+        # Collect all forces acting on the section
+        if False:
 
-        # get_rao create complex motion at origin per freq in all dofs for given wave dir
-        # p2f takes pressure and create global x,y,z force at center of each panel
-        # rao_at_panel transform motion at origin to motion and panel_centers
+            # Hydro static / Buoyancy
+            f_hydro_static = nemoh.get_section_values(hdp.p2f('Hydro_static'), hdp.pd.ppanel_centers, section_point,
+                                                      section_normal)
 
-        for ifreq in range(hdp.nw):
-            for irad in range(6):
-                # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-                this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad] # TODO: Check if correct
-                f_rad[ifreq, :] += nemoh.get_section_values(this_f_rad, hdp.pd.ppanel_centers,
+            # Gravity
+            part_list = unit_model.get_parts()
+            point_mass_gravity_force = np.asarray([[0, 0, part.mass] for part in part_list]) * settings.grav
+            point_mass_centers = np.asarray([-part.reduction_point for part in part_list])
+            f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
+                                                 section_normal)
+
+            # Froude-Krylof and diffraction
+            f_fk = np.zeros([hdp.nw, 6], dtype=complex)
+            f_diff = np.zeros([hdp.nw, 6], dtype=complex)
+
+            for ifreq in range(hdp.nw):
+                f_fk[ifreq, :] = nemoh.get_section_values(hdp.p2f('Froude-Krylof', ifreq, idir), hdp.pd.ppanel_centers,
+                                                          section_point,
+                                                          section_normal)
+                f_diff[ifreq, :] = nemoh.get_section_values(hdp.p2f('Diffraction', ifreq, idir), hdp.pd.ppanel_centers,
                                                             section_point,
                                                             section_normal)
 
 
 
-        f_tot_dyn = f_fk + f_diff + f_rad
+            # Calculate radiation force transferfunctions R = H * eta
+            f_rad = np.zeros([hdp.nw, 6], dtype=complex)
 
-        plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 4]))
-        plt.show()
+            # get_rao create complex motion at origin per freq in all dofs for given wave dir
+            # p2f takes pressure and create global x,y,z force at center of each panel
+            # rao_at_panel transform motion at origin to motion and panel_centers
+
+            for ifreq in range(hdp.nw):
+                for irad in range(6):
+                    # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
+                    this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad] # TODO: Check if correct
+                    f_rad[ifreq, :] += nemoh.get_section_values(this_f_rad, hdp.pd.ppanel_centers,
+                                                                section_point,
+                                                                section_normal)
+
+            f_tot_dyn = f_fk + f_diff + f_rad
+
+
+        #for ifreq in range(hdp.nw):
+
+        ifreq = 40
+        rot_mat=tb.rotation_matrix(np.imag(rao[ifreq, 3:6]))
+        a = np.transpose(np.dot(rot_mat, hdp.pd.ppanel_centers.T))
+
+        xyz = np.zeros([hdp._pd._npanel, 3])
+        xyz[:, 2] = 1
+        nemoh_mesh = Mesh(hdp._pd.ppoints, hdp._pd.ppanels)
+        h = force.show_force(nemoh_mesh, hdp._pd.ppanel_centers, a*xyz)
+        h.show()
+
+
+
+
+
+
+        #plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 4]))
+        #plt.show()
 
 
 
@@ -291,11 +313,11 @@ if __name__ == '__main__':
 
 
 
-        print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
+        #print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
 
-        print('\nFz\t{: 7.2f} MN'.format(f_gravity[2] / 1000000))
-        print('Mx\t{: 7.2f} MNm'.format(f_gravity[3] / 1000000))
-        print('my\t{: 7.2f} MNm'.format(f_gravity[4] / 1000000))
+        #print('\nFz\t{: 7.2f} MN'.format(f_gravity[2] / 1000000))
+        #print('Mx\t{: 7.2f} MNm'.format(f_gravity[3] / 1000000))
+        #print('my\t{: 7.2f} MNm'.format(f_gravity[4] / 1000000))
 
         # print(hdp.ma_zero)
         # print(hdp.ma_inf)
