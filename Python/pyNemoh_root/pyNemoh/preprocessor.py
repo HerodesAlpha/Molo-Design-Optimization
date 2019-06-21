@@ -495,7 +495,7 @@ def compute_radiation_condition(mesh, c, i_case,  direction, axis):
     Args:
         mesh: object The mesh
         c: int, the panel index
-        i_case: int, the integration case
+        i_case: int, the integration case (force or moment)
         direction 1D array of length 3: The direction (x, y or z)
         axis 1D array of length 3:  The axis coordinate
 

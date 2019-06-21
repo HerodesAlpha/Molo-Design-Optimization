@@ -21,15 +21,15 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         h5_bs = BaseStructure()
         with h5py.File(settings.fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
 
-            #hdf5_db['results']['fk_pressure_raw'][0]
+            # hdf5_db['results']['fk_pressure_raw'][0]
 
             self._w = hdf5_db[h5_bs.H5_RESULTS_CASE_W][:]
             self._nw = len(self._w)
-            self._dof = [1,1,1,1,1,1]
+            self._dof = [1, 1, 1, 1, 1, 1]
             self._ndof = int(np.sum(self._dof))
             self._beta = hdf5_db[h5_bs.H5_RESULTS_CASE_BETA][:]
             self._nbeta = len(self._beta)
-            #self._sym = sym
+            # self._sym = sym
 
             step = 0
             sys.stdout.write("\nInit hydro:\n")
@@ -43,26 +43,26 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             # Reshape vertices and faces to full model
             if settings.use_symmmetri == True:
                 a = self._nemoh_mesh_vertices
-                b = a.copy(); b[:,1] = -b[:,1] # Create new set of nodes mirrored about xz
-                self._nemoh_mesh_vertices = np.vstack((a,b)) # Append the new set to the old set
+                b = a.copy();
+                b[:, 1] = -b[:, 1]  # Create new set of nodes mirrored about xz
+                self._nemoh_mesh_vertices = np.vstack((a, b))  # Append the new set to the old set
                 a = self._nemoh_mesh_faces
-                b = a.copy(); b = b + int(self._nemoh_mesh_vertices.shape[0]/2) # Create a new set of faces from the old
+                b = a.copy();
+                b = b + int(self._nemoh_mesh_vertices.shape[0] / 2)  # Create a new set of faces from the old
                 # set and renumber by adding int(nvertices)
-                b[:,:] = b[:,::-1] # Flip normals on mirrored faces (reverse nodes)
+                b[:, :] = b[:, ::-1]  # Flip normals on mirrored faces (reverse nodes)
                 self._nemoh_mesh_faces = np.vstack((a, b))
-                del a; del b
+                del a;
+                del b
 
-                #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
+                # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
                 if True:
-                    ind = self._nemoh_mesh_vertices[:,2] <= np.min(self._nemoh_mesh_vertices[:,2])*0.99
+                    ind = self._nemoh_mesh_vertices[:, 2] <= np.min(self._nemoh_mesh_vertices[:, 2]) * 0.99
                     self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
-                    #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
+                    # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
                     del ind
 
-
-
-
-            self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces) # TODO: Get vertices and points
+            self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)  # TODO: Get vertices and points
 
             # -------------------------------------------------------
             step += 1
@@ -85,7 +85,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             # self._ma_inf = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS_INFINITE][:] TODO: Calc added mass inf
             # self._ma_zero = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS_ZERO][:]
             self._c_hyd = hdf5_db[h5_bs.H5_RESULTS_RADIATION_DAMPING][:]
-            #self._ma, self._c_hyd = nemoh.get_ab(fio, dof, w, dir)
+            # self._ma, self._c_hyd = nemoh.get_ab(fio, dof, w, dir)
             # -------------------------------------------------------
             # nproblems = (len(dir) + sum(dof)) * len(w)
             # with open(fio.nemoh_root.joinpath('Normalvelocities.dat')) as f:
@@ -110,16 +110,28 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
                 sys.stdout.write("\t\tHydro static dz(RAO)\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
-                #dz = self._pd.ppanel_centers @ 1
+
+                # Set rigid body motion postion vector transferfunction for each panel
+                self._pos = np.zeros([self._nw, self._ndof, self._pd.npanels, 3], dtype=complex)
+                pc = self._pd.ppanel_centers
+                direction = np.diag(3)
+                for i in range(self._nw):
+                    for j1 in range(2):
+                        for j2 in range(3):
+                            j = 3*j1 + j2
+                            for k in range(self._pd.npanels):
+                                if not j1: # Consider translation
+
+                                    self._pos[i,j,k,:] = [1,1,1] # Pos in x,y and z duo to rao
+
+                                else:# Consider rotation
+
+                                    if j2 == 0: # about x
+                                        self._pos[i,j,k,:] = pc[i,k,2] - pc[i,k,1]
+                                    pass
+
+                # dz = self._pd.ppanel_centers @ 1
                 self._p['Hydro_static_dz'] = (self._rho_sw * self._grav)
-
-
-
-
-
-
-
-
 
                 sys.stdout.write("\t\tFroude-Krylof \n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
@@ -127,14 +139,13 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
                 pressure = hdf5_db[h5_bs.H5_RESULTS_PRESSURE][:]
 
-
                 sys.stdout.write("\t\tDiffraction\n")
                 self._p['Diffraction'] = np.zeros([self._nw, self._nbeta, self._pd.npanels], dtype=complex)
                 for iw in range(self._nw):
                     for ibeta in range(self._nbeta):
                         pn = nemoh.diffraction_problem_number(iw, ibeta, self._nbeta, self._ndof)
                         # print('\t\t\tProblem {}'.format(pn))
-                        self._p['Diffraction'][iw, ibeta, :] = pressure[pn-1,:]
+                        self._p['Diffraction'][iw, ibeta, :] = pressure[pn - 1, :]
 
                 sys.stdout.write("\t\tRadiation\n")
                 self._p['Radiation'] = np.zeros([self._nw, self._ndof, self._pd.npanels], dtype=complex)
@@ -142,10 +153,10 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                     for iradiation in range(self._ndof):
                         pn = nemoh.radiation_problem_number(iw, iradiation, self._nbeta, self._ndof)
                         # print('\t\t\tProblem {}'.format(pn))
-                        self._p['Radiation'][iw, iradiation, :] = pressure[pn-1,:]
+                        self._p['Radiation'][iw, iradiation, :] = pressure[pn - 1, :]
 
                 with open(pressure_file, "wb") as f:
-                    pickle.dump(self._p,f )
+                    pickle.dump(self._p, f)
 
             print('\n{} initialized\n'.format(self.__str__()))
 
@@ -155,20 +166,18 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         xyz = np.zeros([self._pd._npanel, 3])
         xyz[:, axis] = 1
         nemoh_mesh = Mesh(self._pd.ppoints, self._pd.ppanels)
-        p=self._p[pressure_type][ifreq, pressure_index,:]
-        n=self._pd.ppanel_normals
+        p = self._p[pressure_type][ifreq, pressure_index, :]
+        n = self._pd.ppanel_normals
         vec = (n * np.imag(p)[:, np.newaxis]) * xyz
         h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
         h.show()
 
+    def p2f(self, pressure_type, ifreq=None, idir=None):
 
-
-    def p2f(self,pressure_type, ifreq=None, idir = None):
-
-        if pressure_type=='Hydro_static':
-            p_cmplx=self._p[pressure_type]
+        if pressure_type == 'Hydro_static':
+            p_cmplx = self._p[pressure_type]
         else:
-            p_cmplx=self._p[pressure_type][ifreq, idir, :]
+            p_cmplx = self._p[pressure_type][ifreq, idir, :]
 
         npanels = self.pd.ppanels.shape[0]
         f_normal = np.zeros((npanels), dtype=np.complex)
@@ -228,7 +237,6 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     @property
     def fe(self):
         return self._fe
-
 
     @property
     def c_hyd(self):
