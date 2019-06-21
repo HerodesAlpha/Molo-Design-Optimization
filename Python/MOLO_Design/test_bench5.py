@@ -255,13 +255,17 @@ if __name__ == '__main__':
         # Prepare RAO's for motion dependent response variables
         rao = hdp.get_rao(idir)
 
-        # Radiation
+        # Calculate radiation force transferfunctions R = H * eta
         f_rad = np.zeros([hdp.nw, 6], dtype=complex)
 
-        for ifreq in range(hdp.nw):
+        # get_rao create complex motion at origin per freq in all dofs for given wave dir
+        # p2f takes pressure and create global x,y,z force at center of each panel
+        # rao_at_panel transform motion at origin to motion and panel_centers
 
+        for ifreq in range(hdp.nw):
             for irad in range(6):
-                this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad]
+                # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
+                this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad] # TODO: Check if correct
                 f_rad[ifreq, :] += nemoh.get_section_values(this_f_rad, hdp.pd.ppanel_centers,
                                                             section_point,
                                                             section_normal)
@@ -272,6 +276,19 @@ if __name__ == '__main__':
 
         plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 4]))
         plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))

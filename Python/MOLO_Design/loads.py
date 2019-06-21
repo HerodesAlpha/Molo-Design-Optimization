@@ -53,7 +53,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 del a; del b
 
                 #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                if False:
+                if True:
                     ind = self._nemoh_mesh_vertices[:,2] <= np.min(self._nemoh_mesh_vertices[:,2])*0.99
                     self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
                     #print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
@@ -105,10 +105,25 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             else:
                 self._p = dict()
                 sys.stdout.write("\t\tHydro static\n")
-                self._p['Hydro_static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2] # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab.. Dont use for hydro stat. pressure
-                sys.stdout.write("\t\tFroude-Krylof \n")
-                self._p['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
+                # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
+                self._p['Hydro_static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
 
+                sys.stdout.write("\t\tHydro static dz(RAO)\n")
+                # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
+                #dz = self._pd.ppanel_centers @ 1
+                self._p['Hydro_static_dz'] = (self._rho_sw * self._grav)
+
+
+
+
+
+
+
+
+
+                sys.stdout.write("\t\tFroude-Krylof \n")
+                # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
+                self._p['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
 
                 pressure = hdf5_db[h5_bs.H5_RESULTS_PRESSURE][:]
 
