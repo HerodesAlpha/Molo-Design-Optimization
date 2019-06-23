@@ -29,9 +29,9 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
+    settings.create_model = True
     settings.calc_gz = False
-    settings.run_nemoh = False
+    settings.run_nemoh = True
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 81,
+            "num_wave_frequencies": 161,
             "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
             "num_wave_directions" : 2,
@@ -237,11 +237,11 @@ if __name__ == '__main__':
         if True:
 
             # Hydro static / Buoyancy
-            f_hydro_static = nemoh.get_section_values(np.real(hdp.p2f('Hydro_static')), hdp.pd.ppanel_centers, section_point,
-                                                      section_normal)
+            f_bouyancy = nemoh.get_section_values(np.real(hdp.p2f('Hydro_static')), hdp.pd.ppanel_centers, section_point,
+                                                  section_normal)
 
             print('\nBuoyancy force')
-            tb.matprint(f_hydro_static)
+            tb.matprint(f_bouyancy)
 
             # Gravity
             part_list = unit_model.get_parts()
@@ -280,7 +280,7 @@ if __name__ == '__main__':
                                                                 section_point,
                                                                 section_normal)
 
-            f_hydro_static_rao = np.zeros([hdp.nw, 6], dtype=complex)
+            f_varying_buoyancy = np.zeros([hdp.nw, 6], dtype=complex)
             f_inertia = np.zeros([hdp.nw, 6], dtype=complex)
 
             part_list = unit_model.get_parts()
@@ -289,7 +289,7 @@ if __name__ == '__main__':
 
             for ifreq in range(hdp.nw):
 
-                # Rotate the panels according top RAO
+                # Rotate the panels according to RAO
                 rao_rot_mat = tb.rotation_matrix(rao[ifreq, 3:6])  # rao_rot_mat is complex
 
                 # Gen dynamic position of panels and calc hydro static pressure
@@ -297,7 +297,7 @@ if __name__ == '__main__':
                 panel_pos += rao[ifreq, 0:3]
                 p_dz = (hdp._rho_sw * hdp._grav) * panel_pos[:, 2]
                 f_dz = hdp.p2f(p_dz)
-                f_hydro_static_rao[ifreq, :] = nemoh.get_section_values(f_dz,
+                f_varying_buoyancy[ifreq, :] = nemoh.get_section_values(f_dz,
                                                                         hdp.pd.ppanel_centers, section_point,
                                                                         section_normal)
 
@@ -318,20 +318,45 @@ if __name__ == '__main__':
 
 
 
-            f_tot_dyn = f_fk + f_diff + f_rad + f_hydro_static_rao +f_inertia
+            f_tot_dyn = f_fk + f_diff + f_rad + f_varying_buoyancy + f_inertia
 
-            plt.plot(2 * np.pi / hdp.w, abs(f_fk[:, 2]), label='Froude-Krylof')
-            plt.plot(2 * np.pi / hdp.w, abs(f_diff[:, 2]), label='Diffraction')
-            plt.plot(2 * np.pi / hdp.w, abs(f_rad[:, 2]), label='Radiation')
+            w = 2 * np.pi / hdp.w
+
+            fig, axs = plt.subplots(2, 2)
+            heave = 2
+            pitch = 4
+            for i,dof in enumerate([heave,pitch]):
+                axs[0, i].plot(w, abs(f_fk[:, dof]), 'tab:blue', label='Froude-Krylof')
+                axs[0, i].plot(w, abs(f_diff[:, dof]), 'tab:green', label='Diffraction')
+                axs[0, i].plot(w, abs(f_rad[:, dof]), 'tab:orange', label='Radiation')
+                axs[0, i].set_title('Potential forces')
+                axs[0,i].legend()
+
+                #axs[1, i].plot(w, abs(f_bouyancy[:, dof]), 'tab:blue', label='Buoyancy')
+                #axs[1, i].plot(w, abs(f_gravity[:, dof]), 'tab:green', label='Gravity')
+                #axs[1, i].set_title('Mean forces')
+                #axs[1,i].legend()
+
+
+                axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
+                axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
+                axs[1, i].set_title('Varying forces')
+                axs[1,i].legend()
+
+
+            #plt.plot(2 * np.pi / hdp.w, abs(f_fk[:, 2]), label='Froude-Krylof')
+            #plt.plot(2 * np.pi / hdp.w, abs(f_diff[:, 2]), label='Diffraction')
+            #plt.plot(2 * np.pi / hdp.w, abs(f_rad[:, 2]), label='Radiation')
             #plt.plot(2 * np.pi / hdp.w, abs(f_hydro_static_rao[:, 2]), label='Hydro pressure')
             #plt.plot(2 * np.pi / hdp.w, abs(f_inertia[:, 2]), label='Inertia')
             #plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 2]), label='Total')
-            plt.legend()
+
+
             plt.show()
 
 
 
-        f_hydro_static_rao = np.zeros([hdp.nw, 6], dtype=complex)
+        f_varying_buoyancy = np.zeros([hdp.nw, 6], dtype=complex)
 #        for ifreq in range(hdp.nw):
         ifreq = 5
         # Rotate the panels according top RAO
