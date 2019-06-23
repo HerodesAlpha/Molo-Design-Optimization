@@ -198,7 +198,7 @@ def init_models(settings): #
 
     #unit_model.print_vector_matrix_global()
     hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)
-    hs_floater.gravity = settings.grav
+    hs_floater.gravity = abs(settings.grav)
     hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
     print('\nMass given to hydro is {:5.2f} t'.format(hs_floater.mass))

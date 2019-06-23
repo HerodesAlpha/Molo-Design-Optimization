@@ -36,17 +36,17 @@ if __name__ == '__main__':
 
     h5_bs = BaseStructure()
 
-    filling_ratio = [0.0, 0.0, 0.0]
+    filling_ratio = [0.0, 0.0, 0.05]
 
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 7.1,
+            "Central column diameter" : 7.5,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.04,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 7.1,
+            "Radial column diameter"  : 7.5,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
             "Upper flange thickness"  : 0.04,
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     settings.do_equilibriate = True
     fio = settings.fio
 
-    settings.thin_panel_offset = 0.2
+    settings.thin_panel_offset = 1.0
 
     if settings.create_model:
         print('\n--------------------------------------------------------------------------------------------')
@@ -118,7 +118,7 @@ if __name__ == '__main__':
         print('\n--------------------------------------------------------------------------------------------')
         print('STABILITY ANALYSIS')
         print('--------------------------------------------------------------------------------------------')
-        stability.gz_curve(fio, hs_floater)
+        stability.gz_curve(settings, hs_floater)
 
     if settings.create_model and settings.run_nemoh:
         print('\n--------------------------------------------------------------------------------------------')
@@ -198,7 +198,7 @@ if __name__ == '__main__':
         # --------------------------------------------------------------------------------------------------------------
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
-        if False:
+        if True:
             h = hdp.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / hdp.w
@@ -234,11 +234,14 @@ if __name__ == '__main__':
         rao = hdp.get_rao(idir)
 
         # Collect all forces acting on the section
-        if False:
+        if True:
 
             # Hydro static / Buoyancy
-            f_hydro_static = nemoh.get_section_values(hdp.p2f('Hydro_static'), hdp.pd.ppanel_centers, section_point,
+            f_hydro_static = nemoh.get_section_values(np.real(hdp.p2f('Hydro_static')), hdp.pd.ppanel_centers, section_point,
                                                       section_normal)
+
+            print('\nBuoyancy force')
+            tb.matprint(f_hydro_static)
 
             # Gravity
             part_list = unit_model.get_parts()
@@ -246,6 +249,9 @@ if __name__ == '__main__':
             point_mass_centers = np.asarray([-part.reduction_point for part in part_list])
             f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
                                                  section_normal)
+
+            print('\nGravity force')
+            tb.matprint(f_gravity)
 
             # Froude-Krylof and diffraction
             f_fk = np.zeros([hdp.nw, 6], dtype=complex)
@@ -259,8 +265,6 @@ if __name__ == '__main__':
                                                             section_point,
                                                             section_normal)
 
-
-
             # Calculate radiation force transferfunctions R = H * eta
             f_rad = np.zeros([hdp.nw, 6], dtype=complex)
 
@@ -271,53 +275,90 @@ if __name__ == '__main__':
             for ifreq in range(hdp.nw):
                 for irad in range(6):
                     # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-                    this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad] # TODO: Check if correct
+                    this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad]  # TODO: Check if correct
                     f_rad[ifreq, :] += nemoh.get_section_values(this_f_rad, hdp.pd.ppanel_centers,
                                                                 section_point,
                                                                 section_normal)
 
-            f_tot_dyn = f_fk + f_diff + f_rad
+            f_hydro_static_rao = np.zeros([hdp.nw, 6], dtype=complex)
+            f_inertia = np.zeros([hdp.nw, 6], dtype=complex)
+
+            part_list = unit_model.get_parts()
+            part_mass = np.asarray([part.mass for part in part_list])
+            part_meanpos = np.asarray([-part.reduction_point for part in part_list])
+
+            for ifreq in range(hdp.nw):
+
+                # Rotate the panels according top RAO
+                rao_rot_mat = tb.rotation_matrix(rao[ifreq, 3:6])  # rao_rot_mat is complex
+
+                # Gen dynamic position of panels and calc hydro static pressure
+                panel_pos = np.transpose(np.dot(rao_rot_mat, hdp.pd.ppanel_centers.T))
+                panel_pos += rao[ifreq, 0:3]
+                p_dz = (hdp._rho_sw * hdp._grav) * panel_pos[:, 2]
+                f_dz = hdp.p2f(p_dz)
+                f_hydro_static_rao[ifreq, :] = nemoh.get_section_values(f_dz,
+                                                                        hdp.pd.ppanel_centers, section_point,
+                                                                        section_normal)
 
 
-        #for ifreq in range(hdp.nw):
 
-        ifreq = 40
-        rot_mat=tb.rotation_matrix(np.imag(rao[ifreq, 3:6]))
-        a = np.transpose(np.dot(rot_mat, hdp.pd.ppanel_centers.T))
+                # Get dynamic acceleration of part masses and calc inertia force
+
+                part_dynpos = np.transpose(np.dot(rao_rot_mat, part_meanpos.T))
+                part_dynpos += rao[ifreq, 0:3]
+                part_dynacc = part_dynpos * hdp.w[ifreq] ** 2
+                part_inertia_force = part_dynacc * part_mass[:, np.newaxis]
+                f_inertia[ifreq, :] = nemoh.get_section_values(part_inertia_force,
+                                                               part_meanpos, section_point,
+                                                               section_normal)
+
+
+
+
+
+
+            f_tot_dyn = f_fk + f_diff + f_rad + f_hydro_static_rao +f_inertia
+
+            plt.plot(2 * np.pi / hdp.w, abs(f_fk[:, 2]), label='Froude-Krylof')
+            plt.plot(2 * np.pi / hdp.w, abs(f_diff[:, 2]), label='Diffraction')
+            plt.plot(2 * np.pi / hdp.w, abs(f_rad[:, 2]), label='Radiation')
+            #plt.plot(2 * np.pi / hdp.w, abs(f_hydro_static_rao[:, 2]), label='Hydro pressure')
+            #plt.plot(2 * np.pi / hdp.w, abs(f_inertia[:, 2]), label='Inertia')
+            #plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 2]), label='Total')
+            plt.legend()
+            plt.show()
+
+
+
+        f_hydro_static_rao = np.zeros([hdp.nw, 6], dtype=complex)
+#        for ifreq in range(hdp.nw):
+        ifreq = 5
+        # Rotate the panels according top RAO
+        rao_rot_mat = tb.rotation_matrix(rao[ifreq, 3:6])  # rao_rot_mat is complex
+
+
+
+
+
+
+        # Calc velocity and acc (not needed yet)
+        # panel_vel = panel_pos * 1j * hdp.w(ifreq)
+        # panel_acc = panel_pos * hdp.w(ifreq)**2
 
         xyz = np.zeros([hdp._pd._npanel, 3])
         xyz[:, 2] = 1
         nemoh_mesh = Mesh(hdp._pd.ppoints, hdp._pd.ppanels)
-        h = force.show_force(nemoh_mesh, hdp._pd.ppanel_centers, a*xyz)
-        h.show()
+        h = force.show_force(nemoh_mesh, hdp._pd.ppanel_centers, np.imag(panel_pos * xyz))
+        #h.show()
 
 
 
+        # print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
 
-
-
-        #plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 4]))
-        #plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        #print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
-
-        #print('\nFz\t{: 7.2f} MN'.format(f_gravity[2] / 1000000))
-        #print('Mx\t{: 7.2f} MNm'.format(f_gravity[3] / 1000000))
-        #print('my\t{: 7.2f} MNm'.format(f_gravity[4] / 1000000))
+        # print('\nFz\t{: 7.2f} MN'.format(f_gravity[2] / 1000000))
+        # print('Mx\t{: 7.2f} MNm'.format(f_gravity[3] / 1000000))
+        # print('my\t{: 7.2f} MNm'.format(f_gravity[4] / 1000000))
 
         # print(hdp.ma_zero)
         # print(hdp.ma_inf)

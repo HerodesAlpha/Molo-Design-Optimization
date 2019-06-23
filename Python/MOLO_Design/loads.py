@@ -109,31 +109,6 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 self._p['Hydro_static'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
 
 
-                sys.stdout.write("\t\tHydro static dz(RAO)\n")
-                # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
-
-                # # Set rigid body motion postion vector transferfunction for each panel
-                # self._pos = np.zeros([self._nw, self._ndof, self._pd.npanels, 3], dtype=complex)
-                # pc = self._pd.ppanel_centers
-                # direction = np.diag(3)
-                # for i in range(self._nw):
-                #     for j1 in range(2):
-                #         for j2 in range(3):
-                #             j = 3*j1 + j2
-                #             for k in range(self._pd.npanels):
-                #                 if not j1: # Consider translation
-                #
-                #                     self._pos[i,j,k,:] = [1,1,1] # Pos in x,y and z duo to rao
-                #
-                #                 else:# Consider rotation
-                #
-                #                     if j2 == 0: # about x
-                #                         self._pos[i,j,k,:] = pc[i,k,2] - pc[i,k,1]
-                #                     pass
-
-                # dz = self._pd.ppanel_centers @ 1
-                self._p['Hydro_static_dz'] = (self._rho_sw * self._grav)
-
                 sys.stdout.write("\t\tFroude-Krylof \n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
                 self._p['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
@@ -173,12 +148,15 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
         h.show()
 
-    def p2f(self, pressure_type, ifreq=None, idir=None):
+    def p2f(self, p, ifreq=None, idir=None):
 
-        if pressure_type == 'Hydro_static':
-            p_cmplx = self._p[pressure_type]
+        if isinstance(p, str):
+            if p == 'Hydro_static':
+                p_cmplx = self._p[p]
+            elif p in self._p.keys():
+                p_cmplx = self._p[p][ifreq, idir, :]
         else:
-            p_cmplx = self._p[pressure_type][ifreq, idir, :]
+            p_cmplx = p
 
         npanels = self.pd.ppanels.shape[0]
         f_normal = np.zeros((npanels), dtype=np.complex)

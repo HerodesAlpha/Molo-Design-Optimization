@@ -42,12 +42,11 @@ class MMViewer:
         self.render_window.SetWindowName("MOLO viewer")
         self.render_window.AddRenderer(self.renderer)
 
-
-
-        if use_interactor == None or True:
+        self.render_window_interactor = vtk.vtkRenderWindowInteractor()
+        self.render_window_interactor.SetRenderWindow(self.render_window)
+        if use_interactor == None or use_interactor == True:
         # Building interactor
-            self.render_window_interactor = vtk.vtkRenderWindowInteractor()
-            self.render_window_interactor.SetRenderWindow(self.render_window)
+
             self.render_window_interactor.GetInteractorStyle().SetCurrentStyleToTrackballCamera()
             self.render_window_interactor.AddObserver('KeyPressEvent', self.on_key_press, 0.0)
 
@@ -61,29 +60,30 @@ class MMViewer:
         self.widget.SetEnabled(1)
         self.widget.InteractiveOn()
 
-        # Building command annotations
-        command_text = "left mouse : rotate\n" + \
-                       "right mouse : zoom\n" + \
-                       "middle mouse : pan\n" + \
-                       "ctrl+left mouse : spin\n" + \
-                       "n : (un)show normals\n" + \
-                       "b : (un)show axes box\n" + \
-                       "f : focus on the mouse cursor\n" + \
-                       "r : reset view\n" + \
-                       "s : surface representation\n" + \
-                       "w : wire representation\n" + \
-                       "h : (un)show Oxy plane\n" + \
-                       "x : save\n" + \
-                       "c : screenshot\n" + \
-                       "q : quit"
+        if use_interactor == None or use_interactor == True:
+            # Building command annotations
+            command_text = "left mouse : rotate\n" + \
+                           "right mouse : zoom\n" + \
+                           "middle mouse : pan\n" + \
+                           "ctrl+left mouse : spin\n" + \
+                           "n : (un)show normals\n" + \
+                           "b : (un)show axes box\n" + \
+                           "f : focus on the mouse cursor\n" + \
+                           "r : reset view\n" + \
+                           "s : surface representation\n" + \
+                           "w : wire representation\n" + \
+                           "h : (un)show Oxy plane\n" + \
+                           "x : save\n" + \
+                           "c : screenshot\n" + \
+                           "q : quit"
 
-        corner_annotation = vtk.vtkCornerAnnotation()
-        corner_annotation.SetLinearFontScaleFactor(2)
-        corner_annotation.SetNonlinearFontScaleFactor(1)
-        corner_annotation.SetMaximumFontSize(20)
-        corner_annotation.SetText(3, command_text)
-        corner_annotation.GetTextProperty().SetColor(0., 0., 0.)
-        self.renderer.AddViewProp(corner_annotation)
+            corner_annotation = vtk.vtkCornerAnnotation()
+            corner_annotation.SetLinearFontScaleFactor(2)
+            corner_annotation.SetNonlinearFontScaleFactor(1)
+            corner_annotation.SetMaximumFontSize(20)
+            corner_annotation.SetText(3, command_text)
+            corner_annotation.GetTextProperty().SetColor(0., 0., 0.)
+            self.renderer.AddViewProp(corner_annotation)
 
         copyright_text = "MOLO Concept\nCopyright VERBUN AS {}".format(__year__)
 

@@ -14,7 +14,7 @@ class PhysicalQuantities():
     # This is the only place allowed to put these quantities
     def __init__(self):
         self._rho_sw = 1025
-        self._grav = -9.81
+        self._grav = -9.81 # In global coordinate system
         self._rho_st = 7850
 
     @property
@@ -235,6 +235,7 @@ class SettingsClass(PhysicalQuantities, object):
             self._case_label = '{}{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt, nrc, rcd * 10, gf * 10, rh * 10)
         else:
             self._case_label = type
+        print('\nMODEL NAME: {}'.format(self._case_label))
 
     @property
     def floater_data(self):

@@ -2,7 +2,6 @@ __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-
 # Use meshmagic eq. solver until somthing faster can be implemented
 import meshmagick.hydrostatics as hs
 import numpy as np
@@ -11,77 +10,69 @@ import vtk
 import imageio
 import os
 
+
 # TODO: Evaluate Mathieu instability
 
-def gz_curve(fio,hs_floater):
-    #np.linalg.solve
+def gz_curve(settings, hs_floater):
+    # np.linalg.solve
     hs_floater.verbose_off()
     # Init
     thetax = thetay = 0
-    dthetay = (np.pi / 180)/4
+    dthetay = (np.pi / 180) / 4
     dthetax = 0
 
-    ifile=0
+    ifile = 0
 
     x = 0
 
+    with imageio.get_writer(settings.fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
+        with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
+            f_gz.write('{:7s} {:7s} {:7s} {:7s}\n'.format('theta', 'fz','my','mz'))
+            while not x < 0:
+                rot_matrix = hs_floater.mesh.rotate([thetax, dthetay, 0.])
+                hs_floater._gravity_center = np.dot(rot_matrix, hs_floater._gravity_center)
+                hs_floater._rotation = np.dot(rot_matrix, hs_floater._rotation)
+                hs_floater.set_displacement(hs_floater.mass)
+                hs_floater._reinit_clipper()
+                # hs_floater._update_hydrostatic_properties()
 
-    with imageio.get_writer(fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
-        while not x < 0:
-            rot_matrix = hs_floater.mesh.rotate([thetax, dthetay, 0.])
-            hs_floater._gravity_center = np.dot(rot_matrix, hs_floater._gravity_center)
-            hs_floater._rotation = np.dot(rot_matrix, hs_floater._rotation)
-            hs_floater.set_displacement(hs_floater.mass)
-            hs_floater._reinit_clipper()
-            #hs_floater._update_hydrostatic_properties()
+                thetay += dthetay
+                # print(thetay)
+                x = -hs_floater.residual[2]
+                f_gz.write('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}\n'.format(thetay * 180 / np.pi,
+                                                                                      val=-hs_floater.residual / 1000000))
 
-            thetay += dthetay
-            print(thetay)
-            x = -hs_floater.residual[2]
+                if 1:
+                    vtk_polydata = hs_floater.mesh._vtk_polydata()
+                    hs_floater.viewer = MMViewer(use_interactor=False)
+                    hs_floater.viewer.add_polydata(vtk_polydata)
+                    hs_floater.viewer.plane_on()
+                    corner_annotation = vtk.vtkCornerAnnotation()
+                    corner_annotation.SetLinearFontScaleFactor(2)
+                    corner_annotation.SetNonlinearFontScaleFactor(1)
+                    corner_annotation.SetMaximumFontSize(20)
+                    corner_annotation.SetText(3, '{:5.1f} deg {:6.1f} MNm'.format(thetay * 180 / np.pi, x / 1000000))
+                    corner_annotation.GetTextProperty().SetColor(0., 0., 0.)
+                    hs_floater.viewer.renderer.AddViewProp(corner_annotation)
+                    hs_floater.viewer.render_window.SetOffScreenRendering(1)
+                    # hs_floater.viewer.ShowWindowOff()
+                    hs_floater.viewer.show_no_interactive()
+                    ifile += 1
 
-            if 1:
-                vtk_polydata = hs_floater.mesh._vtk_polydata()
-                hs_floater.viewer = MMViewer(use_interactor=False)
-                hs_floater.viewer.add_polydata(vtk_polydata)
-                hs_floater.viewer.plane_on()
-                corner_annotation = vtk.vtkCornerAnnotation()
-                corner_annotation.SetLinearFontScaleFactor(2)
-                corner_annotation.SetNonlinearFontScaleFactor(1)
-                corner_annotation.SetMaximumFontSize(20)
-                corner_annotation.SetText(3, '{:5.1f} deg {:6.1f} MNm'.format(thetay*180/np.pi, x/1000000))
-                corner_annotation.GetTextProperty().SetColor(0., 0., 0.)
-                hs_floater.viewer.renderer.AddViewProp(corner_annotation)
-                hs_floater.viewer.render_window.SetOffScreenRendering(1)
-                #hs_floater.viewer.ShowWindowOff()
-                hs_floater.viewer.show_no_interactive()
-                ifile += 1
+                    # fio.stability_dir.joinpath('stability.mp4')
 
-                #fio.stability_dir.joinpath('stability.mp4')
+                    filename = str(settings.fio.stability_dir.joinpath('gz_{:05d}.gif'.format(ifile)))
+                    hs_floater.viewer.save_png(filename)
+                    image = imageio.imread(filename)
+                    writer.append_data(image)
+                    os.remove(filename)
 
-                filename = str(fio.stability_dir.joinpath('gz_{:05d}.gif'.format(ifile)))
-                hs_floater.viewer.save_png(filename)
-                image = imageio.imread(filename)
-                writer.append_data(image)
-                os.remove(filename)
+                    # hs_floater.render_window_interactor.GetRenderWindow().Finalize()
+                    # hs_floater.render_window_interactor.TerminateApp()
+                    hs_floater.viewer.finalize()
 
-                #hs_floater.render_window_interactor.GetRenderWindow().Finalize()
-                #hs_floater.render_window_interactor.TerminateApp()
-                hs_floater.viewer.finalize()
-
-
-
-
-            print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay*180/np.pi, val=-hs_floater.residual/1000000))
-
-
-
-
-
-
-
-
-
-
+                print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay * 180 / np.pi,
+                                                                             val=-hs_floater.residual / 1000000))
 
         #
         #

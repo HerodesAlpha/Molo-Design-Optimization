@@ -150,7 +150,7 @@ if postprocessing:
 
         print(np.abs(nemoh.get_section_forces(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))
 
-        print(abs(hdp.p2f(ifreq, pressure_index=0, pressure_type='Hydro static')) / 9.81)
+        print(abs(hdp.p2f(ifreq, pressure_index=0, p='Hydro static')) / 9.81)
         #print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
     part_list = unit_model.get_parts()
