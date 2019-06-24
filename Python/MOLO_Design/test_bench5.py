@@ -223,140 +223,26 @@ if __name__ == '__main__':
 
         # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
-        print('\n--------------------------------------------------------------------------------------------')
-        print('SECTION FORCES')
-        print('--------------------------------------------------------------------------------------------')
-
-        section_point = [0, 0, 0]
-        section_normal = [1, 0, 0]
-
-        # Prepare RAO's for motion dependent response variables
-        rao = hdp.get_rao(idir)
-
-        # Collect all forces acting on the section
-        if True:
-
-            # Hydro static / Buoyancy
-            f_bouyancy = nemoh.get_section_values(np.real(hdp.p2f('Hydro_static')), hdp.pd.ppanel_centers, section_point,
-                                                  section_normal)
-
-            print('\nBuoyancy force')
-            tb.matprint(f_bouyancy)
-
-            # Gravity
-            part_list = unit_model.get_parts()
-            point_mass_gravity_force = np.asarray([[0, 0, part.mass] for part in part_list]) * settings.grav
-            point_mass_centers = np.asarray([-part.reduction_point for part in part_list])
-            f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
-                                                 section_normal)
-
-            print('\nGravity force')
-            tb.matprint(f_gravity)
-
-            # Froude-Krylof and diffraction
-            f_fk = np.zeros([hdp.nw, 6], dtype=complex)
-            f_diff = np.zeros([hdp.nw, 6], dtype=complex)
-
-            for ifreq in range(hdp.nw):
-                f_fk[ifreq, :] = nemoh.get_section_values(hdp.p2f('Froude-Krylof', ifreq, idir), hdp.pd.ppanel_centers,
-                                                          section_point,
-                                                          section_normal)
-                f_diff[ifreq, :] = nemoh.get_section_values(hdp.p2f('Diffraction', ifreq, idir), hdp.pd.ppanel_centers,
-                                                            section_point,
-                                                            section_normal)
-
-            # Calculate radiation force transferfunctions R = H * eta
-            f_rad = np.zeros([hdp.nw, 6], dtype=complex)
-
-            # get_rao create complex motion at origin per freq in all dofs for given wave dir
-            # p2f takes pressure and create global x,y,z force at center of each panel
-            # rao_at_panel transform motion at origin to motion and panel_centers
-
-            for ifreq in range(hdp.nw):
-                for irad in range(6):
-                    # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-                    this_f_rad = hdp.p2f('Radiation', ifreq, irad) * rao[ifreq, irad]  # TODO: Check if correct
-                    f_rad[ifreq, :] += nemoh.get_section_values(this_f_rad, hdp.pd.ppanel_centers,
-                                                                section_point,
-                                                                section_normal)
-
-            f_varying_buoyancy = np.zeros([hdp.nw, 6], dtype=complex)
-            f_inertia = np.zeros([hdp.nw, 6], dtype=complex)
-
-            part_list = unit_model.get_parts()
-            part_mass = np.asarray([part.mass for part in part_list])
-            part_meanpos = np.asarray([-part.reduction_point for part in part_list])
-
-            for ifreq in range(hdp.nw):
-
-                # Rotate the panels according to RAO
-                rao_rot_mat = tb.rotation_matrix(rao[ifreq, 3:6])  # rao_rot_mat is complex
-
-                # Gen dynamic position of panels and calc hydro static pressure
-                panel_pos = np.transpose(np.dot(rao_rot_mat, hdp.pd.ppanel_centers.T))
-                panel_pos += rao[ifreq, 0:3]
-                p_dz = (hdp._rho_sw * hdp._grav) * panel_pos[:, 2]
-                f_dz = hdp.p2f(p_dz)
-                f_varying_buoyancy[ifreq, :] = nemoh.get_section_values(f_dz,
-                                                                        hdp.pd.ppanel_centers, section_point,
-                                                                        section_normal)
+        #
+        # w = 2 * np.pi / hdp.w
+        #
+        # fig, axs = plt.subplots(2, 2)
+        # heave = 2
+        # pitch = 4
+        # for i,dof in enumerate([heave,pitch]):
+        #     axs[0, i].plot(w, abs(f_fk[:, dof]), 'tab:blue', label='Froude-Krylof')
+        #     axs[0, i].plot(w, abs(f_diff[:, dof]), 'tab:green', label='Diffraction')
+        #     axs[0, i].plot(w, abs(f_rad[:, dof]), 'tab:orange', label='Radiation')
+        #     axs[0, i].set_title('Potential forces')
+        #     axs[0,i].legend()
+        #     axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
+        #     axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
+        #     axs[1, i].set_title('Varying forces')
+        #     axs[1,i].legend()
+        # plt.show()
 
 
 
-                # Get dynamic acceleration of part masses and calc inertia force
-
-                part_dynpos = np.transpose(np.dot(rao_rot_mat, part_meanpos.T))
-                part_dynpos += rao[ifreq, 0:3]
-                part_dynacc = part_dynpos * hdp.w[ifreq] ** 2
-                part_inertia_force = part_dynacc * part_mass[:, np.newaxis]
-                f_inertia[ifreq, :] = nemoh.get_section_values(part_inertia_force,
-                                                               part_meanpos, section_point,
-                                                               section_normal)
-
-
-
-
-
-
-            f_tot_dyn = f_fk + f_diff + f_rad + f_varying_buoyancy + f_inertia
-
-            w = 2 * np.pi / hdp.w
-
-            fig, axs = plt.subplots(2, 2)
-            heave = 2
-            pitch = 4
-            for i,dof in enumerate([heave,pitch]):
-                axs[0, i].plot(w, abs(f_fk[:, dof]), 'tab:blue', label='Froude-Krylof')
-                axs[0, i].plot(w, abs(f_diff[:, dof]), 'tab:green', label='Diffraction')
-                axs[0, i].plot(w, abs(f_rad[:, dof]), 'tab:orange', label='Radiation')
-                axs[0, i].set_title('Potential forces')
-                axs[0,i].legend()
-
-                #axs[1, i].plot(w, abs(f_bouyancy[:, dof]), 'tab:blue', label='Buoyancy')
-                #axs[1, i].plot(w, abs(f_gravity[:, dof]), 'tab:green', label='Gravity')
-                #axs[1, i].set_title('Mean forces')
-                #axs[1,i].legend()
-
-
-                axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
-                axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
-                axs[1, i].set_title('Varying forces')
-                axs[1,i].legend()
-
-
-            #plt.plot(2 * np.pi / hdp.w, abs(f_fk[:, 2]), label='Froude-Krylof')
-            #plt.plot(2 * np.pi / hdp.w, abs(f_diff[:, 2]), label='Diffraction')
-            #plt.plot(2 * np.pi / hdp.w, abs(f_rad[:, 2]), label='Radiation')
-            #plt.plot(2 * np.pi / hdp.w, abs(f_hydro_static_rao[:, 2]), label='Hydro pressure')
-            #plt.plot(2 * np.pi / hdp.w, abs(f_inertia[:, 2]), label='Inertia')
-            #plt.plot(2 * np.pi / hdp.w, abs(f_tot_dyn[:, 2]), label='Total')
-
-
-            plt.show()
-
-
-
-        f_varying_buoyancy = np.zeros([hdp.nw, 6], dtype=complex)
 
 
 

@@ -19,6 +19,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     def __init__(self, settings):
         super().__init__()
         h5_bs = BaseStructure()
+        self._settings = settings
         with h5py.File(settings.fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
 
             # hdf5_db['results']['fk_pressure_raw'][0]
@@ -43,16 +44,16 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             # Reshape vertices and faces to full model
             if settings.use_symmmetri == True:
                 a = self._nemoh_mesh_vertices
-                b = a.copy();
+                b = a.copy()
                 b[:, 1] = -b[:, 1]  # Create new set of nodes mirrored about xz
                 self._nemoh_mesh_vertices = np.vstack((a, b))  # Append the new set to the old set
                 a = self._nemoh_mesh_faces
-                b = a.copy();
+                b = a.copy()
                 b = b + int(self._nemoh_mesh_vertices.shape[0] / 2)  # Create a new set of faces from the old
                 # set and renumber by adding int(nvertices)
                 b[:, :] = b[:, ::-1]  # Flip normals on mirrored faces (reverse nodes)
                 self._nemoh_mesh_faces = np.vstack((a, b))
-                del a;
+                del a
                 del b
 
                 # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
@@ -135,6 +136,10 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                     pickle.dump(self._p, f)
 
             print('\n{} initialized\n'.format(self.__str__()))
+
+
+
+
 
     def show_pressure(self, ifreq, pressure_index, axis, pressure_type):
         # Pressure index is either force degree of freedom or wave direction
