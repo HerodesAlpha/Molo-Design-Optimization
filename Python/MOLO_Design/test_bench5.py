@@ -30,8 +30,8 @@ if __name__ == '__main__':
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
     settings.create_model = True
-    settings.calc_gz = False
-    settings.run_nemoh = True
+    settings.calc_gz = True
+    settings.run_nemoh = False
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 161,
+            "num_wave_frequencies": 3,
             "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
             "num_wave_directions" : 2,
@@ -357,10 +357,7 @@ if __name__ == '__main__':
 
 
         f_varying_buoyancy = np.zeros([hdp.nw, 6], dtype=complex)
-#        for ifreq in range(hdp.nw):
-        ifreq = 5
-        # Rotate the panels according top RAO
-        rao_rot_mat = tb.rotation_matrix(rao[ifreq, 3:6])  # rao_rot_mat is complex
+
 
 
 
