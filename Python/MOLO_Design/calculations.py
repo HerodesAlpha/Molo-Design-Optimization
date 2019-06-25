@@ -150,19 +150,21 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
         f_varying_buoyancy = nemoh.get_section_values(f_dz, self.pd.ppanel_centers, section_point,
                                                       section_normal)
 
-        """
             # Get dynamic acceleration of part masses and calc inertia force
-            f_inertia = np.zeros([self.nw, 6], dtype=complex)
+        f_inertia = np.zeros([self.nw, 6], dtype=complex)
+        b = point_mass_centers[np.newaxis, np.newaxis, :, :, np.newaxis]
+        point_mass_pos = np.squeeze(np.matmul(a, b))
+        #b = self.pd.ppanel_centers[np.newaxis, np.newaxis, :, :, np.newaxis]
 
-            part_dynpos = np.transpose(np.dot(rao_rot_mat, point_mass_centers.T))
-            part_dynpos += rao[ifreq, 0:3]
-            part_dynacc = part_dynpos * self.w[ifreq] ** 2
-            part_inertia_force = part_dynacc * point_mass[:, np.newaxis]
-            f_inertia[ifreq, :] = nemoh.get_section_values(part_inertia_force,
-                                                           point_mass_centers, section_point,
-                                                           section_normal)
 
-        f_tot_dyn[:, idir, :] = f_fk + f_diff + f_rad + f_varying_buoyancy + f_inertia
-        """
 
-        return f_rad + f_fk + f_diff + f_varying_buoyancy
+        point_mass_pos += self._rao[:, :, np.newaxis, 0:3]
+        w2 = self.w ** 2
+        part_dynacc = point_mass_pos * w2[:,np.newaxis,np.newaxis,np.newaxis]
+        part_inertia_force = part_dynacc * point_mass[:, np.newaxis, np.newaxis,0,0]
+        f_inertia[ifreq, :] = nemoh.get_section_values(part_inertia_force,
+                                                       point_mass_centers, section_point,
+                                                       section_normal)
+
+
+        return f_rad + f_fk + f_diff + f_varying_buoyancy + f_inertia

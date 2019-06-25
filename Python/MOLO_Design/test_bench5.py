@@ -29,9 +29,9 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = True
+    settings.create_model = False
     settings.calc_gz = False
-    settings.run_nemoh = True
+    settings.run_nemoh = False
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -40,13 +40,13 @@ if __name__ == '__main__':
 
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 7,
+            "Central column diameter" : 7.5,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.04,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 8.5,
+            "Radial column diameter"  : 7.5,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
             "Upper flange thickness"  : 0.04,
@@ -56,14 +56,14 @@ if __name__ == '__main__':
             "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 3,
+            "num_wave_frequencies": 161,
             "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
-            "num_wave_directions" : 2,
+            "num_wave_directions" : 3,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
-
+    # TODO: Allow for none equidistant frequencies
     settings.case_label = 'floater_data'
     settings.set_file_structure()
     settings.simulation_dir = str(settings.fio.nemoh_root)
