@@ -64,7 +64,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                     del ind
 
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)  # TODO: Get vertices and points
-
+            self._an = self.pd.ppanel_areas[:, np.newaxis] * self.pd.ppanel_normals
             # -------------------------------------------------------
             step += 1
             sys.stdout.write("\t({})Get forces\n".format(step))
@@ -114,18 +114,18 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
             else:
                 self._pressure = dict()
-                an = self.pd.ppanel_areas[:,np.newaxis]*self.pd.ppanel_normals
+
                 self._force = dict()
                 sys.stdout.write("\t\tBuoyancy\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
                 self._pressure['Buoyancy'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
-                self._force['Buoyancy'] = -self._pressure['Buoyancy'][:,np.newaxis]*an
+                self._force['Buoyancy'] = -self._pressure['Buoyancy'][:,np.newaxis]*self._an
 
 
                 sys.stdout.write("\t\tFroude-Krylof \n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
                 self._pressure['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
-                self._force['Froude-Krylof'] = -self._pressure['Froude-Krylof'][:,:,:,np.newaxis]*an[np.newaxis,np.newaxis,:,:]
+                self._force['Froude-Krylof'] = -self._pressure['Froude-Krylof'][:,:,:,np.newaxis]*self._an[np.newaxis,np.newaxis,:,:]
 
 
                 nemoh_pressure = hdf5_db[h5_bs.H5_RESULTS_PRESSURE][:]
@@ -137,7 +137,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                         pn = nemoh.diffraction_problem_number(iw, ibeta, self._nbeta, self._ndof)
                         # print('\t\t\tProblem {}'.format(pn))
                         self._pressure['Diffraction'][iw, ibeta, :] = nemoh_pressure[pn - 1, :]
-                self._force['Diffraction'] = -self._pressure['Diffraction'][:,:,:,np.newaxis]*an[np.newaxis,np.newaxis,:,:]
+                self._force['Diffraction'] = -self._pressure['Diffraction'][:,:,:,np.newaxis]*self._an[np.newaxis,np.newaxis,:,:]
 
                 sys.stdout.write("\t\tRadiation\n")
                 self._pressure['Radiation'] = np.zeros([self._nw, self._ndof, self._pd.npanels], dtype=complex)
@@ -146,7 +146,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                         pn = nemoh.radiation_problem_number(iw, iradiation, self._nbeta, self._ndof)
                         # print('\t\t\tProblem {}'.format(pn))
                         self._pressure['Radiation'][iw, iradiation, :] = nemoh_pressure[pn - 1, :]
-                self._force['Radiation'] = -self._pressure['Radiation'][:,:,:,np.newaxis]*an[np.newaxis,np.newaxis,:,:]
+                self._force['Radiation'] = -self._pressure['Radiation'][:,:,:,np.newaxis]*self._an[np.newaxis,np.newaxis,:,:]
 
                 if save_files:
 

@@ -15,17 +15,21 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
     def __init__(self, settings):
         super().__init__(settings)
 
-    # def rao(self, fe, m, ma, c, k, w):
-    #     return np.absolute(fe / (-w ** 2 * (m + ma) + 1j * w * (c) + k))
-    #
-    #
-    # def get_rao(self, idof, idir):
-    #     fe = self._fe[:, idir, idof]
-    #     m = self._m[idof][idof]
-    #     ma = self._ma[:, idof, idof]
-    #     c = self._c_hyd[:, idof, idof]
-    #     k = self._k[idof][idof]
-    #     return self.rao(fe, m, ma, c, k, self._w)
+        # def rao(self, fe, m, ma, c, k, w):
+        #     return np.absolute(fe / (-w ** 2 * (m + ma) + 1j * w * (c) + k))
+        #
+        #
+        # def get_rao(self, idof, idir):
+        #     fe = self._fe[:, idir, idof]
+        #     m = self._m[idof][idof]
+        #     ma = self._ma[:, idof, idof]
+        #     c = self._c_hyd[:, idof, idof]
+        #     k = self._k[idof][idof]
+        #     return self.rao(fe, m, ma, c, k, self._w)
+
+        self._rao = np.zeros([self.nw, self._nbeta, 6], dtype=complex)
+        for ibeta in range(self._nbeta):
+            self._rao[:, ibeta, :] = self.get_rao(ibeta)
 
     def get_rao(self, idir):
         fe = self._fe[:, idir, :]
@@ -106,38 +110,49 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
         # Calculate radiation force transferfunctions R = H * eta
 
         # get_rao create complex motion at origin per freq in all dofs for given wave dir
-        # p2f takes pressure and create global x,y,z force at center of each panel
-        # rao_at_panel transform motion at origin to motion and panel_centers
 
-        rao = np.zeros([self.nw, self._nbeta, 6], dtype=complex)
-        for ibeta in range(self._nbeta):
-            rao[:, ibeta, :] = self.get_rao(ibeta)
 
-            a = self._force['Radiation'] * rao[:, :, np.newaxis, :]
+        rad = self._force['Radiation'].copy()  # Dont mess with original
+        # rad = np.swapaxes(rad,1,2) # Modify radiation axes to align axes with RAO for broadcasting
+        f_rad_all_panels_all_dof = rad[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis, np.newaxis]
+        f_rad_all_panels = np.sum(f_rad_all_panels_all_dof, axis=2)  # TODO: Move this work to init. Will be reused
 
-            # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        f_rad = nemoh.get_section_values(a, self.pd.ppanel_centers,
+        # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
+        f_rad = nemoh.get_section_values(f_rad_all_panels, self.pd.ppanel_centers,
                                          section_point,
                                          section_normal)
 
+        # Gen dynamic position of panels and calc hydro static pressure
+
+        rao_rot_mat = np.zeros([self._nw, self._nbeta, 3, 3], dtype=complex)
+        panel_pos = np.zeros([self._nw, self._nbeta, self.pd.npanels, 3], dtype=complex)
+        for ifreq in range(self._nw):
+            for ibeta in range(self._nbeta):
+                rao_rot_mat[ifreq, ibeta, :, :] = tb.rotation_matrix(self._rao[ifreq, ibeta, 3:6])  # TODO: Vectorize
+                """
+                for ipanel in range(self.pd.npanels):
+                    panel_pos[ifreq, ibeta, ipanel, :] = np.transpose(
+                        np.dot(rao_rot_mat[ifreq, ibeta, :, :], self.pd.ppanel_centers[ipanel, :].T))
+
+
+
         """
-        f_varying_buoyancy = np.zeros([self.nw, 6], dtype=complex)
-        f_inertia = np.zeros([self.nw, 6], dtype=complex)
+        a = rao_rot_mat[:, :, np.newaxis, :, :]
+        b = self.pd.ppanel_centers[np.newaxis, np.newaxis, :, :, np.newaxis] # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
+        panel_pos[:, :, :, :] = np.squeeze(np.matmul(a, b)) # Perform matmul and remove artificial dim. This code is fast ...
 
-        for ifreq in range(self.nw):
-            # Rotate the panels according to RAO
-            rao_rot_mat = tb.rotation_matrix(rao[ifreq, 3:6])  # rao_rot_mat is complex
+        # panel_pos = np.transpose(np.dot(rao_rot_mat[:,:,:,:], self.pd.ppanel_centers.T))
+        # panel_pos = np.transpose(np.matmul(rao_rot_mat[:,:,np.newaxis,:,:], self.pd.ppanel_centers[np.newaxis,np.newaxis,:,:, np.newaxis]))
+        panel_pos += self._rao[:, :, np.newaxis, 0:3]
+        p_dz = (self._rho_sw * self._grav) * panel_pos[:, :, :, 2]
+        f_dz = -p_dz[:, :, :, np.newaxis] * self._an[np.newaxis, np.newaxis, :, :]
 
-            # Gen dynamic position of panels and calc hydro static pressure
-            panel_pos = np.transpose(np.dot(rao_rot_mat, self.pd.ppanel_centers.T))
-            panel_pos += rao[ifreq, 0:3]
-            p_dz = (self._rho_sw * self._grav) * panel_pos[:, 2]
-            f_dz = self.p2f(p_dz)
-            f_varying_buoyancy[ifreq, :] = nemoh.get_section_values(f_dz,
-                                                                    self.pd.ppanel_centers, section_point,
-                                                                    section_normal)
+        f_varying_buoyancy = nemoh.get_section_values(f_dz, self.pd.ppanel_centers, section_point,
+                                                      section_normal)
 
+        """
             # Get dynamic acceleration of part masses and calc inertia force
+            f_inertia = np.zeros([self.nw, 6], dtype=complex)
 
             part_dynpos = np.transpose(np.dot(rao_rot_mat, point_mass_centers.T))
             part_dynpos += rao[ifreq, 0:3]
@@ -150,4 +165,4 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
         f_tot_dyn[:, idir, :] = f_fk + f_diff + f_rad + f_varying_buoyancy + f_inertia
         """
 
-        return
+        return f_rad + f_fk + f_diff + f_varying_buoyancy

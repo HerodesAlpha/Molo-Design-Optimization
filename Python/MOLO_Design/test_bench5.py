@@ -29,9 +29,9 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
+    settings.create_model = True
     settings.calc_gz = False
-    settings.run_nemoh = False
+    settings.run_nemoh = True
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -40,13 +40,13 @@ if __name__ == '__main__':
 
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 7.5,
+            "Central column diameter" : 7,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.04,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 7.5,
+            "Radial column diameter"  : 8.5,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
             "Upper flange thickness"  : 0.04,
@@ -219,7 +219,7 @@ if __name__ == '__main__':
         f = hdp.section_forces()
 
 
-        plt.plot(2 * np.pi / hdp.w, abs(f[:, idir, idof]))
+        plt.plot(2 * np.pi / hdp.w, abs(f[:, 0, 4]))
         plt.show()
 
         # np.set_printoptions(precision=3)
