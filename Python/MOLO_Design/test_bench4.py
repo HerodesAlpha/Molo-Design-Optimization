@@ -175,8 +175,8 @@ if __name__ == '__main__':
             # tmp = nemoh.get_section_forces(fio, problem, [-100,0,0], [1,0,0], sym=SYM)
             # print('\nSection force:\n{}'.format(np.abs(tmp)))
 
-            f_fk = nemoh.p2f(hdp._p['Froude-Krylof'][ifreq, idir, :], hdp.pd)
-            f_diff = nemoh.p2f(hdp._p['Diffraction'][ifreq, idir, :], hdp.pd)
+            f_fk = nemoh.p2f(hdp._pressure['Froude-Krylof'][ifreq, idir, :], hdp.pd)
+            f_diff = nemoh.p2f(hdp._pressure['Diffraction'][ifreq, idir, :], hdp.pd)
             f_exc = f_fk + f_diff
 
             print(np.abs(nemoh.get_section_values(f_exc, hdp.pd.ppanel_centers, [10, 0, 0], [1, 0, 0])))

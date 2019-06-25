@@ -220,7 +220,8 @@ def init_models(settings): #
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     print('\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
     #hs_floater.show()
-    # unit_model.print_vector_matrix_global()
+    print('\nUpdated global mass matrix after adjusting to draught')
+    unit_model.print_vector_matrix_global()
 
     msh_file=tb.msh_file(settings, mesh_type='nemoh')
     nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)

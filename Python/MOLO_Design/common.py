@@ -56,7 +56,7 @@ class FileIOClass(object):
 
         self._templates_dir = Path(os.getcwd()).joinpath('templates')
 
-        path_to_gmsh_exe = r'C:\Users\edux\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
+        path_to_gmsh_exe = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
         if Path(path_to_gmsh_exe).exists():
             self._gmsh_exe = path_to_gmsh_exe
         else:

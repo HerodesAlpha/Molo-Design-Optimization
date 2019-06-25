@@ -65,33 +65,33 @@ def writeCalFile(dir, rho_sw, water_depth, omega, dof, aO, mesh_file, nrNode, nr
 
         fid.write('--- Load cases to be solved ---\n')
         fid.write(str(omega[0]) + '\t' + str(omega[1]) + '\t' + str(
-            omega[2]) + '		! Number of wave frequencies, Min, and Max (rad/s)\n')
+                omega[2]) + '		! Number of wave frequencies, Min, and Max (rad/s)\n')
         if dirCheck:
             fid.write(str(aO['dirStep']) + '\t' + str(aO['dirStart']) + '\t' + str(
-                aO['dirStop']) + '		! Number of wave directions, Min and Max (degrees)\n')
+                    aO['dirStop']) + '		! Number of wave directions, Min and Max (degrees)\n')
         else:
             fid.write(str(dir[0]) + '\t' + str(dir[1]) + '\t' + str(
-                dir[2]) + '		! Number of wave directions, Min and Max (degrees)\n')
+                    dir[2]) + '		! Number of wave directions, Min and Max (degrees)\n')
         fid.write('--- Post processing ---\n')
         if irfCheck:
             fid.write('1' + '\t' + str(aO['irfStep']) + '\t' + str(aO[
                                                                        'irfDur']) + '\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n')
         else:
             fid.write(
-                '0' + '\t0.01\t20.\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n')
+                    '0' + '\t0.01\t20.\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n')
         fid.write('1				! Show pressure\n')
         if kochCheck:
             fid.write(str(aO['kochStep']) + '\t' + str(aO['kochStart']) + '\t' + str(aO[
                                                                                          'kochStop']) + '		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n')
         else:
             fid.write(
-                '0	0.	180.		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n')
+                    '0	0.	180.		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n')
         if fsCheck:
             fid.write(str(aO['fsDeltaX']) + '\t' + str(aO['fsDeltaY']) + '\t' + str(aO['fsLengthX']) + '\t' + str(aO[
                                                                                                                       'fsLengthY']) + '	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n')
         else:
             fid.write(
-                '50	50	100 100	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n')
+                    '50	50	100 100	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n')
 
 
 def runNemoh(fio, hydromodel, mesh_file, dir, rho_sw, water_depth, omega_calc, dof):
@@ -110,7 +110,7 @@ def runNemoh(fio, hydromodel, mesh_file, dir, rho_sw, water_depth, omega_calc, d
 
     nemoh_exe_path = Path(r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Nemoh v2.03')
     nemoh_exe_path = Path(
-        r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\Fortran\nemoh\bin')
+            r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Projects\P2017.001\Work\Fortran\nemoh\bin')
     subprocess.call(str(nemoh_exe_path.joinpath('preProc.exe')))
     subprocess.call(str(nemoh_exe_path.joinpath('solver.exe')))
     subprocess.call(str(nemoh_exe_path.joinpath('postProc.exe')))
@@ -498,11 +498,11 @@ def mesh(fio, hs_floater, sym=None):
 def p2f(p_cmplx, pd):
     npanels = pd.ppanels.shape[0]
     f_normal = np.zeros((npanels), dtype=np.complex)
-    f = np.zeros((npanels,3), dtype=np.complex)
+    f = np.zeros((npanels, 3), dtype=np.complex)
     for i, panel in enumerate(pd.ppanels):
         f_normal[i] = p_cmplx[i] * pd.ppanel_areas[i]
         for j in range(3):
-            f[i,j] = -f_normal[i] * pd.ppanel_normals[i, j]
+            f[i, j] = -f_normal[i] * pd.ppanel_normals[i, j]
     return f
 
     # sec_panel_force = pressure[ppanels[sec_panel_index,:]]
@@ -519,8 +519,8 @@ class PanelData(object):
         self._npanel = int(ls[1][3::])
         self._ppoints = np.asarray([line.split() for line in _lines[2:self._npoints + 2]], dtype='float')[:, 0:3]
         self._ppanels = np.asarray(
-            [line.split() for line in _lines[self._npoints + 2:self._npoints + 1 + self._npanel + 1]],
-            dtype='int') - 1
+                [line.split() for line in _lines[self._npoints + 2:self._npoints + 1 + self._npanel + 1]],
+                dtype='int') - 1
         # --------------------------------------
         # Calculate section forces from pressure
         # --------------------------------------
@@ -582,31 +582,39 @@ class PanelData(object):
         return self._ppanels.shape[0]
 
 
-def get_section_values(forces, coordinates, section_point, section_normal, moment_ref = None):
+def get_section_values(forces, coordinates, section_point, section_normal, moment_ref=None):
     # Filter forces
-
-    if moment_ref == None :
+    #assert (forces.ndim == 4 or forces.ndim == 2)
+    if moment_ref == None:
         moment_ref = 'section'
     elif not (moment_ref == 'origin' or moment_ref == 'section'):
-        print('moment_axis = {}is not an option'.format(moment_ref))
+        print('moment_axis = {} is not an option'.format(moment_ref))
 
     vec = coordinates - section_point
-    dot = np.dot(vec, section_normal) # dot product i positive for coordinates on the positive side of the plane
+    dot = np.dot(vec, section_normal)  # dot product i positive for coordinates on the positive side of the plane
     index = dot >= 0
-    if 1 in index:
-        section_forces = forces[index, :]
-        if moment_ref  == 'origin' :
-            section_moments = np.cross(coordinates[index], section_forces) # Calculate moment about origin
-        else:
-            section_moments = np.cross(vec[index], section_forces) # Calculate moment about section
-
-
-
-
-
-
-
-        return sum(np.concatenate((section_forces, section_moments), axis=1))
+    if 1 in index: # At least one item is on the considered side of the section surface
+        if forces.ndim == 4:  # Dynamic [freq, dir, panel, f]
+            section_forces = forces[:, :, index, :]
+            if moment_ref == 'origin':
+                section_moments = np.cross(coordinates[np.newaxis, np.newaxis, index, :],
+                                           section_forces)  # Calculate moment about origin
+            else:
+                section_moments = np.cross(vec[np.newaxis, np.newaxis, index, :],
+                                           section_forces)  # Calculate moment about section
+            # Concatenate along 4th dimension contaning [fx, fy, fz] and [mx, mz, mz]
+            # Then sum along 3rd dimension holding the panels or point mass indices
+            return np.sum(np.concatenate((section_forces, section_moments), axis=3), axis=2)
+        elif forces.ndim == 2:  # Static [panel, f]
+            section_forces = forces[index, :]
+            if moment_ref == 'origin':
+                section_moments = np.cross(coordinates[np.newaxis, np.newaxis, index, :],
+                                           section_forces)  # Calculate moment about origin
+            else:
+                section_moments = np.cross(vec[index, :], section_forces)  # Calculate moment about section
+            # Concatenate along 2nd dimension contaning [fx, fy, fz] and [mx, mz, mz]
+            # Then sum along 1st dimension holding the panels or point mass indices
+            return np.sum(np.concatenate((section_forces, section_moments), axis=1), axis=0)
     else:
         return np.zeros(6)
 

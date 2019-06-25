@@ -29,14 +29,14 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = True
-    settings.calc_gz = True
+    settings.create_model = False
+    settings.calc_gz = False
     settings.run_nemoh = False
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
 
-    filling_ratio = [0.0, 0.0, 0.05]
+    filling_ratio = [0.0, 0.0, 0.0]
 
     settings.floater_data = {
             "Type"                    : "OY",
@@ -198,7 +198,7 @@ if __name__ == '__main__':
         # --------------------------------------------------------------------------------------------------------------
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
-        if True:
+        if False:
             h = hdp.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / hdp.w
@@ -216,8 +216,11 @@ if __name__ == '__main__':
             axs[2, 1].set_title('fe pitch')
             plt.show()
         #
-        # plt.plot(2 * np.pi / hdp.w, abs(hdp.fe[:, idir, idof]))
-        # plt.show()
+        f = hdp.section_forces()
+
+
+        plt.plot(2 * np.pi / hdp.w, abs(f[:, idir, idof]))
+        plt.show()
 
         # np.set_printoptions(precision=3)
 

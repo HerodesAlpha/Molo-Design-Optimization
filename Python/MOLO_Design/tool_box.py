@@ -27,19 +27,21 @@ class TotalMassMatrixClass(object):
         """The position of the center of gravity"""
         return self._cog
 
-    # @cog.setter
-    # def cog(self, point):
-    #     """The position of the center of gravity"""
-    #     self._cog = np.asarray(point, dtype=np.float)
+    @cog.setter
+    def cog(self, point):
+        """The position of the center of gravity"""
+        self._cog = np.asarray(point, dtype=np.float)
 
     @property
     def mass(self):
         """The mass of the body"""
+        #assert(self._mass_matrix_local[0, 0] == self._mass_matrix_global[0, 0])
         return self._mass_matrix_local[0, 0]
 
     @mass.setter
     def mass(self, val):
         self._mass_matrix_local[:3, :3] = np.eye(3) * val
+        #self._mass_matrix_global[:3, :3] = self._mass_matrix_local[:3, :3]
 
     @property
     def mass_matrix_local(self):
@@ -88,6 +90,9 @@ class TotalMassMatrixClass(object):
     def add_mass_matrix_local(self, mat):
         self._mass_matrix_local += mat
 
+    def add_mass_matrix_global(self, mat):
+        self._mass_matrix_global += mat
+
     def assign_val_to_mass_matrix_local(self, i, j, val):
         self._mass_matrix_local[i, j] = val
         self.update_mass_matrix_global()
@@ -131,7 +136,7 @@ class TotalMassMatrixClass(object):
         self.update_mass_matrix_global()
 
     def update_mass_matrix_global(self):
-        self._mass_matrix_global = self._mass_matrix_local + self._huygens_transport() * self.mass
+        self._mass_matrix_global = self._mass_matrix_local + self._huygens_transport() * self._mass_matrix_local[0,0]
 
     @property
     def at_cog(self):
@@ -155,6 +160,14 @@ class TotalMassMatrixClass(object):
         self._mass_matrix_local -= self._huygens_transport() * self.mass
         self._point = self._cog
 
+
+    def mass_matrix_local_from_global(self):
+        """
+        Reducition point must be defined in global coordinate system and global mass matrix must be given relative to global origin
+        """
+        self._mass_matrix_local =  self._mass_matrix_global - self._huygens_transport() * self._mass_matrix_global[0,0]
+
+
     def is_at_cog(self):
         """Returns whether the object is expressed at cog
 
@@ -166,8 +179,8 @@ class TotalMassMatrixClass(object):
 
     def _huygens_transport(self):
         p_g = self._cog - self._point
-        x = p_g[0];
-        y = p_g[1];
+        x = p_g[0]
+        y = p_g[1]
         z = p_g[2]
         # print('x={} y={} z={}'.format(x,y,z))
         A = np.asarray([[0, -z, y],

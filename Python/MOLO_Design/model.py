@@ -24,23 +24,20 @@ class ModelClass(object):
     def set_new_reduction_point(self, new_point):
         # Recursively update reduction point on myself and my children
         assert len(new_point) == 3
-        self._inertias._point += new_point
+        self._inertias.reduction_point += self._inertias._point + new_point # Will update global mass matrix also
         if self.parts_list:
             for part in self.parts_list:
                 part.set_new_reduction_point(new_point)
 
-    def get_parts(self, mass_list=None):
+    def get_parts(self, part_list=None):
         # Only get mass of parts that have no part
         if self.parts_list == []:
-            mass_list.append(self._inertias)
-        if mass_list == None:
-            mass_list=[]
+            part_list.append(self)
+        if part_list == None:
+            part_list = []
         for part in self.parts_list:
-            part.get_parts(mass_list)
-        return mass_list
-
-
-
+            part.get_parts(part_list)
+        return part_list
 
     #     def rec(x):
     #         if self.parts_list:
@@ -95,9 +92,9 @@ class ModelClass(object):
     def print_vector_matrix_global(self):
         if not self.verbose == 0:
             print(
-                '{} {}\n\tMass = {m:6.1f} t\n\tReduction point is [{a[0]:6.2f}, {a[1]:6.2f}, {a[2]:6.2f}]\n\n\tVector matrix'.format(
-                    self.__class__.__name__, self._type, m=self.inertias.mass / 1000,
-                    a=self.inertias.reduction_point))
+                    '{} {}\n\tMass = {m:6.1f} t\n\tReduction point is [{a[0]:6.2f}, {a[1]:6.2f}, {a[2]:6.2f}]\n\n\tVector matrix'.format(
+                            self.__class__.__name__, self._type, m=self.inertias.mass / 1000,
+                            a=self.inertias.reduction_point))
             m = self.inertias.mass_matrix_global / self.inertias.mass
             s = ''
             for i in range(6):
@@ -113,19 +110,31 @@ class AssemblyClass(ModelClass, object):
         ModelClass.__init__(self, type, red_point)
 
     def aggregate_inertias_from_parts(self, parts_list):
-        for part in parts_list:
-            # TODO: Revise mass and mass matrix
-            self.inertias.add_mass_matrix_local(part.inertias.mass_matrix_global)
+        # Check that mass matrix is zero
+        if not np.count_nonzero(self.inertias.mass_matrix_global):
+            # It is important that all parts refer to the same point of reference when aggregating matrices
+            for part in parts_list:
+                self.inertias.add_mass_matrix_global(
+                        part.inertias.mass_matrix_global)
+        else:
+            print('ERROR: self.inertias.mass_matrix_global contain values at initialization')
+            exit()
 
+        # Calculate origin relative to CoG
+        total_mass = self.inertias._mass_matrix_global[0, 0]
+        self.inertias._point = np.zeros(3)
         for part in parts_list:
-            self.inertias._point += part.inertias._point * part.inertias.mass / self.inertias.mass
+            self.inertias._point += part.inertias._point * part.inertias.mass_matrix_global[0, 0] / total_mass
 
-        # self._inertias.update_vector_matrix_global()
-        self._inertias.update_mass_matrix_global()
+
+        self._inertias.mass_matrix_local_from_global()
+        self._inertias.cog = np.zeros(3)  # Just to be sure
         self.print_vector_matrix_global()
 
 
 class UnitClass(AssemblyClass, object):
+    # The mass matrix of all parts, parents and children are defined relative to the plane xy coinciding with the calm
+    # water level plane. z - axis points upwards. Draught is zero.
     def __init__(self, models):
         ModelClass.__init__(self)
 
