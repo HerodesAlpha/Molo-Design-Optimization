@@ -14,19 +14,8 @@ from loads import Sea_and_Inertia_Loads
 class TransferFunctions(Sea_and_Inertia_Loads, object):
     def __init__(self, settings):
         super().__init__(settings)
-
-        # def rao(self, fe, m, ma, c, k, w):
-        #     return np.absolute(fe / (-w ** 2 * (m + ma) + 1j * w * (c) + k))
-        #
-        #
-        # def get_rao(self, idof, idir):
-        #     fe = self._fe[:, idir, idof]
-        #     m = self._m[idof][idof]
-        #     ma = self._ma[:, idof, idof]
-        #     c = self._c_hyd[:, idof, idof]
-        #     k = self._k[idof][idof]
-        #     return self.rao(fe, m, ma, c, k, self._w)
-
+        self._settings = settings
+        self_env = Environment(settings)
         self._rao = np.zeros([self.nw, self._nbeta, 6], dtype=complex)
         for ibeta in range(self._nbeta):
             self._rao[:, ibeta, :] = self.get_rao(ibeta)
@@ -64,10 +53,10 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
 
     def section_forces(self, section_point=None, section_normal=None):
 
-        if section_point == None:
-            section_point = np.array([1, 0, 0])
-        if section_normal == None:
-            section_normal = np.array([1, 0, 0])
+        # if section_point == None:
+        #     section_point = np.array([1, 0, 0])
+        # if section_normal == None:
+        #     section_normal = np.array([1, 0, 0])
 
         print('\n--------------------------------------------------------------------------------------------')
         print('SECTION FORCES')
@@ -77,6 +66,7 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
             unit_model = pickle.load(f)
         unit_model.set_new_reduction_point(section_point)
+
         # Prepare RAO's for motion dependent response variables
 
         part_list = unit_model.get_parts()
@@ -111,7 +101,6 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
 
         # get_rao create complex motion at origin per freq in all dofs for given wave dir
 
-
         rad = self._force['Radiation'].copy()  # Dont mess with original
         # rad = np.swapaxes(rad,1,2) # Modify radiation axes to align axes with RAO for broadcasting
         f_rad_all_panels_all_dof = rad[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis, np.newaxis]
@@ -123,7 +112,6 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
                                          section_normal)
 
         # Gen dynamic position of panels and calc hydro static pressure
-
         rao_rot_mat = np.zeros([self._nw, self._nbeta, 3, 3], dtype=complex)
         panel_pos = np.zeros([self._nw, self._nbeta, self.pd.npanels, 3], dtype=complex)
         for ifreq in range(self._nw):
@@ -138,8 +126,10 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
 
         """
         a = rao_rot_mat[:, :, np.newaxis, :, :]
-        b = self.pd.ppanel_centers[np.newaxis, np.newaxis, :, :, np.newaxis] # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
-        panel_pos[:, :, :, :] = np.squeeze(np.matmul(a, b)) # Perform matmul and remove artificial dim. This code is fast ...
+        b = self.pd.ppanel_centers[np.newaxis, np.newaxis, :, :,
+            np.newaxis]  # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
+        panel_pos[:, :, :, :] = np.squeeze(np.matmul(a, b),
+                                           axis=4)  # Perform matmul and remove artificial dim. This code is fast ...
 
         # panel_pos = np.transpose(np.dot(rao_rot_mat[:,:,:,:], self.pd.ppanel_centers.T))
         # panel_pos = np.transpose(np.matmul(rao_rot_mat[:,:,np.newaxis,:,:], self.pd.ppanel_centers[np.newaxis,np.newaxis,:,:, np.newaxis]))
@@ -150,21 +140,106 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
         f_varying_buoyancy = nemoh.get_section_values(f_dz, self.pd.ppanel_centers, section_point,
                                                       section_normal)
 
-            # Get dynamic acceleration of part masses and calc inertia force
-        f_inertia = np.zeros([self.nw, 6], dtype=complex)
+        # Get dynamic acceleration of part masses and calc inertia force
+        # TODO: Include rotation/inertia moment from parts
         b = point_mass_centers[np.newaxis, np.newaxis, :, :, np.newaxis]
-        point_mass_pos = np.squeeze(np.matmul(a, b))
-        #b = self.pd.ppanel_centers[np.newaxis, np.newaxis, :, :, np.newaxis]
-
-
-
+        point_mass_pos = np.squeeze(np.matmul(a, b), axis=4)
         point_mass_pos += self._rao[:, :, np.newaxis, 0:3]
         w2 = self.w ** 2
-        part_dynacc = point_mass_pos * w2[:,np.newaxis,np.newaxis,np.newaxis]
-        part_inertia_force = part_dynacc * point_mass[:, np.newaxis, np.newaxis,0,0]
-        f_inertia[ifreq, :] = nemoh.get_section_values(part_inertia_force,
-                                                       point_mass_centers, section_point,
-                                                       section_normal)
+        part_dynacc = point_mass_pos * w2[:, np.newaxis, np.newaxis, np.newaxis]
+        part_inertia_force = part_dynacc * point_mass[:, np.newaxis, np.newaxis, 0, 0]
+        f_inertia = nemoh.get_section_values(part_inertia_force,
+                                             point_mass_centers, section_point,
+                                             section_normal)
+
+        return f_gravity + f_bouyancy, f_rad + f_fk + f_diff + f_varying_buoyancy + f_inertia
+
+    def panel_stress(self):
+        a = self._settings.job_data['floater']
+
+        h = a['Radial height']
+        d_rc = a['Radial column diameter']
+        d_cc = a['Central column diameter']
+        w = d_rc
+        t_lf = a['Lower flange thickness']
+        t_uf = a['Upper flange thickness']
+        # Get forces at section center
+        # TODO: Change z to section center, now at waterline
+        section_point = np.asarray([d_cc / 2, 0, 0])
+        section_normal = np.asarray([1, 0, 0])
+        f_stat, f_dyn = self.section_forces(section_point, section_normal)
+        a = w * t_uf
+        wz = t_uf*w**2/6
+
+        def sig(f):
+            fx = f[:, :, 0] / 2 + f[:, :, 4] / h
+            sig_ax = fx / a
+            sig_bx = f[:, :, 5]/wz
+            return sig_ax + sig_bx
+
+        return np.squeeze(sig(f_stat[np.newaxis,np.newaxis,:])), sig(f_dyn)
 
 
-        return f_rad + f_fk + f_diff + f_varying_buoyancy + f_inertia
+
+class Environment():
+    def __init__(self, settings):
+        pass
+
+    def spec_wave(self, hs, wp, w, gamma=None):
+        sig_a = 0.07
+        sig_b = 0.09
+        delta_sig = sig_b - sig_a
+
+        tp = 2 * np.pi / wp
+        x = tp / np.sqrt(hs)
+        if gamma == None:
+            if x <= 3.6:
+                gamma = 5
+            elif x < 5:
+                gamma = np.exp(5.75 - 1.15 * x)
+            else:
+                gamma = 1
+            # print('Gamma {}'.format(gamma))
+
+        a_gamma = 1 - 0.287 * np.log(gamma)
+
+        def spec_pm(w):
+            return (5 / 16) * (hs ** 2) * (wp ** 4) * (w ** (-5)) * np.exp(-(5 / 4) * ((w / wp) ** (-4)))
+
+        def spec_jonswap(w):
+            def sig(w):
+                return sig_a if w <= wp else sig_b
+
+            sig_ab = np.array(list(map(sig, w)))
+
+            return a_gamma * spec_pm(w) * gamma ** np.exp(-0.5 * ((w - wp) / sig_ab * wp))
+
+        if not gamma == 1:
+            spec = spec_jonswap
+        else:
+            spec = spec_pm
+
+        return spec(w)
+
+
+class DNVGL_RP_C201():
+    def __init__(self):
+        self._info = dict()
+        self._info['Company'] = 'Det Norske Veritas'
+        self._info['Type'] = 'Recommended Practice'
+        self._info['Title'] = 'Buckling Strength Of Plated Structures'
+        self._info['Version'] = 'October 2010'
+
+    def func_sx_rd(self, cx, fy, gm):  # Equation 6.1
+        return cx * fy / gm
+
+    def func_cx(self, l_p):  # Equation 6.2
+        if l_p <= 0.673:
+            return 1
+        else:
+            return (l_p - 0.22) / l_p ** 2
+
+    def func_l_p(self, s, t, fy, e):  # Equation 6.3
+        return 0.525 * (s / t) * np.sqrt(fy / e)
+
+    # def func_

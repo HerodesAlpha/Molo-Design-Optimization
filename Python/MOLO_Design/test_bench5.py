@@ -56,10 +56,10 @@ if __name__ == '__main__':
             "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 161,
+            "num_wave_frequencies": 5,
             "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
-            "num_wave_directions" : 3,
+            "num_wave_directions" : 1,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
@@ -136,6 +136,7 @@ if __name__ == '__main__':
     if settings.postprocessing:
 
         hdp = calculations.TransferFunctions(settings)
+        sig_stat, sig_dyn=hdp.panel_stress()
 
         SELECT_DOF = 1
         SELECT_AXIS = 2
@@ -216,10 +217,12 @@ if __name__ == '__main__':
             axs[2, 1].set_title('fe pitch')
             plt.show()
         #
-        f = hdp.section_forces()
-
-
-        plt.plot(2 * np.pi / hdp.w, abs(f[:, 0, 4]))
+        #f = hdp.section_forces()
+        #
+        #
+        # plt.plot(2 * np.pi / hdp.w, abs(f[:, 0, 4]))
+        # plt.show()
+        plt.plot(2 * np.pi / hdp.w, abs(sig_dyn))
         plt.show()
 
         # np.set_printoptions(precision=3)

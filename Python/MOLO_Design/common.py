@@ -8,7 +8,7 @@ import os
 # import matplotlib.pyplot as plt
 
 from pathlib import Path
-
+import getpass
 
 class PhysicalQuantities():
     # This is the only place allowed to put these quantities
@@ -56,12 +56,12 @@ class FileIOClass(object):
 
         self._templates_dir = Path(os.getcwd()).joinpath('templates')
 
-        path_to_gmsh_exe = r'C:\Users\eison\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'
-        if Path(path_to_gmsh_exe).exists():
-            self._gmsh_exe = path_to_gmsh_exe
-        else:
-            print('{} does not exits'.format(path_to_gmsh_exe))
-            exit()
+        path_to_gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(getpass.getuser())
+        assert(Path(path_to_gmsh_exe).exists())
+        self._gmsh_exe = path_to_gmsh_exe
+        # else:
+        #     print('{} does not exits'.format(path_to_gmsh_exe))
+        #     exit()
 
         self.create_dir()
 
