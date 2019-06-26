@@ -51,12 +51,20 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
 
         return container
 
-    def section_forces(self, section_point=None, section_normal=None):
+    def section_forces(self, section_point=None, section_normal=None, components=None):
 
-        # if section_point == None:
-        #     section_point = np.array([1, 0, 0])
-        # if section_normal == None:
-        #     section_normal = np.array([1, 0, 0])
+        if components is None:
+            components = False
+        else:
+            components = True
+
+        if section_point  is None:
+            section_point = np.array([1, 0, 0])
+        if section_normal is None:
+            section_normal = np.array([1, 0, 0])
+
+        section_point = np.asarray(section_point)
+        section_normal = np.asarray(section_normal)
 
         print('\n--------------------------------------------------------------------------------------------')
         print('SECTION FORCES')
@@ -112,47 +120,58 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
                                          section_normal)
 
         # Gen dynamic position of panels and calc hydro static pressure
-        rao_rot_mat = np.zeros([self._nw, self._nbeta, 3, 3], dtype=complex)
+        rao_tra_mat = np.zeros([self._nw, self._nbeta, 4, 4], dtype=complex)
         panel_pos = np.zeros([self._nw, self._nbeta, self.pd.npanels, 3], dtype=complex)
         for ifreq in range(self._nw):
             for ibeta in range(self._nbeta):
-                rao_rot_mat[ifreq, ibeta, :, :] = tb.rotation_matrix(self._rao[ifreq, ibeta, 3:6])  # TODO: Vectorize
-                """
-                for ipanel in range(self.pd.npanels):
-                    panel_pos[ifreq, ibeta, ipanel, :] = np.transpose(
-                        np.dot(rao_rot_mat[ifreq, ibeta, :, :], self.pd.ppanel_centers[ipanel, :].T))
+                rot = self._rao[ifreq, ibeta, 3:6]
+                tra = self._rao[ifreq, ibeta, 0:3]
+                rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot,tra)  # TODO: Vectorize
 
+        rtm = rao_tra_mat[:, :, np.newaxis, :, :]
+        # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
+        pc = np.append(self.pd.ppanel_centers,np.ones((self.pd.npanels,1)),1)
+        # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
+        pc = pc[np.newaxis, np.newaxis, :, :,np.newaxis]
+        # Perform matmul and remove artificial dim and appended 1. This code is fast ...
+        panel_pos[:, :, :, :] = np.squeeze(np.matmul(rtm, pc),axis=4)[:, :, :, 0:3]
+        panel_pos -= self.pd.ppanel_centers[np.newaxis, np.newaxis, :] # Subtract mean position
+        #panel_pos += self._rao[:, :, np.newaxis, 0:3]
+        dp = (self._rho_sw * abs(self._grav)) * panel_pos[:, :, :, 2] # Change in pressure
+        f_dz = -dp[:, :, :, np.newaxis] * self._an[np.newaxis, np.newaxis, :, :]
 
-
-        """
-        a = rao_rot_mat[:, :, np.newaxis, :, :]
-        b = self.pd.ppanel_centers[np.newaxis, np.newaxis, :, :,
-            np.newaxis]  # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
-        panel_pos[:, :, :, :] = np.squeeze(np.matmul(a, b),
-                                           axis=4)  # Perform matmul and remove artificial dim. This code is fast ...
-
-        # panel_pos = np.transpose(np.dot(rao_rot_mat[:,:,:,:], self.pd.ppanel_centers.T))
-        # panel_pos = np.transpose(np.matmul(rao_rot_mat[:,:,np.newaxis,:,:], self.pd.ppanel_centers[np.newaxis,np.newaxis,:,:, np.newaxis]))
-        panel_pos += self._rao[:, :, np.newaxis, 0:3]
-        p_dz = (self._rho_sw * self._grav) * panel_pos[:, :, :, 2]
-        f_dz = -p_dz[:, :, :, np.newaxis] * self._an[np.newaxis, np.newaxis, :, :]
-
-        f_varying_buoyancy = nemoh.get_section_values(f_dz, self.pd.ppanel_centers, section_point,
+        f_dz_s = nemoh.get_section_values(f_dz, self.pd.ppanel_centers, section_point,
                                                       section_normal)
 
         # Get dynamic acceleration of part masses and calc inertia force
         # TODO: Include rotation/inertia moment from parts
-        b = point_mass_centers[np.newaxis, np.newaxis, :, :, np.newaxis]
-        point_mass_pos = np.squeeze(np.matmul(a, b), axis=4)
-        point_mass_pos += self._rao[:, :, np.newaxis, 0:3]
+
+        pmc = np.append(point_mass_centers,np.ones((point_mass_centers.shape[0],1)),1)
+        pmc = pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
+        point_mass_pos = np.squeeze(np.matmul(rtm, pmc), axis=4)[:, :, :, 0:3]
+
+        point_mass_pos -= point_mass_centers[np.newaxis, np.newaxis, :]
         w2 = self.w ** 2
         part_dynacc = point_mass_pos * w2[:, np.newaxis, np.newaxis, np.newaxis]
-        part_inertia_force = part_dynacc * point_mass[:, np.newaxis, np.newaxis, 0, 0]
+        part_inertia_force = -part_dynacc * point_mass[np.newaxis, np.newaxis, :, np.newaxis, 0, 0]
         f_inertia = nemoh.get_section_values(part_inertia_force,
                                              point_mass_centers, section_point,
                                              section_normal)
 
-        return f_gravity + f_bouyancy, f_rad + f_fk + f_diff + f_varying_buoyancy + f_inertia
+        if not components:
+            return f_gravity + f_bouyancy, f_rad + f_fk + f_diff + f_dz_s + f_inertia
+        else:
+            f_comp = dict()
+            f_comp['Static']=dict()
+            f_comp['Dynamic']=dict()
+            f_comp['Static']['Gravity'] = f_gravity
+            f_comp['Static']['Buoyancy'] = f_bouyancy
+            f_comp['Dynamic']['Radiation'] = f_rad
+            f_comp['Dynamic']['Froude-Krylof'] = f_fk
+            f_comp['Dynamic']['Diffraction'] = f_diff
+            f_comp['Dynamic']['Buoyancy'] = f_dz_s
+            f_comp['Dynamic']['Inertia'] = f_inertia
+            return f_comp
 
     def panel_stress(self):
         a = self._settings.job_data['floater']
@@ -169,16 +188,21 @@ class TransferFunctions(Sea_and_Inertia_Loads, object):
         section_normal = np.asarray([1, 0, 0])
         f_stat, f_dyn = self.section_forces(section_point, section_normal)
         a = w * t_uf
-        wz = t_uf*w**2/6
+        wz = t_uf * w ** 2 / 6
 
         def sig(f):
-            fx = f[:, :, 0] / 2 + f[:, :, 4] / h
+            if f.ndim == 3:
+                fx = f[:, :, 0] / 2 + f[:, :, 4] / h
+            else:
+                fx = f[0] / 2 + f[4] / h
             sig_ax = fx / a
-            sig_bx = f[:, :, 5]/wz
+            if f.ndim == 3:
+                sig_bx = f[:, :, 5] / (2 * wz)
+            else:
+                sig_bx = f[5] / (2 * wz)
             return sig_ax + sig_bx
 
-        return np.squeeze(sig(f_stat[np.newaxis,np.newaxis,:])), sig(f_dyn)
-
+        return sig(f_stat), sig(f_dyn)
 
 
 class Environment():

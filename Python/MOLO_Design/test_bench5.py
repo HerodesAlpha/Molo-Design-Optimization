@@ -136,7 +136,12 @@ if __name__ == '__main__':
     if settings.postprocessing:
 
         hdp = calculations.TransferFunctions(settings)
-        sig_stat, sig_dyn=hdp.panel_stress()
+        sig_stat, sig_dyn = hdp.panel_stress()
+        print('\nStatic stress: {:1.1f} MPa'.format(sig_stat / 10 ** 6))
+        plt.plot(2 * np.pi / hdp.w, abs(sig_dyn[:, 0] / 10 ** 6))
+        #plt.show()
+
+
 
         SELECT_DOF = 1
         SELECT_AXIS = 2
@@ -152,17 +157,17 @@ if __name__ == '__main__':
         idir = 0
         irad = 4
         # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
-        iprob = 2
+        #iprob = 2
         # nfreq  = len(w)
         # problem = (ifreq - 1) * nprob + iprob
 
         # print('Problem: {}'.format(problem))
         NEMOH_DOF = [1, 1, 1, 1, 1, 1]
 
-        if True:
+        if False:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            # hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
+            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
             pass
 
         # print(hdp.ma[0,:,0,0])
@@ -217,56 +222,51 @@ if __name__ == '__main__':
             axs[2, 1].set_title('fe pitch')
             plt.show()
         #
-        #f = hdp.section_forces()
+        # f = hdp.section_forces()
         #
         #
         # plt.plot(2 * np.pi / hdp.w, abs(f[:, 0, 4]))
         # plt.show()
-        plt.plot(2 * np.pi / hdp.w, abs(sig_dyn))
-        plt.show()
 
         # np.set_printoptions(precision=3)
 
         # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
         #
-        # w = 2 * np.pi / hdp.w
-        #
-        # fig, axs = plt.subplots(2, 2)
-        # heave = 2
-        # pitch = 4
-        # for i,dof in enumerate([heave,pitch]):
-        #     axs[0, i].plot(w, abs(f_fk[:, dof]), 'tab:blue', label='Froude-Krylof')
-        #     axs[0, i].plot(w, abs(f_diff[:, dof]), 'tab:green', label='Diffraction')
-        #     axs[0, i].plot(w, abs(f_rad[:, dof]), 'tab:orange', label='Radiation')
-        #     axs[0, i].set_title('Potential forces')
-        #     axs[0,i].legend()
-        #     axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
-        #     axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
-        #     axs[1, i].set_title('Varying forces')
-        #     axs[1,i].legend()
-        # plt.show()
+        f_comp = hdp.section_forces([3.5,0,0],[1,0,0],components=True)
+        f_dyn = f_comp['Dynamic']
+        w = 2 * np.pi / hdp.w
 
+        fig, axs = plt.subplots(2, 3)
 
+        dir = 0
+        for i, dof in enumerate([2, 4]):
+            for key in f_dyn:
+                axs[i,0].plot(w, abs(f_dyn[key][:,dir, dof]), label=key)
 
+            axs[i,0].legend()
+            y=abs(f_dyn['Buoyancy'][:, dir, dof] + f_dyn['Inertia'][:, dir, dof])
+            axs[i,1].plot(w, y, label='Buoyancy + Inertia')
+            axs[i, 1].legend()
 
+            axs[i,2].plot(w,abs(hdp._rao[:, dir, dof]), label='RAO')
+            axs[i, 2].legend()
+            # axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
+            # axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
+            # axs[1, i].set_title('Varying forces')
+            # axs[1, i].legend()
 
-
-
-
-
+        plt.show()
 
         # Calc velocity and acc (not needed yet)
         # panel_vel = panel_pos * 1j * hdp.w(ifreq)
         # panel_acc = panel_pos * hdp.w(ifreq)**2
 
-        xyz = np.zeros([hdp._pd._npanel, 3])
-        xyz[:, 2] = 1
-        nemoh_mesh = Mesh(hdp._pd.ppoints, hdp._pd.ppanels)
-        h = force.show_force(nemoh_mesh, hdp._pd.ppanel_centers, np.imag(panel_pos * xyz))
-        #h.show()
-
-
+        # xyz = np.zeros([hdp._pd._npanel, 3])
+        # xyz[:, 2] = 1
+        # nemoh_mesh = Mesh(hdp._pd.ppoints, hdp._pd.ppanels)
+        # h = force.show_force(nemoh_mesh, hdp._pd.ppanel_centers, np.imag(panel_pos * xyz))
+        # h.show()
 
         # print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
 
