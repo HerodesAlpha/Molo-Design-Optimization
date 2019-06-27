@@ -142,25 +142,6 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                         self._pressure['Radiation'][iw, iradiation, :] = nemoh_pressure[pn - 1, :]
                 self._force['Radiation'] = -self._pressure['Radiation'][:,:,:,np.newaxis]*self._an[np.newaxis,np.newaxis,:,:]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             if save_files:
                 with open(pressure_file, "wb") as f:
                     pickle.dump(self._pressure, f)

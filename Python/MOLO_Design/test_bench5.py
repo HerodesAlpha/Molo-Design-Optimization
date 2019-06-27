@@ -21,6 +21,7 @@ from pyNemoh.structure import BaseStructure
 import warnings
 from meshmagick.mesh import Mesh
 import force
+from loads import Sea_and_Inertia_Loads
 
 if __name__ == '__main__':
     ANALYSES_ROOT = Path(r'C:\analyses')
@@ -40,31 +41,31 @@ if __name__ == '__main__':
 
     settings.floater_data = {
             "Type"                    : "OY",
-            "Central column diameter" : 7.5,
+            "Central column diameter" : 7.0,
             "Central column thickness": 0.04,
             "Draught"                 : 0,
             "Gap factor"              : 0.8,
-            "Lower flange thickness"  : 0.04,
+            "Lower flange thickness"  : 0.08,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 7.5,
+            "Radial column diameter"  : 8.1,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
-            "Upper flange thickness"  : 0.04,
+            "Upper flange thickness"  : 0.08,
             "Ballast filling ratio"   : [0,
                                          filling_ratio
                                          ],
             "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 5,
-            "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
+            "num_wave_frequencies": 2,
+            "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
-            "num_wave_directions" : 1,
+            "num_wave_directions" : 3,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
     # TODO: Allow for none equidistant frequencies
-    settings.case_label = 'floater_data'
+    settings.case_label = 'test'
     settings.set_file_structure()
     settings.simulation_dir = str(settings.fio.nemoh_root)
     settings.save_job_settings()
@@ -90,17 +91,6 @@ if __name__ == '__main__':
         settings.thin_panels = []
 
         m, k = tb.load_M_and_K(settings.fio.data_io_dir)
-        # m=m[0:5,0:5]
-        # k=k[0:5,0:5]
-        # Set values close to zero to zero
-        # for i in range(6):
-        #     for j in range(6):
-        #         if abs(m[i, j]) < 0:
-        #             m[i, j] = 0
-        #         if abs(k[i, j]) < 0:
-        #             k[i, j] = 0
-        # if (i == 0 and j == 0) or (i == 1 and j == 1) or (i == 5 and j == 5):
-        #    k[i, j] = 1
 
         print('\nEigenvalue sollution WITHOUT added mass (given as lambda^0.5)')
         print('\nMass matrix:')
@@ -130,18 +120,31 @@ if __name__ == '__main__':
         ql.start()
         nf.run(settings._job_data['analysis'], queue)
         ql.stop()
-        # nemoh.runNemoh(fio, hydro_mesh_symmetri, mesh_file, NEMOH_DIR, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP,
-        #                NEMOH_DOF)
 
     if settings.postprocessing:
 
-        hdp = calculations.TransferFunctions(settings)
-        sig_stat, sig_dyn = hdp.panel_stress()
+        loads = Sea_and_Inertia_Loads(settings)
+        transf = calculations.TransferFunctions(settings, loads)
+        env = calculations.Environment(settings)
+        sig_stat, sig_dyn = transf.panel_stress('Total')
+
+        hs = 12
+        tp = 14
+        gamma = env.gamma(hs, tp)
+        sig_r = np.abs(sig_dyn ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
+        dw = loads.w[1] - loads.w[0]
+        sig_r_m0 = sum(sig_r) * dw
+        tz = env.tp2tz(tp, gamma)
+        nz = 3 * 3600 / tz
+        sig_r_max = np.sqrt(sig_r_m0)*(np.sqrt(2*np.log(nz))+0.5772/np.sqrt(2*np.log(nz)))
+
+        print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs,tp))
+        for i in range(loads._nbeta):
+            print('Wavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i]*180/np.pi, sig_r_max[i] / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat / 10 ** 6))
-        plt.plot(2 * np.pi / hdp.w, abs(sig_dyn[:, 0] / 10 ** 6))
+        plt.plot(2 * np.pi / loads.w, sig_r)
+
         #plt.show()
-
-
 
         SELECT_DOF = 1
         SELECT_AXIS = 2
@@ -157,7 +160,7 @@ if __name__ == '__main__':
         idir = 0
         irad = 4
         # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
-        #iprob = 2
+        # iprob = 2
         # nfreq  = len(w)
         # problem = (ifreq - 1) * nprob + iprob
 
@@ -167,7 +170,7 @@ if __name__ == '__main__':
         if False:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            hdp.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
+            transf.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
             pass
 
         # print(hdp.ma[0,:,0,0])
@@ -175,28 +178,29 @@ if __name__ == '__main__':
 
         idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
 
-        print('Eigenvalue sollution WITH added mass')
-        tb.eigenvalprint(hdp.m + hdp.ma[ifreq, :, :], hdp.k)
 
         if True:
+            print('\nEigenvalue sollution WITH added mass')
+            tb.eigenvalprint(loads.m + loads.ma[ifreq, :, :], loads.k)
+
             print('\n')
 
             print('\nRadiation damping:')
-            tb.matprint(hdp.c_hyd[ifreq])
+            tb.matprint(loads.c_hyd[ifreq])
             print('\nWater plane stiffness:')
-            tb.matprint(hdp.k)
+            tb.matprint(loads.k)
             print('\nStatic mass [tonne]:')
-            tb.matprint(hdp.m / 1000)
+            tb.matprint(loads.m / 1000)
             print('\nAdded mass [tonne]:')
-            tb.matprint(hdp.ma[ifreq] / 1000)
+            tb.matprint(loads.ma[ifreq] / 1000)
             print('\nExcitation force:')
-            tb.matprint(np.abs(hdp.fe[ifreq, idir, :]))
-            f_fk = hdp.p2f('Froude-Krylof', ifreq, idir)
-            f_diff = hdp.p2f('Diffraction', ifreq, idir)
+            tb.matprint(np.abs(loads.fe[ifreq, idir, :]))
+            f_fk = loads.p2f('Froude-Krylof', ifreq, idir)
+            f_diff = loads.p2f('Diffraction', ifreq, idir)
             f_exc = f_fk + f_diff
 
             print('\n')
-            tb.matprint(np.abs(nemoh.get_section_values(f_exc, hdp.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
+            tb.matprint(np.abs(nemoh.get_section_values(f_exc, loads.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
         # np.set_printoptions(precision=3)
 
         idir = 0
@@ -205,20 +209,20 @@ if __name__ == '__main__':
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
         if False:
-            h = hdp.get_rao(idir)
+            h = transf.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
-            w = 2 * np.pi / hdp.w
+            w = 2 * np.pi / loads.w
             axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')
             axs[0, 0].set_title('Rao heave')
             axs[0, 1].plot(w, abs(h[:, 4]), 'tab:orange')
             axs[0, 1].set_title('Rao pitch')
-            axs[1, 0].plot(w, hdp.ma[:, 2, 2] + hdp.m[2, 2], 'tab:green')
+            axs[1, 0].plot(w, loads.ma[:, 2, 2] + loads.m[2, 2], 'tab:green')
             axs[1, 0].set_title('m+ma heave')
-            axs[1, 1].plot(w, hdp.ma[:, 4, 4] + hdp.m[4, 4], 'tab:green')
+            axs[1, 1].plot(w, loads.ma[:, 4, 4] + transf.m[4, 4], 'tab:green')
             axs[1, 1].set_title('m+ma pitch')
-            axs[2, 0].plot(w, abs(hdp._fe[:, idir, 2]), 'tab:blue')
+            axs[2, 0].plot(w, abs(loads._fe[:, idir, 2]), 'tab:blue')
             axs[2, 0].set_title('fe heave')
-            axs[2, 1].plot(w, abs(hdp._fe[:, idir, 4]), 'tab:blue')
+            axs[2, 1].plot(w, abs(loads._fe[:, idir, 4]), 'tab:blue')
             axs[2, 1].set_title('fe pitch')
             plt.show()
         #
@@ -233,30 +237,34 @@ if __name__ == '__main__':
         # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
         #
-        f_comp = hdp.section_forces([3.5,0,0],[1,0,0],components=True)
-        f_dyn = f_comp['Dynamic']
-        w = 2 * np.pi / hdp.w
+        f = transf.section_forces([3.5, 0, 0], [1, 0, 0])
+
+        f_dyn = f['Dynamic']
+        w = 2 * np.pi / loads.w
 
         fig, axs = plt.subplots(2, 3)
 
-        dir = 0
-        for i, dof in enumerate([2, 4]):
+        dir = 2
+        for i, dof in enumerate([1, 5]):
             for key in f_dyn:
-                axs[i,0].plot(w, abs(f_dyn[key][:,dir, dof]), label=key)
+                if not key is 'Total':
+                    axs[i, 0].plot(w, abs(f_dyn[key][:, dir, dof]), label=key)
 
-            axs[i,0].legend()
-            y=abs(f_dyn['Buoyancy'][:, dir, dof] + f_dyn['Inertia'][:, dir, dof])
-            axs[i,1].plot(w, y, label='Buoyancy + Inertia')
+            axs[i, 0].legend()
+
+            y = abs(f_dyn['Total'][:, dir, dof])
+            axs[i, 1].plot(w, y, label='Total')
             axs[i, 1].legend()
 
-            axs[i,2].plot(w,abs(hdp._rao[:, dir, dof]), label='RAO')
+            axs[i, 2].plot(w, abs(transf._rao[:, dir, dof]), label='RAO')
+            axs[i, 2].axis([5, 15, 0, 0.01])
             axs[i, 2].legend()
             # axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
             # axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
             # axs[1, i].set_title('Varying forces')
             # axs[1, i].legend()
 
-        plt.show()
+        #plt.show()
 
         # Calc velocity and acc (not needed yet)
         # panel_vel = panel_pos * 1j * hdp.w(ifreq)

@@ -428,6 +428,12 @@ MODULE NEMOH
         MeshFS%X = meshfs_X
         MeshFS%P = meshFS_P
     END IF
+
+    WRITE(*,'(A,I3)') '   - Wave directions '
+    DO j=1,n_beta
+        WRITE(*,'(A,F7.1,A)') '       ', beta(j)*57.2957795130823,' deg'
+    END DO
+
     !   Initialise results table
     ALLOCATE(Force(Nintegration,Bodyconditions%Nproblems))
     Force(:,:)=0.
