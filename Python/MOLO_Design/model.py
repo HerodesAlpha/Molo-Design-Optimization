@@ -199,6 +199,8 @@ class FloaterClass(AssemblyClass, object):
         self._t_ufst = floater_data.t_ufst
         self._h_ufst = floater_data.h_ufst
 
+        self._n_strips = 10  # Number of flange strips in longitudinal direction
+
         # self._l_radial = 0
         # self._m_rc = 0
         # self._m_hc = 0
@@ -226,11 +228,31 @@ class FloaterClass(AssemblyClass, object):
         # self._w_uf = self._dia_rc
 
         da = (1 + self._gap) * self._dia_rc
+        a = da * self._nc / self._n_strips
         dtheta = 2 * pi / self._nr
         theta = [i * dtheta for i in range(self._nr)]
         zr = -(self._hgt / 2 + self._t_lf)
         hf_hc = self._ballast_filling[0]
         zhc_bal = -(hf_hc / 2 + self._t_lf)
+
+        def func_rpx(i):
+            dx = - da * self._nc / self._n_strips
+
+            def rpx(i):
+                return dx * (i + 1 / 2)
+
+            return rpx(i)
+
+        rpx = func_rpx
+
+        rpy = 0
+        rpz_uf = -(self._t_lf + self._hgt + self._t_uf / 2)
+        rpz_lf = -self._t_lf / 2
+        dy_ufst = self._w_uf / 2 - self._t_ufst / 2
+        dz_ufst = self._t_uf / 2 + self._h_ufst / 2
+        dy_lfst = self._w_lf / 2 - self._t_lfst / 2
+        dz_lfst = -self._t_lf / 2 - self._h_lfst / 2
+        lr = ['left', 'right']
 
         self.parts_list.append(HubColumnClass(type='Hub column cylinder',
                                               dia_hc=self._dia_hc,
@@ -246,66 +268,61 @@ class FloaterClass(AssemblyClass, object):
                                             filling=hf_hc,
                                             rho_bal=self._rho_bal,
                                             red_point=[0, 0, zhc_bal]))
+
         for ir in range(self._nr):
             # dxc = cos(theta[ir]) * da
             # dyc = sin(theta[ir]) * da
             rot_mat = rotation_matrix([0, 0, theta[ir]])
-            rpx = -da * self._nc / 2
-            rpy = 0
-            rpz_uf = -(self._t_lf + self._hgt + self._t_uf / 2)
-            rpz_lf = -self._t_lf / 2
-            dy_ufst = self._w_uf / 2 - self._t_ufst / 2
-            dz_ufst = self._t_uf / 2 + self._h_ufst / 2
-            dy_lfst = self._w_lf / 2 - self._t_lfst / 2
-            dz_lfst = -self._t_lf / 2 - self._h_lfst / 2
 
             # Reduction point is set at center bottom of steel for all parts.
             # Flanges
             # TODO: Discretize flanges every meter or so in radial direction for better mass resolution
-            self.parts_list.append(FlangeClass(type='Upper flange',
-                                               irow=ir,
-                                               icol=None,
-                                               a=da * self._nc,
-                                               b=self._w_uf,
-                                               h=self._t_uf,
-                                               density=self._rho_st,
-                                               theta=theta[ir],
-                                               red_point=rot_mat @ [rpx, rpy, rpz_uf]))
-
-
-            for ist in range(2):
-                self.parts_list.append(FlangeClass(type='Upper flange stiffener',
+            for istrip in range(self._n_strips):
+                self.parts_list.append(FlangeClass(type='Radial{r:1.0f}, upper flange'.format(r=ir + 1),
                                                    irow=ir,
                                                    icol=None,
-                                                   a=da * self._nc,
-                                                   b=self._t_ufst,
-                                                   h=self._h_ufst,
+                                                   a=a,
+                                                   b=self._w_uf,
+                                                   h=self._t_uf,
                                                    density=self._rho_st,
                                                    theta=theta[ir],
-                                                   red_point=rot_mat @ [rpx, rpy + (-1) ** ist * dy_ufst,
-                                                                        rpz_uf + dz_ufst]))
+                                                   red_point=rot_mat @ [rpx(istrip), rpy, rpz_uf]))
 
-            self.parts_list.append(FlangeClass(type='Lower flange',
-                                               irow=ir,
-                                               icol=None,
-                                               a=da * self._nc,
-                                               b=self._w_lf,
-                                               h=self._t_lf,
-                                               density=self._rho_st,
-                                               theta=theta[ir],
-                                               red_point=rot_mat @ [rpx, rpy, rpz_lf]))
+                for ist in range(2):
+                    self.parts_list.append(FlangeClass(
+                            type='Radial{r}, upper flange stiffener {a}'.format(r=ir + 1, a=lr[ist]),
+                            irow=ir,
+                            icol=None,
+                            a=a,
+                            b=self._t_ufst,
+                            h=self._h_ufst,
+                            density=self._rho_st,
+                            theta=theta[ir],
+                            red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_ufst,
+                                                 rpz_uf + dz_ufst]))
 
-            for ist in range(2):
-                self.parts_list.append(FlangeClass(type='Upper flange stiffener',
+                self.parts_list.append(FlangeClass(type='Radial{r:1.0f}, lower flange'.format(r=ir + 1),
                                                    irow=ir,
                                                    icol=None,
-                                                   a=da * self._nc,
-                                                   b=self._t_ufst,
-                                                   h=self._h_ufst,
+                                                   a=a,
+                                                   b=self._w_lf,
+                                                   h=self._t_lf,
                                                    density=self._rho_st,
                                                    theta=theta[ir],
-                                                   red_point=rot_mat @ [rpx, rpy + (-1) ** ist * dy_lfst,
-                                                                        rpz_lf + dz_lfst]))
+                                                   red_point=rot_mat @ [rpx(istrip), rpy, rpz_lf]))
+
+                for ist in range(2):
+                    self.parts_list.append(FlangeClass(
+                            type='Radial{r:1.0f}, upper flange stiffener{a}'.format(r=ir + 1, a=lr[ist]),
+                            irow=ir,
+                            icol=None,
+                            a=a,
+                            b=self._t_ufst,
+                            h=self._h_ufst,
+                            density=self._rho_st,
+                            theta=theta[ir],
+                            red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_lfst,
+                                                 rpz_lf + dz_lfst]))
 
             # Radial columns
             for ic in range(self._nc):

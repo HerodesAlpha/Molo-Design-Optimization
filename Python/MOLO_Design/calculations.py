@@ -171,6 +171,9 @@ class TransferFunctions(object):
 
         return force_out
 
+
+
+
     def force_comp(f):
         if f.ndim == 3:
             fx = f[:, :, 0]
@@ -188,7 +191,8 @@ class TransferFunctions(object):
             mz = f[5]
 
 
-    def section_stress(self,f):
+
+    def radial_cross_section(self):
         fdi = self._settings.job_data['floater']
 
         h = fdi['Radial height']
@@ -202,6 +206,15 @@ class TransferFunctions(object):
         h_lfst = fdi['Lower flange stiffener height']
         t_ufst = fdi['Upper flange stiffener thickness']
         h_ufst = fdi['Upper flange stiffener height']
+
+        # Neutral axis relative to bottom of cylinder
+        z0 =
+
+
+
+
+    def section_stress(self,f):
+
 
         # Get forces at section center
         # TODO: Change z to section center, now at waterline
