@@ -30,10 +30,10 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
+    settings.create_model = True
     settings.calc_gz = False
     settings.run_nemoh = False
-    settings.postprocessing = True
+    settings.postprocessing = False
 
     h5_bs = BaseStructure()
 
@@ -126,7 +126,8 @@ if __name__ == '__main__':
         loads = Sea_and_Inertia_Loads(settings)
         transf = calculations.TransferFunctions(settings, loads)
         env = calculations.Environment(settings)
-        sig_stat, sig_dyn = transf.panel_stress('Total')
+        f_sf1 = transf.section_forces([1,0,0],[1,0,0])
+        sig_dyn_tot = transf.section_stress(section, f_sf1['Dynamic']['Total'])
 
         hs = 12
         tp = 14

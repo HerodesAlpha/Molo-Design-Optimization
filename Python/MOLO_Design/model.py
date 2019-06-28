@@ -24,19 +24,25 @@ class ModelClass(object):
     def set_new_reduction_point(self, new_point):
         # Recursively update reduction point on myself and my children
         assert len(new_point) == 3
-        self._inertias.reduction_point += self._inertias._point + new_point # Will update global mass matrix also
-        if self.parts_list:
-            for part in self.parts_list:
-                part.set_new_reduction_point(new_point)
+        for part in self.get_all_parts():
+            part._inertias.reduction_point = part._inertias._point + new_point  # Will update global mass matrix also
 
-    def get_parts(self, part_list=None):
+    def get_parts_without_children(self, part_list=None):
         # Only get mass of parts that have no part
         if self.parts_list == []:
             part_list.append(self)
         if part_list == None:
             part_list = []
         for part in self.parts_list:
-            part.get_parts(part_list)
+            part.get_parts_without_children(part_list)
+        return part_list
+
+    def get_all_parts(self, part_list=None):
+        if part_list == None:
+            part_list = []
+        part_list.append(self)
+        for part in self.parts_list:
+            part.get_all_parts(part_list)
         return part_list
 
     #     def rec(x):
@@ -126,7 +132,6 @@ class AssemblyClass(ModelClass, object):
         for part in parts_list:
             self.inertias._point += part.inertias._point * part.inertias.mass_matrix_global[0, 0] / total_mass
 
-
         self._inertias.mass_matrix_local_from_global()
         self._inertias.cog = np.zeros(3)  # Just to be sure
         self.print_vector_matrix_global()
@@ -189,6 +194,11 @@ class FloaterClass(AssemblyClass, object):
         self._ballast_filling = floater_data._ballast_filling
         self._rho_st = rho_st
         self._rho_bal = floater_data.rho_bal
+        self._t_lfst = floater_data.t_lfst
+        self._h_lfst = floater_data.h_lfst
+        self._t_ufst = floater_data.t_ufst
+        self._h_ufst = floater_data.h_ufst
+
         # self._l_radial = 0
         # self._m_rc = 0
         # self._m_hc = 0
@@ -198,8 +208,8 @@ class FloaterClass(AssemblyClass, object):
         # self._m_hub = 0
         # self._m_ballast = 0
         # self._m_global = 0
-        # self._w_lf = 0
-        # self._w_uf = 0
+        self._w_lf = self._dia_rc
+        self._w_uf = self._dia_rc
         # self.parts_list = []
 
         self.__update_global__()
@@ -211,6 +221,9 @@ class FloaterClass(AssemblyClass, object):
 
     def __update_global__(self):
         self._inertias.reset()
+
+        # self._w_lf = self._dia_rc
+        # self._w_uf = self._dia_rc
 
         da = (1 + self._gap) * self._dia_rc
         dtheta = 2 * pi / self._nr
@@ -234,8 +247,18 @@ class FloaterClass(AssemblyClass, object):
                                             rho_bal=self._rho_bal,
                                             red_point=[0, 0, zhc_bal]))
         for ir in range(self._nr):
-            dxc = cos(theta[ir]) * da
-            dyc = sin(theta[ir]) * da
+            # dxc = cos(theta[ir]) * da
+            # dyc = sin(theta[ir]) * da
+            rot_mat = rotation_matrix([0, 0, theta[ir]])
+            rpx = -da * self._nc / 2
+            rpy = 0
+            rpz_uf = -(self._t_lf + self._hgt + self._t_uf / 2)
+            rpz_lf = -self._t_lf / 2
+            dy_ufst = self._w_uf / 2 - self._t_ufst / 2
+            dz_ufst = self._t_uf / 2 + self._h_ufst / 2
+            dy_lfst = self._w_lf / 2 - self._t_lfst / 2
+            dz_lfst = -self._t_lf / 2 - self._h_lfst / 2
+
             # Reduction point is set at center bottom of steel for all parts.
             # Flanges
             # TODO: Discretize flanges every meter or so in radial direction for better mass resolution
@@ -243,27 +266,53 @@ class FloaterClass(AssemblyClass, object):
                                                irow=ir,
                                                icol=None,
                                                a=da * self._nc,
-                                               b=self._dia_rc,
-                                               h=self._t_lf,
+                                               b=self._w_uf,
+                                               h=self._t_uf,
                                                density=self._rho_st,
                                                theta=theta[ir],
-                                               red_point=[-dxc * self._nc / 2, -dyc * self._nc / 2,
-                                                          -(self._t_lf + self._hgt + self._t_uf / 2)]))
+                                               red_point=rot_mat @ [rpx, rpy, rpz_uf]))
+
+
+            for ist in range(2):
+                self.parts_list.append(FlangeClass(type='Upper flange stiffener',
+                                                   irow=ir,
+                                                   icol=None,
+                                                   a=da * self._nc,
+                                                   b=self._t_ufst,
+                                                   h=self._h_ufst,
+                                                   density=self._rho_st,
+                                                   theta=theta[ir],
+                                                   red_point=rot_mat @ [rpx, rpy + (-1) ** ist * dy_ufst,
+                                                                        rpz_uf + dz_ufst]))
+
             self.parts_list.append(FlangeClass(type='Lower flange',
                                                irow=ir,
                                                icol=None,
                                                a=da * self._nc,
-                                               b=self._dia_rc,
-                                               h=self._t_uf,
+                                               b=self._w_lf,
+                                               h=self._t_lf,
                                                density=self._rho_st,
                                                theta=theta[ir],
-                                               red_point=[-dxc * self._nc / 2, -dyc * self._nc / 2, -self._t_lf / 2]))
+                                               red_point=rot_mat @ [rpx, rpy, rpz_lf]))
+
+            for ist in range(2):
+                self.parts_list.append(FlangeClass(type='Upper flange stiffener',
+                                                   irow=ir,
+                                                   icol=None,
+                                                   a=da * self._nc,
+                                                   b=self._t_ufst,
+                                                   h=self._h_ufst,
+                                                   density=self._rho_st,
+                                                   theta=theta[ir],
+                                                   red_point=rot_mat @ [rpx, rpy + (-1) ** ist * dy_lfst,
+                                                                        rpz_lf + dz_lfst]))
+
             # Radial columns
             for ic in range(self._nc):
                 hf_rc = self._ballast_filling[1][ic]
 
-                xr = -(ic + 1) * dxc
-                yr = -(ic + 1) * dyc
+                xr = -(ic + 1) * da
+                yr = 0
                 zrc_bal = -(hf_rc / 2 + self._t_lf)
 
                 self.parts_list.append(RadialColumnClass(type='Radial column cylinder',
@@ -273,7 +322,8 @@ class FloaterClass(AssemblyClass, object):
                                                          thi_rc=self._thi_rc,
                                                          hgt=self._hgt,
                                                          rho_st=self._rho_st,
-                                                         red_point=[xr, yr, zr]))
+                                                         red_point=rot_mat @ [xr, yr, zr]))
+
                 self.parts_list.append(BallastClass(type='Radial column ballast',
                                                     irow=ir,
                                                     icol=ic,
@@ -281,7 +331,7 @@ class FloaterClass(AssemblyClass, object):
                                                     rc_internal_hgt=self._hgt,
                                                     filling=hf_rc,
                                                     rho_bal=self._rho_bal,
-                                                    red_point=[xr, yr, zrc_bal]))
+                                                    red_point=rot_mat @ [xr, yr, zrc_bal]))
 
         # Set inertias and CoG relative to bottom of tower
         self.aggregate_inertias_from_parts(self.parts_list)
@@ -487,3 +537,7 @@ class FloaterDataClass():
         self.t_uf = fdi['Upper flange thickness']
         self._ballast_filling = fdi['Ballast filling ratio']
         self.rho_bal = fdi['Ballast density']
+        self.t_lfst = fdi['Lower flange stiffener thickness']
+        self.h_lfst = fdi['Lower flange stiffener height']
+        self.t_ufst = fdi['Upper flange stiffener thickness']
+        self.h_ufst = fdi['Upper flange stiffener height']

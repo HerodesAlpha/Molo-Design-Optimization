@@ -8,7 +8,7 @@ import nemoh
 import pickle
 import tool_box as tb
 
-from loads import Sea_and_Inertia_Loads
+
 
 
 class TransferFunctions(object):
@@ -73,7 +73,7 @@ class TransferFunctions(object):
 
         # Prepare RAO's for motion dependent response variables
 
-        part_list = unit_model.get_parts()
+        part_list = unit_model.get_parts_without_children()
         # [print(part._type) for part in part_list]
 
         point_mass = np.asarray([part._inertias.mass_matrix_global for part in part_list])
@@ -171,20 +171,44 @@ class TransferFunctions(object):
 
         return force_out
 
-    def panel_stress(self,key):
-        a = self._settings.job_data['floater']
+    def force_comp(f):
+        if f.ndim == 3:
+            fx = f[:, :, 0]
+            fy = f[:, :, 1]
+            fz = f[:, :, 2]
+            mx = f[:, :, 3]
+            my = f[:, :, 4]
+            mz = f[:, :, 5]
+        elif f.ndim == 1:
+            fx = f[0]
+            fy = f[1]
+            fz = f[2]
+            mx = f[3]
+            my = f[4]
+            mz = f[5]
 
-        h = a['Radial height']
-        d_rc = a['Radial column diameter']
-        d_cc = a['Central column diameter']
+
+    def section_stress(self,f):
+        fdi = self._settings.job_data['floater']
+
+        h = fdi['Radial height']
+        d_rc = fdi['Radial column diameter']
+        d_cc = fdi['Central column diameter']
         w = d_rc
-        t_lf = a['Lower flange thickness']
-        t_uf = a['Upper flange thickness']
+        t_lf = fdi['Lower flange thickness']
+        t_uf = fdi['Upper flange thickness']
+
+        t_lfst = fdi['Lower flange stiffener thickness']
+        h_lfst = fdi['Lower flange stiffener height']
+        t_ufst = fdi['Upper flange stiffener thickness']
+        h_ufst = fdi['Upper flange stiffener height']
+
         # Get forces at section center
         # TODO: Change z to section center, now at waterline
-        section_point = np.asarray([d_cc / 2, 0, 0])
-        section_normal = np.asarray([1, 0, 0])
-        f = self.section_forces(section_point, section_normal)
+
+
+
+
         a_reinf = 2*4*t_uf*3*t_uf
         a = w * t_uf + a_reinf
         wz = t_uf * w ** 2 / 6  +  a_reinf * w/2

@@ -11,7 +11,7 @@ import tool_box as tb
 from common import PhysicalQuantities
 from meshmagick.mesh import Mesh
 from pyNemoh.structure import BaseStructure
-
+import warnings
 
 class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     # TODO: Get added mass at zero and infinite frequency
@@ -57,11 +57,14 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 del b
 
                 # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                if True:
+                if True: # Move lower faces to correct position
                     ind = self._nemoh_mesh_vertices[:, 2] <= np.min(self._nemoh_mesh_vertices[:, 2]) * 0.99
                     self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
                     # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
                     del ind
+                    lower_face_corrected_z_pos = True
+                else:
+                    lower_face_corrected_z_pos = False
 
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)  # TODO: Get vertices and points
             self._an = self.pd.ppanel_areas[:, np.newaxis] * self.pd.ppanel_normals
@@ -105,6 +108,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
                 sys.stdout.write("\t\tStatic buoyancy pressure\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
+                assert lower_face_corrected_z_pos
                 self._pressure['Buoyancy'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
 
                 sys.stdout.write("\t\tStatic buoyancy force\n")
@@ -148,14 +152,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 with open(force_file, "wb") as f:
                     pickle.dump(self._force, f)
 
-
-
-
             print('\n{} initialized\n'.format(self.__str__()))
-
-
-
-
 
     def show_pressure(self, ifreq, pressure_index, axis, pressure_type):
         # Pressure index is either force degree of freedom or wave direction
@@ -169,24 +166,24 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
         h.show()
 
-    def p2f(self, p, ifreq=None, idir=None):
-
-        if isinstance(p, str):
-            if p == 'Hydro_static':
-                p_cmplx = self._pressure[p]
-            elif p in self._pressure.keys():
-                p_cmplx = self._pressure[p][ifreq, idir, :]
-        else:
-            p_cmplx = p
-
-        npanels = self.pd.ppanels.shape[0]
-        f_normal = np.zeros((npanels), dtype=np.complex)
-        f = np.zeros((npanels, 3), dtype=np.complex)
-        for i, panel in enumerate(self.pd.ppanels):
-            f_normal[i] = p_cmplx[i] * self.pd.ppanel_areas[i]
-            for j in range(3):
-                f[i, j] = -f_normal[i] * self.pd.ppanel_normals[i, j]
-        return f
+    # def p2f(self, p, ifreq=None, idir=None):
+    #
+    #     if isinstance(p, str):
+    #         if p == 'Hydro_static':
+    #             p_cmplx = self._pressure[p]
+    #         elif p in self._pressure.keys():
+    #             p_cmplx = self._pressure[p][ifreq, idir, :]
+    #     else:
+    #         p_cmplx = p
+    #
+    #     npanels = self.pd.ppanels.shape[0]
+    #     f_normal = np.zeros((npanels), dtype=np.complex)
+    #     f = np.zeros((npanels, 3), dtype=np.complex)
+    #     for i, panel in enumerate(self.pd.ppanels):
+    #         f_normal[i] = p_cmplx[i] * self.pd.ppanel_areas[i]
+    #         for j in range(3):
+    #             f[i, j] = -f_normal[i] * self.pd.ppanel_normals[i, j]
+    #     return f
 
     def f(self):
 

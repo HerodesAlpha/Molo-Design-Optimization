@@ -184,5 +184,5 @@ if __name__ == '__main__':
             print(abs(hdp.p2f(ifreq, pressure_index=0, p='Hydro static')) / 9.81)
             # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
-        part_list = unit_model.get_parts()
+        part_list = unit_model.get_parts_without_children()
         print(sum([part.mass for part in part_list]))

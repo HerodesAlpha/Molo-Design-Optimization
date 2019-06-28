@@ -183,7 +183,7 @@ def create_mass_models(settings):
     return unit_model, floater_model, wtg_model
 
 
-def init_models(settings): #
+def init_models(settings):  #
     unit_model, floater_model, wtg_model = create_mass_models(settings)
 
     msh_file = tb.msh_file(settings, mesh_type='stability')
@@ -196,7 +196,7 @@ def init_models(settings): #
     stability_mesh.heal_mesh()
     stability_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
 
-    #unit_model.print_vector_matrix_global()
+    # unit_model.print_vector_matrix_global()
     hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)
     hs_floater.gravity = abs(settings.grav)
     hs_floater.rho_water = settings.rho_sw
@@ -209,56 +209,53 @@ def init_models(settings): #
     hs_floater.set_displacement(hs_floater.mass)
 
     #
-    #hs_floater.show()
+    # hs_floater.show()
     print(hs_floater.get_hydrostatic_report())
     tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
+    # print('\nMass matrix just before adjusting to draught')
+    # for part in unit_model.get_all_parts():
+    #     part.print_vector_matrix_global()
     unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
     settings.draught = hs_floater.hs_data['draught']
 
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     print('\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
-    #hs_floater.show()
-    print('\nUpdated global mass matrix after adjusting to draught')
-    unit_model.print_vector_matrix_global()
+    # hs_floater.show()
+    # print('\nUpdated global mass matrix after adjusting to draught')
+    # for part in unit_model.get_all_parts():
+    #     part.print_vector_matrix_global()
 
-    msh_file=tb.msh_file(settings, mesh_type='nemoh')
+    msh_file = tb.msh_file(settings, mesh_type='nemoh')
     nemoh_vertices, nemoh_panels = mmio.load_MSH(msh_file)
 
     if settings.use_dipols:
         nemoh_vertices, nemoh_panels, not_dipol_index, dipol_index = tb.prepare_dipol_mesh(nemoh_vertices,
-                                                                                             nemoh_panels,
-                                                                                             settings)
-        if len(dipol_index)>0:
+                                                                                           nemoh_panels,
+                                                                                           settings)
+        if len(dipol_index) > 0:
             settings.thin_panels = dipol_index  # index must start with 0
         else:
-            settings.thin_panels ='0'
+            settings.thin_panels = '0'
 
-
-
-
-
-    #print(msh_file.stem)
+    # print(msh_file.stem)
     nemoh_mesh = Mesh(nemoh_vertices, nemoh_panels)
     nemoh_mesh.heal_normals()
-    #nemoh_mesh.show()
+    # nemoh_mesh.show()
 
     # nemo_mesh_not_dipol= Mesh(nemoh_vertices, nemoh_panels[not_dipol_index])
     # nemo_mesh_dipol= Mesh(nemoh_vertices, nemoh_panels[dipol_index])
     # nemo_mesh_not_dipol.show()
     # nemo_mesh_dipol.show()
 
-
     if settings.use_symmmetri:
         nemoh_mesh = nemoh_mesh.de_symmetrize_xz()
         nemoh_mesh.merge_duplicates()
 
+    # nemoh_mesh.show()
 
-    #nemoh_mesh.show()
-
-
-    mesh_dat=settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
+    mesh_dat = settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
     settings.mesh_file = str(mesh_dat)
 
     pickle.dump(nemoh_mesh.vertices, open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), "wb"))
@@ -275,8 +272,6 @@ def init_models(settings): #
         with open(mesh_dat, 'w') as f:
             f.writelines(lines)
 
-
     print('\nNemoh mesh written to {}'.format(settings.mesh_file))
-
 
     return unit_model, hs_floater

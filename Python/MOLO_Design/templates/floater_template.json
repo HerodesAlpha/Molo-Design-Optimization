@@ -13,6 +13,8 @@
     "Central column thickness": 0.04,
     "Draught": 7,
     "Gap factor": 0.8,
+    "Lower flange stiffener height": 0.5,
+    "Lower flange stiffener thickness": 0.4,
     "Lower flange thickness": 0.04,
     "Number of radial columns": 3,
     "Radial column diameter": 10,
@@ -20,5 +22,7 @@
     "Radial height": 18,
     "Thin panel offset": 1.0,
     "Type": "Molo",
+    "Upper flange stiffener height": 0.5,
+    "Upper flange stiffener thickness": 0.4,
     "Upper flange thickness": 0.04
 }
