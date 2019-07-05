@@ -161,7 +161,7 @@ def create_mass_models(settings):
     #                 dict_floater_data = data[key]
     #                 floater_data_found = True
 
-    rho_st = 7850
+    # rho_st = 7850
     #
     twr_data = model.TowerDataClass(settings.job_data['tower'])
     floater_data = model.FloaterDataClass(settings.job_data['floater'])
@@ -173,10 +173,10 @@ def create_mass_models(settings):
     rna_data.p = [0, 0, -(interface_point + twr_data.h)]
 
     # Build floater
-    floater_model = model.FloaterClass(floater_data, rho_st)  # CoGz will be set for BOS at z=0
+    floater_model = model.FloaterClass(floater_data, settings.rho_st)  # CoGz will be set for BOS at z=0
 
     # Build tower and RNA
-    wtg_model = model.WtgClass(twr_data, rna_data, rho_st)  # CoGz will be controlled by p
+    wtg_model = model.WtgClass(twr_data, rna_data, settings.rho_st)  # CoGz will be controlled by p
 
     # Assemble parts into complete unit
     unit_model = model.UnitClass([wtg_model, floater_model])
@@ -198,7 +198,7 @@ def init_models(settings):  #
 
     # unit_model.print_vector_matrix_global()
     hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)
-    hs_floater.gravity = abs(settings.grav)
+    hs_floater.gravity = abs(settings.gravity)
     hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
     print('\nMass given to hydro is {:5.2f} t'.format(hs_floater.mass))

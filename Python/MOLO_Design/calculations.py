@@ -79,7 +79,7 @@ class TransferFunctions(object):
         point_mass = np.asarray([part._inertias.mass_matrix_global for part in part_list])
 
         # Gravity
-        point_mass_gravity_force = point_mass[:, 2, 2][:, np.newaxis] * np.asarray([0, 0, self._settings.grav])[
+        point_mass_gravity_force = point_mass[:, 2, 2][:, np.newaxis] * np.asarray([0, 0, self._settings.gravity])[
                                                                         np.newaxis, :]  # Use m33
         point_mass_centers = np.asarray([-part._inertias.reduction_point for part in part_list])
         f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
@@ -208,7 +208,7 @@ class TransferFunctions(object):
         h_ufst = fdi['Upper flange stiffener height']
 
         # Neutral axis relative to bottom of cylinder
-        z0 =
+        #z0 =
 
 
 
@@ -219,8 +219,18 @@ class TransferFunctions(object):
         # Get forces at section center
         # TODO: Change z to section center, now at waterline
 
+        fdi = self._settings.job_data['floater']
+        h = fdi['Radial height']
+        d_rc = fdi['Radial column diameter']
+        d_cc = fdi['Central column diameter']
+        w = d_rc
+        t_lf = fdi['Lower flange thickness']
+        t_uf = fdi['Upper flange thickness']
 
-
+        t_lfst = fdi['Lower flange stiffener thickness']
+        h_lfst = fdi['Lower flange stiffener height']
+        t_ufst = fdi['Upper flange stiffener thickness']
+        h_ufst = fdi['Upper flange stiffener height']
 
         a_reinf = 2*4*t_uf*3*t_uf
         a = w * t_uf + a_reinf
@@ -237,7 +247,7 @@ class TransferFunctions(object):
                 sig_bz = f[5] / (2 * wz)
             return sig_ax + sig_by + sig_bz
 
-        return sig(f['Static'][key]), sig(f['Dynamic'][key])
+        return sig(f)
 
 
 class Environment():

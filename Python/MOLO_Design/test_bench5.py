@@ -124,15 +124,15 @@ if __name__ == '__main__':
     if settings.postprocessing:
 
         loads = Sea_and_Inertia_Loads(settings)
-        transf = calculations.TransferFunctions(settings, loads)
+        tran_fun = calculations.TransferFunctions(settings, loads)
         env = calculations.Environment(settings)
-        f_sf1 = transf.section_forces([1,0,0],[1,0,0])
-        sig_dyn_tot = transf.section_stress(section, f_sf1['Dynamic']['Total'])
+        f_sf1 = tran_fun.section_forces([1, 0, 0], [1, 0, 0])
+        sig_dyn_tot, sig_stat_tot = tran_fun.section_stress(sectio, f_sf1['Dynamic']['Total'])
 
         hs = 12
         tp = 14
         gamma = env.gamma(hs, tp)
-        sig_r = np.abs(sig_dyn ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
+        sig_r = np.abs(sig_dyn_tot ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
         dw = loads.w[1] - loads.w[0]
         sig_r_m0 = sum(sig_r) * dw
         tz = env.tp2tz(tp, gamma)
@@ -142,7 +142,7 @@ if __name__ == '__main__':
         print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs,tp))
         for i in range(loads._nbeta):
             print('Wavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i]*180/np.pi, sig_r_max[i] / 10 ** 6))
-        print('\nStatic stress: {:1.1f} MPa'.format(sig_stat / 10 ** 6))
+        print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
         plt.plot(2 * np.pi / loads.w, sig_r)
 
         #plt.show()
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         if False:
             # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
             # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            transf.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
+            tran_fun.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
             pass
 
         # print(hdp.ma[0,:,0,0])
@@ -210,7 +210,7 @@ if __name__ == '__main__':
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
         if False:
-            h = transf.get_rao(idir)
+            h = tran_fun.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / loads.w
             axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')
@@ -219,7 +219,7 @@ if __name__ == '__main__':
             axs[0, 1].set_title('Rao pitch')
             axs[1, 0].plot(w, loads.ma[:, 2, 2] + loads.m[2, 2], 'tab:green')
             axs[1, 0].set_title('m+ma heave')
-            axs[1, 1].plot(w, loads.ma[:, 4, 4] + transf.m[4, 4], 'tab:green')
+            axs[1, 1].plot(w, loads.ma[:, 4, 4] + tran_fun.m[4, 4], 'tab:green')
             axs[1, 1].set_title('m+ma pitch')
             axs[2, 0].plot(w, abs(loads._fe[:, idir, 2]), 'tab:blue')
             axs[2, 0].set_title('fe heave')
@@ -238,7 +238,7 @@ if __name__ == '__main__':
         # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
 
         #
-        f = transf.section_forces([3.5, 0, 0], [1, 0, 0])
+        f = tran_fun.section_forces([3.5, 0, 0], [1, 0, 0])
 
         f_dyn = f['Dynamic']
         w = 2 * np.pi / loads.w
@@ -257,7 +257,7 @@ if __name__ == '__main__':
             axs[i, 1].plot(w, y, label='Total')
             axs[i, 1].legend()
 
-            axs[i, 2].plot(w, abs(transf._rao[:, dir, dof]), label='RAO')
+            axs[i, 2].plot(w, abs(tran_fun._rao[:, dir, dof]), label='RAO')
             axs[i, 2].axis([5, 15, 0, 0.01])
             axs[i, 2].legend()
             # axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')

@@ -11,10 +11,10 @@ from pathlib import Path
 import getpass
 
 class PhysicalQuantities():
-    # This is the only place allowed to put these quantities
+    # This is the only place allowed to put physical quantities
     def __init__(self):
         self._rho_sw = 1025
-        self._grav = -9.81 # In global coordinate system
+        self._gravity = -9.81 # In global coordinate system
         self._rho_st = 7850
 
     @property
@@ -22,8 +22,8 @@ class PhysicalQuantities():
         return self._rho_sw
 
     @property
-    def grav(self):
-        return self._grav
+    def gravity(self):
+        return self._gravity
 
     @property
     def rho_st(self):

@@ -109,7 +109,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 sys.stdout.write("\t\tStatic buoyancy pressure\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
                 assert lower_face_corrected_z_pos
-                self._pressure['Buoyancy'] = (self._rho_sw * self._grav) * self._pd.ppanel_centers[:, 2]
+                self._pressure['Buoyancy'] = (self._rho_sw * self._gravity) * self._pd.ppanel_centers[:, 2]
 
                 sys.stdout.write("\t\tStatic buoyancy force\n")
                 self._force['Buoyancy'] = -self._pressure['Buoyancy'][:,np.newaxis]*self._an
