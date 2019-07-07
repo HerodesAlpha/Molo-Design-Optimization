@@ -166,24 +166,22 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
         h.show()
 
-    # def p2f(self, p, ifreq=None, idir=None):
-    #
-    #     if isinstance(p, str):
-    #         if p == 'Hydro_static':
-    #             p_cmplx = self._pressure[p]
-    #         elif p in self._pressure.keys():
-    #             p_cmplx = self._pressure[p][ifreq, idir, :]
-    #     else:
-    #         p_cmplx = p
-    #
-    #     npanels = self.pd.ppanels.shape[0]
-    #     f_normal = np.zeros((npanels), dtype=np.complex)
-    #     f = np.zeros((npanels, 3), dtype=np.complex)
-    #     for i, panel in enumerate(self.pd.ppanels):
-    #         f_normal[i] = p_cmplx[i] * self.pd.ppanel_areas[i]
-    #         for j in range(3):
-    #             f[i, j] = -f_normal[i] * self.pd.ppanel_normals[i, j]
-    #     return f
+    def p2f(self, p, ifreq=None, idir=None):
+        if isinstance(p, str):
+            if p == 'Hydro_static':
+                p_cmplx = self._pressure[p]
+            elif p in self._pressure.keys():
+                p_cmplx = self._pressure[p][ifreq, idir, :]
+        else:
+            p_cmplx = p
+        npanels = self.pd.ppanels.shape[0]
+        f_normal = np.zeros((npanels), dtype=np.complex)
+        f = np.zeros((npanels, 3), dtype=np.complex)
+        for i, panel in enumerate(self.pd.ppanels):
+            f_normal[i] = p_cmplx[i] * self.pd.ppanel_areas[i]
+            for j in range(3):
+                f[i, j] = -f_normal[i] * self.pd.ppanel_normals[i, j]
+        return f
 
     def f(self):
 

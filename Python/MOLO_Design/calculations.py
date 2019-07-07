@@ -133,7 +133,7 @@ class TransferFunctions(object):
         panel_pos[:, :, :, :] = np.squeeze(np.matmul(rtm, pc), axis=4)[:, :, :, 0:3]
         panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
         # panel_pos += self._rao[:, :, np.newaxis, 0:3]
-        dp = (self._loads._rho_sw * abs(self._loads._grav)) * panel_pos[:, :, :, 2]  # Change in pressure
+        dp = (self._loads.rho_sw * abs(self._loads.gravity)) * panel_pos[:, :, :, 2]  # Change in pressure
         f_dz = -dp[:, :, :, np.newaxis] * self._loads._an[np.newaxis, np.newaxis, :, :]
 
         f_dz_s = nemoh.get_section_values(f_dz, self._loads.pd.ppanel_centers, section_point,

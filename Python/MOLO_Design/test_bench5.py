@@ -6,7 +6,6 @@ import logging
 import multiprocessing
 import pickle
 from pathlib import Path
-import scipy
 import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
@@ -18,9 +17,6 @@ import stability
 from MOLO_Nemoh import nemoh_frontend as nf
 from common import SettingsClass
 from pyNemoh.structure import BaseStructure
-import warnings
-from meshmagick.mesh import Mesh
-import force
 from loads import Sea_and_Inertia_Loads
 
 if __name__ == '__main__':
@@ -32,8 +28,8 @@ if __name__ == '__main__':
 
     settings.create_model = True
     settings.calc_gz = False
-    settings.run_nemoh = False
-    settings.postprocessing = False
+    settings.run_nemoh = True
+    settings.postprocessing = True
 
     h5_bs = BaseStructure()
 
@@ -47,7 +43,7 @@ if __name__ == '__main__':
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.08,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 8.1,
+            "Radial column diameter"  : 8.2,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
             "Upper flange thickness"  : 0.08,
@@ -57,15 +53,15 @@ if __name__ == '__main__':
             "Thin panel offset"       : 0.2
     }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 2,
+            "num_wave_frequencies": 41,
             "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
-            "num_wave_directions" : 3,
+            "num_wave_directions" : 2,
             "min_wave_directions" : 0,  # deg
             "max_wave_directions" : 90,
     }
     # TODO: Allow for none equidistant frequencies
-    settings.case_label = 'test'
+    settings.case_label = 'test1'
     settings.set_file_structure()
     settings.simulation_dir = str(settings.fio.nemoh_root)
     settings.save_job_settings()
@@ -75,9 +71,9 @@ if __name__ == '__main__':
     settings.use_symmmetri = True
 
     settings.do_equilibriate = True
-    fio = settings.fio
+    #fio = settings.fio
 
-    settings.thin_panel_offset = 1.0
+    settings.thin_panel_offset = 0.5
 
     if settings.create_model:
         print('\n--------------------------------------------------------------------------------------------')
@@ -85,8 +81,8 @@ if __name__ == '__main__':
         print('--------------------------------------------------------------------------------------------')
 
         unit_model, hs_floater = msu.init_models(settings)
-        pickle.dump(unit_model, open(fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
-        pickle.dump(hs_floater, open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
+        pickle.dump(unit_model, open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
+        pickle.dump(hs_floater, open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
 
         settings.thin_panels = []
 
@@ -127,7 +123,9 @@ if __name__ == '__main__':
         tran_fun = calculations.TransferFunctions(settings, loads)
         env = calculations.Environment(settings)
         f_sf1 = tran_fun.section_forces([1, 0, 0], [1, 0, 0])
-        sig_dyn_tot, sig_stat_tot = tran_fun.section_stress(sectio, f_sf1['Dynamic']['Total'])
+        sig_dyn_tot = tran_fun.section_stress(f_sf1['Dynamic']['Total'])
+        sig_stat_tot = tran_fun.section_stress(f_sf1['Static']['Total'])
+
 
         hs = 12
         tp = 14
@@ -141,7 +139,7 @@ if __name__ == '__main__':
 
         print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs,tp))
         for i in range(loads._nbeta):
-            print('Wavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i]*180/np.pi, sig_r_max[i] / 10 ** 6))
+            print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i]*180/np.pi, sig_r_max[i] / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
         plt.plot(2 * np.pi / loads.w, sig_r)
 
@@ -209,7 +207,7 @@ if __name__ == '__main__':
         # --------------------------------------------------------------------------------------------------------------
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
-        if False:
+        if True:
             h = tran_fun.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / loads.w
@@ -219,7 +217,7 @@ if __name__ == '__main__':
             axs[0, 1].set_title('Rao pitch')
             axs[1, 0].plot(w, loads.ma[:, 2, 2] + loads.m[2, 2], 'tab:green')
             axs[1, 0].set_title('m+ma heave')
-            axs[1, 1].plot(w, loads.ma[:, 4, 4] + tran_fun.m[4, 4], 'tab:green')
+            axs[1, 1].plot(w, loads.ma[:, 4, 4] + loads.m[4, 4], 'tab:green')
             axs[1, 1].set_title('m+ma pitch')
             axs[2, 0].plot(w, abs(loads._fe[:, idir, 2]), 'tab:blue')
             axs[2, 0].set_title('fe heave')
