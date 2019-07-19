@@ -14,7 +14,6 @@ import warnings
 import scipy
 
 
-
 class TotalMassMatrixClass(object):
     def __init__(self):
         self._cog = np.zeros((3), dtype='float')
@@ -35,13 +34,13 @@ class TotalMassMatrixClass(object):
     @property
     def mass(self):
         """The mass of the body"""
-        #assert(self._mass_matrix_local[0, 0] == self._mass_matrix_global[0, 0])
+        # assert(self._mass_matrix_local[0, 0] == self._mass_matrix_global[0, 0])
         return self._mass_matrix_local[0, 0]
 
     @mass.setter
     def mass(self, val):
         self._mass_matrix_local[:3, :3] = np.eye(3) * val
-        #self._mass_matrix_global[:3, :3] = self._mass_matrix_local[:3, :3]
+        # self._mass_matrix_global[:3, :3] = self._mass_matrix_local[:3, :3]
 
     @property
     def mass_matrix_local(self):
@@ -136,7 +135,7 @@ class TotalMassMatrixClass(object):
         self.update_mass_matrix_global()
 
     def update_mass_matrix_global(self):
-        self._mass_matrix_global = self._mass_matrix_local + self._huygens_transport() * self._mass_matrix_local[0,0]
+        self._mass_matrix_global = self._mass_matrix_local + self._huygens_transport() * self._mass_matrix_local[0, 0]
 
     @property
     def at_cog(self):
@@ -160,13 +159,11 @@ class TotalMassMatrixClass(object):
         self._mass_matrix_local -= self._huygens_transport() * self.mass
         self._point = self._cog
 
-
     def mass_matrix_local_from_global(self):
         """
         Reducition point must be defined in global coordinate system and global mass matrix must be given relative to global origin
         """
-        self._mass_matrix_local =  self._mass_matrix_global - self._huygens_transport() * self._mass_matrix_global[0,0]
-
+        self._mass_matrix_local = self._mass_matrix_global - self._huygens_transport() * self._mass_matrix_global[0, 0]
 
     def is_at_cog(self):
         """Returns whether the object is expressed at cog
@@ -339,7 +336,7 @@ def msh_file(settings, mesh_type=None):
     #     'use_dipoles_implementation'] else ''
 
     if settings.mesh_name == None:
-        settings.mesh_name = 'MOLO_{}c'.format(settings.job_data['floater']['Number of radial columns'])
+        settings.mesh_name = 'MOLO_{}c'.format(settings.job_data['floater']['Radial']['Number of columns'])
 
     this_mesh_name = '{}_{}'.format(settings.mesh_name, mesh_type)
 
@@ -347,17 +344,18 @@ def msh_file(settings, mesh_type=None):
         filedata = file.read()
 
     # Replace the target string
-    filedata = filedata.replace('#dia_rc#', '{}'.format(settings.job_data['floater']['Radial column diameter']))
+    filedata = filedata.replace('#dia_rc#', '{}'.format(settings.job_data['floater']['Radial']['Column']['Diameter']))
     filedata = filedata.replace('#dia_hc#', '{}'.format(settings.job_data['floater']['Central column diameter']))
     filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
-    filedata = filedata.replace('#t_lf#', '{}'.format(settings.job_data['floater']['Lower flange thickness']))
+    filedata = filedata.replace('#t_lf#', '{}'.format(
+            settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']))
 
     if mesh_type == 'nemoh':
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
         filedata = filedata.replace('#zO#', '{}'.format(-settings.job_data['floater']['Draught']))
         filedata = filedata.replace('#vdist#', '{}'.format(settings.job_data['floater']['Thin panel offset']))
     else:
-        filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial height']))
+        filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial']['Heigth']))
 
     # Number of elements around cylinder circ
     filedata = filedata.replace('#nel#', '{}'.format(16))
@@ -620,7 +618,6 @@ def matprint(mat, fmt="f", prec="1"):
     if mat.ndim == 1:
         col_maxes = max([len(("{:1." + prec + fmt + "}").format(x)) for x in mat.T])
         for y in mat:
-
             print(("{:" + str(col_maxes) + "." + prec + fmt + "}").format(y), end="  ")
         print("")
     else:
@@ -630,7 +627,8 @@ def matprint(mat, fmt="f", prec="1"):
                 print(("{:" + str(col_maxes[i]) + "." + prec + fmt + "}").format(y), end="  ")
             print("")
 
-def eigenvalprint(m,k):
+
+def eigenvalprint(m, k):
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     l = scipy.linalg.eigvals(k, m)
     vT = 2 * np.pi / np.sqrt(l)

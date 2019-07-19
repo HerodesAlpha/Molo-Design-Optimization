@@ -124,14 +124,45 @@ def intact_stability(settings, hs_floater):
 
     r = sum(rmc[1, :i_last]) / sum(whm[1, :i_last])
     if r < 1.4:
-        print('Requirements for intact stability is not fulfilled')
+        print('Requirements for intact stability is NOT fulfilled')
     else:
         print('Requirements for intact stability is fulfilled')
     print('\tArea ratio is {: 7.1f}% (requirement is 140%)'.format(r * 100))
 
-    plt.plot(rmc[0, :] * 180 / np.pi, rmc[1, :], label='Righting moment')
-    plt.plot(whm[0, :] * 180 / np.pi, whm[1, :], label='Heeling moment')
-    ib = whm[0, i_last]
-    plt.plot(np.asarray([ib, ib]) * 180 / np.pi, [0, whm[1, :][i_last]], label='Second intercept')
-    plt.legend()
+    fig = plt.figure(1, figsize=(8, 5))
+    ax = fig.add_subplot(111)
+    ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
+    ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
+    ib = whm[0, i_last] * 180 / np.pi
+    # ax.plot(np.asarray([ib, ib]) * 180 / np.pi, [0, whm[1, :][i_last]])
+    ax.annotate('Second intercept',
+                xy=(ib, whm[1, :][i_last]), xycoords='data',
+                xytext=(0.8, 0.5), textcoords='axes fraction',
+                arrowprops=dict(arrowstyle="->"))
+    ax.legend()
+    textstr = 'Area ratio is {:1.0f}%\nU_10min = {:1.1f} m/s\nz = {:1.0f} m'.format(r * 100,
+                                                                                              settings._job_data[
+                                                                                                  'design_basis'][
+                                                                                                  "Wind"]['ESS']['u'],
+                                                                                              settings._job_data[
+                                                                                                  'design_basis'][
+                                                                                                  "Wind"]['ESS'][
+                                                                                                  'Reference height'])
+    if r < 1.4:
+        facecolor = 'orangered'
+    else:
+        facecolor = 'lightgreen'
+
+    props = dict(boxstyle='round', facecolor=facecolor, alpha=1.0)
+    ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+            verticalalignment='top', bbox=props)
+    ax.set_xlabel('Angle of inclination [degrees]')
+    ax.set_ylabel('Moment [MNm]')
+    ax.set_title('INTACT STABILITY\nModel: {}'.format(settings._molo_label))
+    # Show the major grid lines with dark grey lines
+    plt.grid(b=True, which='major', color='#666666', linestyle='-')
+
+    # Show the minor grid lines with very faint and almost transparent grey lines
+    plt.minorticks_on()
+    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
     plt.show()

@@ -543,18 +543,18 @@ class TowerDataClass():
 class FloaterDataClass():
     def __init__(self, fdi):
         self.type = fdi['Type']
-        self.nc = fdi['Number of radial columns']  # 2, 3 or 4
+        self.nc = fdi['Radial']['Number of columns']  # 2, 3 or 4
         self.gap = fdi['Gap factor']
-        self.dia_rc = fdi['Radial column diameter']
-        self.thi_rc = fdi['Radial column thickness']
+        self.dia_rc = fdi['Radial']['Column']['Diameter']
+        self.thi_rc = fdi['Radial']['Column']['Thickness']
         self.dia_hc = fdi['Central column diameter']
         self.thi_hc = fdi['Central column thickness']
-        self.hgt = fdi['Radial height']
-        self.t_lf = fdi['Lower flange thickness']
-        self.t_uf = fdi['Upper flange thickness']
+        self.hgt = fdi['Radial']['Heigth']
+        self.t_lf = fdi['Radial']['Flange']['Lower']['Plate']['Thickness']
+        self.t_uf = fdi['Radial']['Flange']['Upper']['Plate']['Thickness']
         self._ballast_filling = fdi['Ballast filling ratio']
         self.rho_bal = fdi['Ballast density']
-        self.t_lfst = fdi['Lower flange stiffener thickness']
-        self.h_lfst = fdi['Lower flange stiffener height']
-        self.t_ufst = fdi['Upper flange stiffener thickness']
-        self.h_ufst = fdi['Upper flange stiffener height']
+        self.t_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Thickness']
+        self.h_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
+        self.t_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Thickness']
+        self.h_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Height']

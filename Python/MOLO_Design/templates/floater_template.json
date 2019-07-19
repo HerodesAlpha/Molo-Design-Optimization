@@ -9,20 +9,46 @@
             0.0
         ]
     ],
-    "Central column diameter": 6,
+    "Central column diameter": 7,
     "Central column thickness": 0.04,
     "Draught": 7,
     "Gap factor": 0.8,
-    "Lower flange stiffener height": 0.5,
-    "Lower flange stiffener thickness": 0.4,
-    "Lower flange thickness": 0.04,
-    "Number of radial columns": 3,
-    "Radial column diameter": 10,
-    "Radial column thickness": 0.04,
-    "Radial height": 18,
+    "Radial": {
+        "Column": {
+            "Diameter": 8.3,
+            "Thickness": 0.04
+        },
+        "Flange": {
+            "Lower": {
+                "Plate": {
+                    "Thickness": 0.04,
+                    "Width": "NA"
+                },
+                "Stiffener": {
+                    "Longitudinal": {
+                        "Height": 0.5,
+                        "Number of": 4,
+                        "Thickness": 0.05
+                    }
+                }
+            },
+            "Upper": {
+                "Plate": {
+                    "Thickness": 0.04,
+                    "Width": "NA"
+                },
+                "Stiffener": {
+                    "Longitudinal": {
+                        "Height": 0.5,
+                        "Number of": 4,
+                        "Thickness": 0.05
+                    }
+                }
+            }
+        },
+        "Heigth": 15,
+        "Number of columns": 3
+    },
     "Thin panel offset": 1.0,
-    "Type": "MOLO",
-    "Upper flange stiffener height": 0.5,
-    "Upper flange stiffener thickness": 0.4,
-    "Upper flange thickness": 0.04
+    "Type": "MOLO"
 }

@@ -143,6 +143,7 @@ class SettingsClass(PhysicalQuantities, object):
 
         self._fio = None
 
+
         # Collect template data
         for item in self._json_list:
             with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'r') as f:
@@ -157,12 +158,27 @@ class SettingsClass(PhysicalQuantities, object):
         self._use_dipols = self._job_data['analysis']['simulations']['default']['calculation'][
             'use_dipoles_implementation']
 
+
+
+
+
         self._thin_panel_offset = self._job_data['floater']['Thin panel offset']
-        self._flange_thickness = self._job_data['floater']['Lower flange thickness']
+        self._flange_thickness = self._job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']
         self._create_model = False
         self._calc_gz = False
         self._run_nemoh = False
         self._postprocessing = False
+        self.set_molo_label()
+
+
+    def set_molo_label(self):
+        nrc = self._job_data['floater']['Radial']['Number of columns']
+        rcd = self._job_data['floater']['Radial']['Column']['Diameter']
+        gf = self._job_data['floater']['Gap factor']
+        rh = self._job_data['floater']['Radial']['Heigth']
+        mt = self._job_data['floater']['Type']
+        self._molo_label = '{}{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt, nrc, rcd * 10, gf * 10, rh * 10)
+
 
     def set_file_structure(self):
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
@@ -236,15 +252,10 @@ class SettingsClass(PhysicalQuantities, object):
         if type == None:
             self._case_label = None  # Auto numbering
         elif type == 'floater_data':
-            nrc = self._job_data['floater']['Number of radial columns']
-            rcd = self._job_data['floater']['Radial column diameter']
-            gf = self._job_data['floater']['Gap factor']
-            rh = self._job_data['floater']['Radial height']
-            mt = self._job_data['floater']['Type']
-            self._case_label = '{}{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt, nrc, rcd * 10, gf * 10, rh * 10)
+            self._case_label = self._molo_label
         else:
             self._case_label = type
-        print('\nMODEL NAME: {}'.format(self._case_label))
+        print('\nMODEL NAME: {}'.format(self._molo_label))
 
     @property
     def floater_data(self):
