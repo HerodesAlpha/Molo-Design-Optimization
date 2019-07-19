@@ -9,11 +9,12 @@ from meshmagick.MMviewer import MMViewer
 import vtk
 import imageio
 import os
+import matplotlib.pyplot as plt
 
 
 # TODO: Evaluate Mathieu instability
 
-def gz_curve(settings, hs_floater):
+def righting_moment_curve(settings, hs_floater):
     # np.linalg.solve
     hs_floater.verbose_off()
     # Init
@@ -25,9 +26,12 @@ def gz_curve(settings, hs_floater):
 
     x = 0
 
+    heel_angles = []
+    righting_moments = []
+
     with imageio.get_writer(settings.fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
         with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
-            f_gz.write('{:7s} {:7s} {:7s} {:7s}\n'.format('theta', 'fz','my','mz'))
+            f_gz.write('{:7s} {:7s} {:7s} {:7s}\n'.format('theta', 'fz', 'my', 'mz'))
             while not x < 0:
                 rot_matrix = hs_floater.mesh.rotate([thetax, dthetay, 0.])
                 hs_floater._gravity_center = np.dot(rot_matrix, hs_floater._gravity_center)
@@ -40,7 +44,9 @@ def gz_curve(settings, hs_floater):
                 # print(thetay)
                 x = -hs_floater.residual[2]
                 f_gz.write('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}\n'.format(thetay * 180 / np.pi,
-                                                                                      val=-hs_floater.residual / 1000000))
+                                                                                        val=-hs_floater.residual / 1000000))
+                heel_angles.append(thetay)
+                righting_moments.append(-hs_floater.residual[2])
 
                 if 1:
                     vtk_polydata = hs_floater.mesh._vtk_polydata()
@@ -72,7 +78,7 @@ def gz_curve(settings, hs_floater):
                     hs_floater.viewer.finalize()
 
                 print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay * 180 / np.pi,
-                                                                             val=-hs_floater.residual / 1000000))
+                                                                                 val=-hs_floater.residual / 1000000))
 
         #
         #
@@ -85,3 +91,47 @@ def gz_curve(settings, hs_floater):
         # v = np.dot(hs_floater._rotation,[0,0,1])
         # angle=np.arctan2(v[2], v[0]) * 180 / np.pi
         # print('{:7.2f} {:7.2f}'.format(angle, dM/1000000))
+
+    return np.asarray([heel_angles, righting_moments])
+
+
+def wind_heeling_moment_curve(settings, heel_angles):
+    M_xy_unit = 0.905  # Must be multiplied with hub height, rotor diameter, and wind speed. Calibrated against 116.5m hub height
+    # 167 m rotor diameter and 70.7 m/s wind speed at hub height
+    z = settings._job_data['rna']['Hub height']
+    rd = settings._job_data['rna']['Rotor diameter']
+    u = settings._job_data['design_basis']["Wind"]['ESS']['u']
+    H = settings._job_data['design_basis']["Wind"]['ESS']['Reference height']
+    z0 = settings._job_data['design_basis']["Wind"]['Surface friction coefficient']
+    uh = u * (1 + np.log(z / H) / np.log(H / z0))
+
+    M_xy = M_xy_unit * z * rd * uh ** 2
+    heeling_moments = np.zeros(heel_angles.shape[0])
+    for i, angle in enumerate(heel_angles):
+        heeling_moments[i] = M_xy * np.cos(angle)
+
+    return np.asarray([heel_angles, heeling_moments])
+
+
+def intact_stability(settings, hs_floater):
+    rmc = righting_moment_curve(settings, hs_floater)
+    whm = wind_heeling_moment_curve(settings, rmc[0, :])
+
+    # Find second intercept
+    a = [i > j for i, j in zip(rmc[1, :], whm[1, :])]
+
+    i_last = [i for i, x in enumerate(a) if x][-1]  # Index of last righting moment greater than heeling moment
+
+    r = sum(rmc[1, :i_last]) / sum(whm[1, :i_last])
+    if r < 1.4:
+        print('Requirements for intact stability is not fulfilled')
+    else:
+        print('Requirements for intact stability is fulfilled')
+    print('\tArea ratio is {: 7.1f}% (requirement is 140%)'.format(r * 100))
+
+    plt.plot(rmc[0, :] * 180 / np.pi, rmc[1, :], label='Righting moment')
+    plt.plot(whm[0, :] * 180 / np.pi, whm[1, :], label='Heeling moment')
+    ib = whm[0, i_last]
+    plt.plot(np.asarray([ib, ib]) * 180 / np.pi, [0, whm[1, :][i_last]], label='Second intercept')
+    plt.legend()
+    plt.show()

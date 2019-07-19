@@ -1,0 +1,9 @@
+{
+    "Wind": {
+        "ESS": {
+            "Reference height": 10,
+            "u": 56
+        },
+        "Surface friction coefficient": 0.01
+    }
+}

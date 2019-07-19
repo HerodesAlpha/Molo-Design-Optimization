@@ -27,9 +27,9 @@ if __name__ == '__main__':
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
     settings.create_model = True
-    settings.calc_gz = False
-    settings.run_nemoh = True
-    settings.postprocessing = True
+    settings.calc_intact_stability = True
+    settings.run_nemoh = False
+    settings.postprocessing = False
 
     h5_bs = BaseStructure()
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             "Gap factor"              : 0.8,
             "Lower flange thickness"  : 0.08,
             "Number of radial columns": 3,
-            "Radial column diameter"  : 8.2,
+            "Radial column diameter"  : 8.5,
             "Radial column thickness" : 0.04,
             "Radial height"           : 15,
             "Upper flange thickness"  : 0.08,
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             "max_wave_directions" : 90,
     }
     # TODO: Allow for none equidistant frequencies
-    settings.case_label = 'test1'
+    settings.case_label = 'stab1'
     settings.set_file_structure()
     settings.simulation_dir = str(settings.fio.nemoh_root)
     settings.save_job_settings()
@@ -100,11 +100,11 @@ if __name__ == '__main__':
         unit_model = pickle.load(open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
         hs_floater = pickle.load(open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
-    if settings.create_model and settings.calc_gz:
+    if settings.create_model and settings.calc_intact_stability:
         print('\n--------------------------------------------------------------------------------------------')
         print('STABILITY ANALYSIS')
         print('--------------------------------------------------------------------------------------------')
-        stability.gz_curve(settings, hs_floater)
+        stability.intact_stability(settings, hs_floater)
 
     if settings.create_model and settings.run_nemoh:
         print('\n--------------------------------------------------------------------------------------------')

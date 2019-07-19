@@ -73,7 +73,7 @@ else:
     hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
 if create_model and calc_gz:
-    stability.gz_curve(fio, hs_floater)
+    stability.righting_moment_curve(fio, hs_floater)
 
 if create_model and run_nemoh:
     nemoh.runNemoh(fio, hydro_mesh_symmetri, mesh_file, NEMOH_DIR, RHO_SW, WATER_DEPTH, OMEGA_NEMOH_INP,

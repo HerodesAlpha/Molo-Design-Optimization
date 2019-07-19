@@ -129,7 +129,7 @@ class SettingsClass(PhysicalQuantities, object):
     def __init__(self, analyses_root, park_label, wtg_label):
         super().__init__()
 
-        self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis']
+        self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis', 'design_basis']
 
         self._mesh_name = None
         self._do_equilibrate = True
@@ -295,11 +295,11 @@ class SettingsClass(PhysicalQuantities, object):
         self._create_model = val
 
     @property
-    def calc_gz(self):
+    def calc_intact_stability(self):
         return self._calc_gz
 
-    @calc_gz.setter
-    def calc_gz(self, val):
+    @calc_intact_stability.setter
+    def calc_intact_stability(self, val):
         self._calc_gz = val
 
     @property

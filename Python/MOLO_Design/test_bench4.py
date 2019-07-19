@@ -28,7 +28,7 @@ if __name__ == '__main__':
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
     settings.create_model = True
-    settings.calc_gz = False
+    settings.calc_intact_stability = False
     settings.run_nemoh = True
     settings.postprocessing = True
 
@@ -104,8 +104,8 @@ if __name__ == '__main__':
         unit_model = pickle.load(open(fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
         hs_floater = pickle.load(open(fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
 
-    if settings.create_model and settings.calc_gz:
-        stability.gz_curve(fio, hs_floater)
+    if settings.create_model and settings.calc_intact_stability:
+        stability.righting_moment_curve(fio, hs_floater)
 
     if settings.create_model and settings.run_nemoh:
         queue = multiprocessing.Queue(-1)
