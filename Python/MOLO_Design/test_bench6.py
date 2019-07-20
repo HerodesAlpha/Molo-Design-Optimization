@@ -286,3 +286,4 @@ if __name__ == '__main__':
 
         # this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
         # this_mesh.show()
+    settings._report.generate_pdf(clean_tex=False)
