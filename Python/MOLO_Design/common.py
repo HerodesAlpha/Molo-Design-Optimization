@@ -10,10 +10,7 @@ import os
 from pathlib import Path
 import getpass
 import sys
-from pylatex import Document, PageStyle, Head, Foot, MiniPage, \
-    StandAloneGraphic, MultiColumn, Tabu, LongTabu, LargeText, MediumText, \
-    LineBreak, NewPage, Tabularx, TextColor, simple_page_number, Command
-from pylatex.utils import bold, NoEscape
+from report import DesignReport
 
 
 class PhysicalQuantities():
@@ -177,146 +174,19 @@ class SettingsClass(PhysicalQuantities, object):
         gf = self._job_data['floater']['Gap factor']
         rh = self._job_data['floater']['Radial']['Heigth']
         mt = self._job_data['floater']['Type']
-        self._molo_label = '{}-{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(mt, nrc, rcd * 10, gf * 10, rh * 10)
+        self._molo_model = '{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(nrc, rcd * 10, gf * 10, rh * 10)
+        self._molo_label = '{}-{}'.format(mt,self._molo_model)
 
-    def set_file_structure(self):
+    def set_file_structure_and_report(self):
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
         # print(self._job_data['analysis']['simulations'])
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()
 
         print(str(self._fio.case_dir))
-        self.init_report()
-
-        # self._report = Document(self._fio._case_dir.joinpath('report_{}'.format(self._molo_label)))
-        # self._report.preamble.append(Command('title', '{}'.format(self._molo_label)))
-        # self._report.preamble.append(Command('author', NoEscape(r'Eivind S{\o}nju')))
-        # self._report.preamble.append(Command('date', NoEscape(r'\today')))
-        # self._report.append(NoEscape(r'\maketitle'))
-
-    def init_report(self):
-        geometry_options = {
-                "head"           : "40pt",
-                "margin"         : "0.5in",
-                "bottom"         : "0.6in",
-                "includeheadfoot": True
-        }
-        self._report = Document(self._fio._case_dir.joinpath('report_{}'.format(self._molo_label)),
-                                geometry_options=geometry_options)
-
-        # Generating first page style
-        first_page = PageStyle("firstpage")
-
-        # Header image
-
-        with first_page.create(Head("L")) as header_left:
-            with header_left.create(MiniPage(width=NoEscape(r"0.49\textwidth"),
-                                             pos='c')) as logo_wrapper:
-                logo_file = str(Path(os.getcwd()).joinpath('templates').joinpath('logo.png'))
-                #logo_file= '{' + logo_file + '}'
-                logo_file =  logo_file.replace('\\','/')
-                # print(str(logo_file))
-                logo_wrapper.append(StandAloneGraphic(image_options="width=120px",
-                                                      filename=logo_file))
-                                                      # filename='logo.png'))
-
-        # Add document title
-        with first_page.create(Head("R")) as right_header:
-            with right_header.create(MiniPage(width=NoEscape(r"0.49\textwidth"),
-                                              pos='c', align='r')) as title_wrapper:
-                title_wrapper.append(LargeText(bold('{}'.format(self._molo_label))))
-                title_wrapper.append(LineBreak())
-                title_wrapper.append(MediumText(bold(NoEscape(r'\today'))))
-
-        # Add footer
-        with first_page.create(Foot("C")) as footer:
-            message = "Important message please read"
-            with footer.create(Tabularx(
-                    "X X X X",
-                    width_argument=NoEscape(r"\textwidth"))) as footer_table:
-                footer_table.add_row(
-                        [MultiColumn(4, align='l', data=TextColor("blue", message))])
-                footer_table.add_hline(color="blue")
-                footer_table.add_empty_row()
-
-                branch_address = MiniPage(
-                        width=NoEscape(r"0.25\textwidth"),
-                        pos='t')
-                branch_address.append("Radyrveien 32")
-                branch_address.append("\n")
-                branch_address.append("1555 SON")
-
-                document_details = MiniPage(width=NoEscape(r"0.25\textwidth"),
-                                            pos='t', align='r')
-                document_details.append("1000")
-                document_details.append(LineBreak())
-                document_details.append(simple_page_number())
-
-                footer_table.add_row([branch_address, branch_address,
-                                      branch_address, document_details])
-
-        self._report.preamble.append(first_page)
-        # End first page style
-
-        # # Add customer information
-        # with self._report.create(Tabu("X[l] X[r]")) as first_page_table:
-        #     customer = MiniPage(width=NoEscape(r"0.49\textwidth"), pos='h')
-        #     customer.append("Verna Volcano")
-        #     customer.append("\n")
-        #     customer.append("For some Person")
-        #     customer.append("\n")
-        #     customer.append("Address1")
-        #     customer.append("\n")
-        #     customer.append("Address2")
-        #     customer.append("\n")
-        #     customer.append("Address3")
-        #
-        #     # Add branch information
-        #     branch = MiniPage(width=NoEscape(r"0.49\textwidth"), pos='t!',
-        #                       align='r')
-        #     branch.append("Branch no.")
-        #     branch.append(LineBreak())
-        #     branch.append(bold("1181..."))
-        #     branch.append(LineBreak())
-        #     branch.append(bold("TIB Cheque"))
-        #
-        #     first_page_table.add_row([customer, branch])
-        #     first_page_table.add_empty_row()
-        #
-
-        self._report.add_color(name="lightgray", model="gray", description="0.80")
-        #
-        # # Add statement table
-        # with self._report.create(LongTabu("X[l] X[2l] X[r] X[r] X[r]",
-        #                                   row_height=1.5)) as data_table:
-        #     data_table.add_row(["date",
-        #                         "description",
-        #                         "debits($)",
-        #                         "credits($)",
-        #                         "balance($)"],
-        #                        mapper=bold,
-        #                        color="lightgray")
-        #     data_table.add_empty_row()
-        #     data_table.add_hline()
-        #     row = ["2016-JUN-01", "Test", "$100", "$1000", "-$900"]
-        #     for i in range(30):
-        #         if (i % 2) == 0:
-        #             data_table.add_row(row, color="lightgray")
-        #         else:
-        #             data_table.add_row(row)
-
-        self._report.preamble.append(Command('title', 'MOLO Conceptual Design Report'))
-        self._report.change_document_style("firstpage")
-        self._report.append(NewPage())
+        self._report = DesignReport(self)
 
 
-        # # Add cheque images
-        # with self._report.create(LongTabu("X[c] X[c]")) as cheque_table:
-        #     cheque_file = os.path.join(os.path.dirname(__file__),
-        #                                'chequeexample.png')
-        #     cheque = StandAloneGraphic(cheque_file, image_options="width=200px")
-        #     for i in range(0, 20):
-        #         cheque_table.add_row([cheque, cheque])
 
     def save_job_settings(self):
         # Save updated settings to analysis directory
@@ -379,10 +249,10 @@ class SettingsClass(PhysicalQuantities, object):
         if type == None:
             self._case_label = None  # Auto numbering
         elif type == 'floater_data':
-            self._case_label = self._molo_label
+            self._case_label = self._molo_model
         else:
             self._case_label = type
-        print('\nMODEL NAME: {}'.format(self._molo_label))
+        print('\nMODEL: {}'.format(self._molo_model))
 
     @property
     def floater_data(self):

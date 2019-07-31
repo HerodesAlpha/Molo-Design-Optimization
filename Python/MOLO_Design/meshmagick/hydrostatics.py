@@ -7,6 +7,7 @@ import math
 import numpy as np
 
 from .mesh_clipper import MeshClipper
+from pylatex import Section, Figure, NoEscape
 
 __author__ = "Francois Rongere"
 __copyright__ = "Copyright 2014-2015, Ecole Centrale de Nantes"
@@ -1118,6 +1119,7 @@ class Hydrostatics(object):
         # msg += ('Relative tolerance of the solver: %.1E\n' % self.reltol)
 
         return msg
+
 
     # FIXME: la methode show ne devrait pas faire appel explicitement a des fonctions vtk...
     # Tout devrait etre gere dans MMViewer

@@ -62,7 +62,7 @@ if __name__ == '__main__':
     }
     # TODO: Allow for none equidistant frequencies
     settings.case_label = 'stab1'
-    settings.set_file_structure()
+    settings.set_file_structure_and_report()
     settings.simulation_dir = str(settings.fio.nemoh_root)
     settings.save_job_settings()
 
@@ -286,4 +286,4 @@ if __name__ == '__main__':
 
         # this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
         # this_mesh.show()
-    settings._report.generate_pdf(clean_tex=False)
+    settings._report._doc.generate_pdf(clean_tex=False)

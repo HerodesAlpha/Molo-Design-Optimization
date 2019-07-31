@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # settings.case_label = 'debug_plate_thin'
     settings.case_label = 'debug2_plate_thin'
     # settings.case_label = 'debug_plate_thick'
-    settings.set_file_structure()
+    settings.set_file_structure_and_report()
 
     # settings.mesh_name = 'debug_3c'
     settings.mesh_name = settings.case_label

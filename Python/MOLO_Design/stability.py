@@ -10,9 +10,9 @@ import vtk
 import imageio
 import os
 import matplotlib.pyplot as plt
-from pylatex import Section, Figure, NoEscape
+from pylatex import Section, Figure, NoEscape, NewPage
 
-# TODO: Evaluate Mathieu instability
+# Stiffness is linear for heel < 10 deg, param. excit. not likely
 
 def righting_moment_curve(settings, hs_floater):
     # np.linalg.solve
@@ -80,17 +80,6 @@ def righting_moment_curve(settings, hs_floater):
                 print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay * 180 / np.pi,
                                                                                  val=-hs_floater.residual / 1000000))
 
-        #
-        #
-        # dM += hs_floater.S55*np.pi/1800 # Add moment giving one deg rotation based on current water plane stiffness
-        # dF1 = hs.Force(point=(0, 0, -0.5), value=(-dM, 0, 0), name="F1")
-        # dF2 = hs.Force(point=(0, 0, +0.5), value=(dM, 0, 0), name="F2")
-        # hs_floater.add_force(dF1)
-        # hs_floater.add_force(dF2)
-        # hs_floater.equilibrate()
-        # v = np.dot(hs_floater._rotation,[0,0,1])
-        # angle=np.arctan2(v[2], v[0]) * 180 / np.pi
-        # print('{:7.2f} {:7.2f}'.format(angle, dM/1000000))
 
     return np.asarray([heel_angles, righting_moments])
 
@@ -120,9 +109,9 @@ def intact_stability(settings, hs_floater):
     # Find second intercept
     a = [i > j for i, j in zip(rmc[1, :], whm[1, :])]
 
-    i_last = [i for i, x in enumerate(a) if x][-1]  # Index of last righting moment greater than heeling moment
+    intercept = [i for i, x in enumerate(a) if x][-1]  # Index of last righting moment greater than heeling moment
 
-    r = sum(rmc[1, :i_last]) / sum(whm[1, :i_last])
+    r = sum(rmc[1, :intercept]) / sum(whm[1, :intercept])
     if r < 1.4:
         print('Requirements for intact stability is NOT fulfilled')
     else:
@@ -131,44 +120,35 @@ def intact_stability(settings, hs_floater):
 
     width = r'1\textwidth'
 
-    with settings._report.create(Section('Stability')):
-        with settings._report.create(Figure(position='htbp')) as plot:
+    settings._report._doc.append(NewPage())
+    with settings._report._doc.create(Section('Stability')) as stability_section:
+
+        textstr = 'Area ratio is {:1.0f}%\nU_10min = {:1.1f} m/s\nz = {:1.0f} m'.format(r * 100,
+                                                                                        settings._job_data[
+                                                                                            'design_basis'][
+                                                                                            "Wind"]['ESS']['u'],
+                                                                                        settings._job_data[
+                                                                                            'design_basis'][
+                                                                                            "Wind"]['ESS'][
+                                                                                            'Reference height'])
+        stability_section.append(textstr)
+        with stability_section.create(Figure(position='htbp')) as plot:
             fig = plt.figure(1, figsize=(8, 5))
             ax = fig.add_subplot(111)
             ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
             ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
-            ib = whm[0, i_last] * 180 / np.pi
-            # ax.plot(np.asarray([ib, ib]) * 180 / np.pi, [0, whm[1, :][i_last]])
+            ib = whm[0, intercept] * 180 / np.pi
             ax.annotate('Second intercept',
-                        xy=(ib, whm[1, :][i_last]), xycoords='data',
+                        xy=(ib, whm[1, intercept]), xycoords='data',
                         xytext=(0.8, 0.5), textcoords='axes fraction',
                         arrowprops=dict(arrowstyle="->"))
-            ax.legend()
-            textstr = 'Area ratio is {:1.0f}%\nU_10min = {:1.1f} m/s\nz = {:1.0f} m'.format(r * 100,
-                                                                                                      settings._job_data[
-                                                                                                          'design_basis'][
-                                                                                                          "Wind"]['ESS']['u'],
-                                                                                                      settings._job_data[
-                                                                                                          'design_basis'][
-                                                                                                          "Wind"]['ESS'][
-                                                                                                          'Reference height'])
-            if r < 1.4:
-                facecolor = 'orangered'
-            else:
-                facecolor = 'lightgreen'
-
-            props = dict(boxstyle='round', facecolor=facecolor, alpha=1.0)
-            ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,
-                    verticalalignment='top', bbox=props)
             ax.set_xlabel('Angle of inclination [degrees]')
             ax.set_ylabel('Moment [MNm]')
-            ax.set_title('INTACT STABILITY\nModel: {}'.format(settings._molo_label))
-            # Show the major grid lines with dark grey lines
+            ax.legend()
             plt.grid(b=True, which='major', color='#666666', linestyle='-')
-
             # Show the minor grid lines with very faint and almost transparent grey lines
             plt.minorticks_on()
             plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
             plot.add_plot(width=NoEscape(width))
-            plot.add_caption('INTACT STABILITY')
+            plot.add_caption('Intact Stability')
             plt.close()

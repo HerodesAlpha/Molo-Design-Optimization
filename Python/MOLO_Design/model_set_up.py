@@ -13,7 +13,7 @@ import meshmagick.mmio as mmio
 import model
 import tool_box as tb
 from meshmagick.mesh import Mesh
-
+import report
 
 def rem_list(df):
     # Dirty :-(
@@ -197,7 +197,7 @@ def init_models(settings):  #
     stability_mesh.rotate_z(-np.pi / 2)  # IMPORTANT
 
     # unit_model.print_vector_matrix_global()
-    hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)
+    hs_floater = hs.Hydrostatics(stability_mesh, verbose=True) # TODO: Set mass, gravity and water density here
     hs_floater.gravity = abs(settings.gravity)
     hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
@@ -211,6 +211,7 @@ def init_models(settings):  #
     #
     # hs_floater.show()
     print(hs_floater.get_hydrostatic_report())
+    settings._report.write_hydrostatic_report_latex_table(hs_floater)
     tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft

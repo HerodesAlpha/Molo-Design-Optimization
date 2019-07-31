@@ -62,7 +62,7 @@ if __name__ == '__main__':
     }
     # TODO: Allow for none equidistant frequencies
     settings.case_label = 'stab1'
-    settings.set_file_structure()
+    settings.set_file_structure_and_report()
     settings.simulation_dir = str(settings.fio.nemoh_root)
     settings.save_job_settings()
 
