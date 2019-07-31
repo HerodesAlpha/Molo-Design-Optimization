@@ -69,10 +69,10 @@ class TransferFunctions(object):
 
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
             unit_model = pickle.load(f)
-        unit_model.move_reduction_point(section_point) # Why?
+        unit_model.move_reduction_point(vector = section_point) # TODO: Check if it is correct
 
         part_list = unit_model.get_parts_without_children()
-        # [print(part._type) for part in part_list]
+
 
         point_mass = np.asarray([part._inertias.mass_matrix_global for part in part_list])
 
@@ -144,7 +144,7 @@ class TransferFunctions(object):
         pmc = pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
         point_mass_pos = np.squeeze(np.matmul(rtm, pmc), axis=4)[:, :, :, 0:3]
 
-        point_mass_pos -= point_mass_centers[np.newaxis, np.newaxis, :]
+        point_mass_pos -= point_mass_centers[np.newaxis, np.newaxis, :] # Subtract mean position
         w2 = self._loads.w ** 2
         part_dynacc = point_mass_pos * w2[:, np.newaxis, np.newaxis, np.newaxis]
         part_inertia_force = -part_dynacc * point_mass[np.newaxis, np.newaxis, :, np.newaxis, 0, 0]

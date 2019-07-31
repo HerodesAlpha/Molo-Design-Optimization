@@ -165,7 +165,7 @@ class TotalMassMatrixClass(object):
         """
         Reducition point must be defined in global coordinate system and global mass matrix must be given relative to global origin
         """
-        self._mass_matrix_local = self._mass_matrix_global - self._huygens_transport() * self._mass_matrix_global[0, 0]
+        self._mass_matrix_local = self._mass_matrix_global - self._huygens_transport() * self.mass
 
     def is_at_cog(self):
         """Returns whether the object is expressed at cog
