@@ -21,11 +21,11 @@ class ModelClass(object):
             assert (len(red_point) == 3)
             self._inertias._point = np.asarray(red_point)
 
-    def set_new_reduction_point(self, new_point):
+    def move_reduction_point(self, vector):
         # Recursively update reduction point on myself and my children
-        assert len(new_point) == 3
+        assert len(vector) == 3
         for part in self.get_all_parts():
-            part._inertias.reduction_point = part._inertias._point + new_point  # Will update global mass matrix also
+            part._inertias.reduction_point = part._inertias._point + vector  # Will update global mass matrix also
 
     def get_parts_without_children(self, part_list=None):
         # Only get mass of parts that have no part

@@ -248,7 +248,7 @@ class SettingsClass(PhysicalQuantities, object):
     def case_label(self, type=None):
         if type == None:
             self._case_label = None  # Auto numbering
-        elif type == 'floater_data':
+        elif type == 'molo_model':
             self._case_label = self._molo_model
         else:
             self._case_label = type

@@ -69,9 +69,7 @@ class TransferFunctions(object):
 
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
             unit_model = pickle.load(f)
-        unit_model.set_new_reduction_point(section_point)
-
-        # Prepare RAO's for motion dependent response variables
+        unit_model.move_reduction_point(section_point) # Why?
 
         part_list = unit_model.get_parts_without_children()
         # [print(part._type) for part in part_list]
@@ -84,15 +82,15 @@ class TransferFunctions(object):
         point_mass_centers = np.asarray([-part._inertias.reduction_point for part in part_list])
         f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
                                              section_normal)
-        print('\nGravity force')
-        tb.matprint(f_gravity)
+        #print('\nGravity force')
+        #tb.matprint(f_gravity)
 
         # Hydro static / Buoyancy
         f_bouyancy = nemoh.get_section_values(self._loads._force['Buoyancy'], self._loads._pd.ppanel_centers,
                                               section_point,
                                               section_normal)
-        print('\nBuoyancy force')
-        tb.matprint(f_bouyancy)
+        #print('\nBuoyancy force')
+        #tb.matprint(f_bouyancy)
 
         # Collect all forces acting on the section
         # Froude-Krylof and diffraction
@@ -213,24 +211,24 @@ class TransferFunctions(object):
 
 
 
-    def section_stress(self,f):
+    def flange_normal_stress(self, f):
 
 
         # Get forces at section center
         # TODO: Change z to section center, now at waterline
 
         fdi = self._settings.job_data['floater']
-        h = fdi['Radial height']
-        d_rc = fdi['Radial column diameter']
+        h = fdi['Radial']['Heigth']
+        d_rc = fdi['Radial']['Column']['Diameter']
         d_cc = fdi['Central column diameter']
         w = d_rc
-        t_lf = fdi['Lower flange thickness']
-        t_uf = fdi['Upper flange thickness']
+        t_lf = fdi['Radial']['Flange']['Lower']['Plate']['Thickness']
+        t_uf = fdi['Radial']['Flange']['Upper']['Plate']['Thickness']
 
-        t_lfst = fdi['Lower flange stiffener thickness']
-        h_lfst = fdi['Lower flange stiffener height']
-        t_ufst = fdi['Upper flange stiffener thickness']
-        h_ufst = fdi['Upper flange stiffener height']
+        t_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Thickness']
+        h_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
+        t_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Thickness']
+        h_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Height']
 
         a_reinf = 2*4*t_uf*3*t_uf
         a = w * t_uf + a_reinf

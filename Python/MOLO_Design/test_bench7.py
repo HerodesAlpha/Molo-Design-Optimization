@@ -26,32 +26,32 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = True
-    settings.calc_intact_stability = True
+    settings.create_model = False
+    settings.calc_intact_stability = False
     settings.run_nemoh = False
-    settings.postprocessing = False
+    settings.postprocessing = True
 
     h5_bs = BaseStructure()
 
     filling_ratio = [0.0, 0.0, 0.0]
 
-    settings.floater_data = {
-            "Type"                    : "OY",
-            "Central column diameter" : 7.0,
-            "Central column thickness": 0.04,
-            "Draught"                 : 0,
-            "Gap factor"              : 0.8,
-            "Lower flange thickness"  : 0.08,
-            "Number of radial columns": 3,
-            "Radial column diameter"  : 8.5,
-            "Radial column thickness" : 0.04,
-            "Radial height"           : 15,
-            "Upper flange thickness"  : 0.08,
-            "Ballast filling ratio"   : [0,
-                                         filling_ratio
-                                         ],
-            "Thin panel offset"       : 0.2
-    }
+    # settings.floater_data = {
+    #         "Type"                    : "OY",
+    #         "Central column diameter" : 7.0,
+    #         "Central column thickness": 0.04,
+    #         "Draught"                 : 0,
+    #         "Gap factor"              : 0.8,
+    #         "Lower flange thickness"  : 0.08,
+    #         "Number of radial columns": 3,
+    #         "Radial column diameter"  : 8.5,
+    #         "Radial column thickness" : 0.04,
+    #         "Radial height"           : 15,
+    #         "Upper flange thickness"  : 0.08,
+    #         "Ballast filling ratio"   : [0,
+    #                                      filling_ratio
+    #                                      ],
+    #         "Thin panel offset"       : 0.2
+    # }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
             "num_wave_frequencies": 41,
             "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             "max_wave_directions" : 90,
     }
     # TODO: Allow for none equidistant frequencies
-    settings.case_label = 'stab1'
+    settings.case_label = 'molo_model'
     settings.set_file_structure_and_report()
     settings.simulation_dir = str(settings.fio.nemoh_root)
     settings.save_job_settings()
@@ -143,7 +143,7 @@ if __name__ == '__main__':
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
         plt.plot(2 * np.pi / loads.w, sig_r)
 
-        #plt.show()
+        plt.show()
 
         SELECT_DOF = 1
         SELECT_AXIS = 2
@@ -286,3 +286,4 @@ if __name__ == '__main__':
 
         # this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
         # this_mesh.show()
+    settings._report._doc.generate_pdf(clean_tex=False)

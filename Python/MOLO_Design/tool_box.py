@@ -15,6 +15,8 @@ import scipy
 
 
 class TotalMassMatrixClass(object):
+    # TODO: Define parts in global instead of local coordinate system. Set CoG instead of reduction point.
+    # Both reduction point and CoG relative to waterline.
     def __init__(self):
         self._cog = np.zeros((3), dtype='float')
         self._point = np.zeros((3), dtype='float')

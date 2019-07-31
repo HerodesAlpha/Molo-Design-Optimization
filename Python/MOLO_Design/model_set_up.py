@@ -218,7 +218,7 @@ def init_models(settings):  #
     # print('\nMass matrix just before adjusting to draught')
     # for part in unit_model.get_all_parts():
     #     part.print_vector_matrix_global()
-    unit_model.set_new_reduction_point([0, 0, hs_floater.hs_data['draught']])
+    unit_model.move_reduction_point([0, 0, hs_floater.hs_data['draught']])
     settings.draught = hs_floater.hs_data['draught']
 
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
