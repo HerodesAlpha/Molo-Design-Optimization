@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
+    settings.create_model = True
     settings.calc_intact_stability = False
     settings.run_nemoh = False
     settings.postprocessing = True
@@ -243,7 +243,7 @@ if __name__ == '__main__':
 
         fig, axs = plt.subplots(2, 3)
 
-        dir = 2
+        dir = 1
         for i, dof in enumerate([1, 5]):
             for key in f_dyn:
                 if not key is 'Total':
