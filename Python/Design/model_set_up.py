@@ -133,36 +133,7 @@ def model01():
 
 
 def create_mass_models(settings):
-    # twr_data_found = False
-    # rna_data_found = False
-    # floater_data_found = False
-    # with open(json_file, 'r') as f:
-    #     data = json.loads(f.read())
-    #     for key in data:
-    #         if key == 'Tower':
-    #             if twr_data_found == True:
-    #                 print('Tower data given more than once!')
-    #                 exit()
-    #             else:
-    #                 dict_tower_data = data[key]
-    #                 twr_data_found = True
-    #         if key == 'Rotor-Nacelle-Assembly':
-    #             if twr_data_found == True:
-    #                 print('RNA data given more than once!')
-    #                 exit()
-    #             else:
-    #                 dict_rna_data = data[key]
-    #                 rna_data_found = True
-    #         if key == 'Floater':
-    #             if floater_data_found == True:
-    #                 print('Floater data given more than once!')
-    #                 exit()
-    #             else:
-    #                 dict_floater_data = data[key]
-    #                 floater_data_found = True
 
-    # rho_st = 7850
-    #
     twr_data = model.TowerDataClass(settings.job_data['tower'])
     floater_data = model.FloaterDataClass(settings.job_data['floater'])
     rna_data = model.RNADataClass(settings.job_data['rna'])

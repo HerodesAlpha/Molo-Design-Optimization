@@ -21,6 +21,12 @@ class ModelClass(object):
             assert (len(red_point) == 3)
             self._inertias._point = np.asarray(red_point)
 
+    def set_reduction_point(self, vector):
+        # Recursively update reduction point on myself and my children
+        assert len(vector) == 3
+        for part in self.get_all_parts():
+            part._inertias.reduction_point = vector  # Will update global mass matrix also
+
     def move_reduction_point(self, vector):
         # Recursively update reduction point on myself and my children
         assert len(vector) == 3
@@ -45,28 +51,6 @@ class ModelClass(object):
             part.get_all_parts(part_list)
         return part_list
 
-    #     def rec(x):
-    #         if self.parts_list:
-    #             for part in self.parts_list:
-    #                 x.append(part.rec(x))
-    #         else:
-    #             return self._inertias
-    #
-    #     return rec(x)
-    #
-    # def pop_list(nodes=None, parent=None, node_list=None):
-    #     if parent is None:
-    #         return node_list
-    #     node_list.append([])
-    #     for node in nodes:
-    #         if node['parent'] == parent:
-    #             node_list[-1].append(node)
-    #         if node['id'] == parent:
-    #             next_parent = node['parent']
-    #
-    #     pop_list(nodes, next_parent, node_list)
-    #     return node_list
-
     @property
     def inertias(self):
         return self._inertias
@@ -74,10 +58,6 @@ class ModelClass(object):
     @property
     def mass(self):
         return self._inertias.mass
-
-    @property
-    def inertia_matrix(self):
-        return self._inertias.inertia_matrix_global
 
     @property
     def cog(self):
@@ -117,24 +97,19 @@ class AssemblyClass(ModelClass, object):
 
     def aggregate_inertias_from_parts(self, parts_list):
         # Check that mass matrix is zero
-        if not np.count_nonzero(self.inertias.mass_matrix_global):
-            # It is important that all parts refer to the same point of reference when aggregating matrices
-            for part in parts_list:
-                self.inertias.add_mass_matrix_global(
-                        part.inertias.mass_matrix_global)
-        else:
-            print('ERROR: self.inertias.mass_matrix_global contain values at initialization')
-            exit()
+        sum_mass_matrix_global = np.zeros((6, 6), dtype='float')
+        for part in parts_list:
+            sum_mass_matrix_global += part.inertias.mass_matrix_global
 
         # Calculate origin relative to CoG
-        total_mass = self.inertias._mass_matrix_global[0, 0]
         self.inertias._point = np.zeros(3)
-        for part in parts_list:
-            self.inertias._point += part.inertias._point * part.inertias.mass_matrix_global[0, 0] / total_mass
+        for part in parts_list:  # Calculate reference point for this assembly
+            self.inertias._point += part.inertias._point * part.mass
+            self.inertias._point /= sum_mass_matrix_global[0, 0]
 
-        self._inertias.mass_matrix_local_from_global()
+        self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * self.mass
         self._inertias.cog = np.zeros(3)  # Just to be sure
-        self.print_vector_matrix_global()
+        # self.print_vector_matrix_global()
 
 
 class UnitClass(AssemblyClass, object):
@@ -216,7 +191,7 @@ class FloaterClass(AssemblyClass, object):
 
         self.__update_global__()
 
-        # self.print_vector_matrix_global()
+        self.print_vector_matrix_global()
 
         # self._inertias.reduction_point = self._red_point
         # self.__set_cog_relative_to_point__()
@@ -278,19 +253,22 @@ class FloaterClass(AssemblyClass, object):
             # Flanges
             # TODO: Discretize flanges every meter or so in radial direction for better mass resolution
             for istrip in range(self._n_strips):
-                self.parts_list.append(FlangeClass(type='Radial{r:1.0f}, upper flange'.format(r=ir + 1),
-                                                   irow=ir,
-                                                   icol=None,
-                                                   a=a,
-                                                   b=self._w_uf,
-                                                   h=self._t_uf,
-                                                   density=self._rho_st,
-                                                   theta=theta[ir],
-                                                   red_point=rot_mat @ [rpx(istrip), rpy, rpz_uf]))
+                self.parts_list.append(
+                    FlangeClass(type='Radial {r:1.0f}, upper flange, strip {s:1.0f}'.format(r=ir + 1, s=istrip + 1),
+                                irow=ir,
+                                icol=None,
+                                a=a,
+                                b=self._w_uf,
+                                h=self._t_uf,
+                                density=self._rho_st,
+                                theta=theta[ir],
+                                red_point=rot_mat @ [rpx(istrip), rpy, rpz_uf]))
 
                 for ist in range(2):
                     self.parts_list.append(FlangeClass(
-                            type='Radial{r}, upper flange stiffener {a}'.format(r=ir + 1, a=lr[ist]),
+                            type='Radial {r:1.0f}, upper flange, {a} stiffener, strip {s:1.0f}'.format(r=ir + 1,
+                                                                                                       a=lr[ist],
+                                                                                                       s=istrip + 1),
                             irow=ir,
                             icol=None,
                             a=a,
@@ -301,19 +279,22 @@ class FloaterClass(AssemblyClass, object):
                             red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_ufst,
                                                  rpz_uf + dz_ufst]))
 
-                self.parts_list.append(FlangeClass(type='Radial{r:1.0f}, lower flange'.format(r=ir + 1),
-                                                   irow=ir,
-                                                   icol=None,
-                                                   a=a,
-                                                   b=self._w_lf,
-                                                   h=self._t_lf,
-                                                   density=self._rho_st,
-                                                   theta=theta[ir],
-                                                   red_point=rot_mat @ [rpx(istrip), rpy, rpz_lf]))
+                self.parts_list.append(
+                    FlangeClass(type='Radial {r:1.0f}, lower flange, strip {s:1.0f}'.format(r=ir + 1, s=istrip + 1),
+                                irow=ir,
+                                icol=None,
+                                a=a,
+                                b=self._w_lf,
+                                h=self._t_lf,
+                                density=self._rho_st,
+                                theta=theta[ir],
+                                red_point=rot_mat @ [rpx(istrip), rpy, rpz_lf]))
 
                 for ist in range(2):
                     self.parts_list.append(FlangeClass(
-                            type='Radial{r:1.0f}, upper flange stiffener{a}'.format(r=ir + 1, a=lr[ist]),
+                            type='Radial {r:1.0f}, lower flange, {a} stiffener, strip {s:1.0f}'.format(r=ir + 1,
+                                                                                                       a=lr[ist],
+                                                                                                       s=istrip + 1),
                             irow=ir,
                             icol=None,
                             a=a,
@@ -445,6 +426,7 @@ class BallastClass(ModelClass, object):
         self._rho_bal = rho_bal
 
         self.__update_inertias__()
+        # self.print_vector_matrix_global()
 
     def __update_inertias__(self):
         d = self._dia_bal

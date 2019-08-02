@@ -17,9 +17,78 @@ class TransferFunctions(object):
         self._settings = settings
         self._loads = loads
         self_env = Environment(settings)
+
+        # Set up RAOs
         self._rao = np.zeros([self._loads.nw, self._loads._nbeta, 6], dtype=complex)
         for ibeta in range(self._loads._nbeta):
             self._rao[:, ibeta, :] = self.get_rao(ibeta)
+
+        # Prepare discrete mass and hydro forces
+        with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
+            self._unit_model = pickle.load(f)
+
+        self._part_list = self._unit_model.get_parts_without_children()
+        self._point_mass = np.asarray([part._inertias.mass_matrix_global for part in self._part_list])
+
+
+        self._point_mass_centers = np.asarray([-part._inertias.reduction_point for part in self._part_list])
+        self._panel_pressure_centers = self._loads._pd.ppanel_centers
+
+        self._projected_panel_area = self._loads._an[np.newaxis, np.newaxis, :, :]
+
+
+        # Gravity
+        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, np.newaxis] * np.asarray([0, 0, self._settings.gravity])[
+                                                                        np.newaxis, :]  # Use m33
+
+        # Hydro static / Buoyancy
+        self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
+
+
+        # Froude-Krylof
+        self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
+
+        # Diffraction
+        self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
+
+
+        # Radiation
+        self._panel_pressure_radiation_unit_force = self._loads._force['Radiation'].copy()  # Dont mess with original
+        # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
+        self._panel_pressure_radiation_force_all_dof = self._panel_pressure_radiation_unit_force[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis, np.newaxis]
+        self._panel_pressure_radiation_force = np.sum(self._panel_pressure_radiation_force_all_dof, axis=2)
+
+        # RAO transformation matrix
+        self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
+        self._panel_pos = np.zeros([self._loads._nw, self._loads._nbeta, self._loads.pd.npanels, 3], dtype=complex)
+        for ifreq in range(self._loads._nw):
+            for ibeta in range(self._loads._nbeta):
+                rot = self._rao[ifreq, ibeta, 3:6]
+                tra = self._rao[ifreq, ibeta, 0:3]
+                self._rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)  # TODO: Vectorize
+        self._rtm = self._rao_tra_mat[:, :, np.newaxis, :, :]
+
+        # Gen dynamic position of panels and calc hydro static pressure
+        # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
+        self._pc = np.append(self._panel_pressure_centers, np.ones((self._loads.pd.npanels, 1)), 1)
+        # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
+        self._pc = self._pc[np.newaxis, np.newaxis, :, :, np.newaxis]
+        # Perform matmul and remove artificial dim and appended 1. This code is fast ...
+        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rtm, self._pc), axis=4)[:, :, :, 0:3]
+        self._panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
+        # panel_pos += self._rao[:, :, np.newaxis, 0:3]
+        self._pressures_diff_static = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :, 2]  # Change in pressure
+        self._panel_pressure_diff_static_force = -self._pressures_diff_static[:, :, :, np.newaxis] * self._projected_panel_area
+
+        # Get dynamic acceleration of part masses and calc inertia force
+        # TODO: Include rotation/inertia moment from parts
+        self._pmc = np.append(self._point_mass_centers, np.ones((self._point_mass_centers.shape[0], 1)), 1)
+        self._pmc = self._pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
+        self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rtm, self._pmc), axis=4)[:, :, :, 0:3]
+        self._dynamic_point_mass_pos -= self._point_mass_centers[np.newaxis, np.newaxis, :] # Subtract mean position
+        self._w2 = self._loads.w ** 2
+        self._part_dynacc = self._dynamic_point_mass_pos * self._w2[:, np.newaxis, np.newaxis, np.newaxis]
+        self._point_mass_dynamic_inertia_force = -self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :, np.newaxis, 0, 0]
 
     def get_rao(self, idir):
         fe = self._loads._fe[:, idir, :]
@@ -39,123 +108,111 @@ class TransferFunctions(object):
             x = daf @ f[i, :]
             container[i, :] = x
 
-        # def H(self, f, m, ma, c, k, vw):
-        #     container = np.zeros([len(vw), 6], dtype=complex)
-        #     for iw, w in enumerate(vw):
-        #         for i in [2,4]:
-        #             this_ma=ma[iw, i, i]
-        #             denom = np.asarray(-w ** 2 * (m[i,i] + ma[iw, i, i]) + 1j * w * c[iw, i, i] + k[i,i], dtype=complex)
-        #             daf = 1/denom
-        #             # daf =np.asarray([[1/x for x in col]for col in denom])
-        #             x = daf * f[iw, i]
-        #             container[iw, i] = x
-
         return container
 
-    def section_forces(self, section_point=None, section_normal=None):
+    def get_section_index(self, section_point, section_normal):
 
-        if section_point is None:
-            section_point = np.array([1, 0, 0])
-        if section_normal is None:
-            section_normal = np.array([1, 0, 0])
+        def do_dot(coordinates):
+            vec = coordinates - section_point
+            dot = np.dot(vec, section_normal)  # dot product i positive for coordinates on the positive side of the plane
+            return dot >= 0
+        return do_dot(self._point_mass_centers), do_dot(self._panel_pressure_centers)
 
-        section_point = np.asarray(section_point)
-        section_normal = np.asarray(section_normal)
+    def get_flange_panel_index(self):
+        def printv(string):
+            if 0:
+                print(string)
 
-        print('\n--------------------------------------------------------------------------------------------')
-        print('SECTION FORCES')
-        print('Point: {}\nNormal: {}'.format(np.array2string(section_point), np.array2string(section_normal)))
-        print('--------------------------------------------------------------------------------------------')
+        class BreakIt(Exception):
+            pass
 
-        with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
-            unit_model = pickle.load(f)
-        unit_model.move_reduction_point(vector = section_point) # TODO: Check if it is correct
+        drc = self._settings.job_data['floater']['Radial column diameter']
+        dcc = self._settings.job_data['floater']['Central column diameter']
+        gaf = self._settings.job_data['floater']['Gap factor']
+        ncol = self._settings.job_data['floater']['Number of radial columns']
 
-        part_list = unit_model.get_parts_without_children()
+        da = (1 + gaf) * drc
+        dtheta = 2 * np.pi / 3
+        theta = [i * dtheta for i in range(3)]
+        index_1 = []
+        for i in range(self._point_mass_centers.shape[0]):
+            found_inside = False
+            is_flange_element = False
+            xp = self._point_mass_centers[i, 0]
+            yp = self._point_mass_centers[i, 1]
+            xc = yc = 0
 
+            if self._point_mass_centers[i,2] <= np.min(self._point_mass_centers[:,2]) + 0.01:  # Flange element coordinate is at lowest position
+                # Next, find elements not inside the cylinders
+                try:
+                    for irad in range(3):
+                        dxc = np.cos(theta[irad]) * da
+                        dyc = np.sin(theta[irad]) * da
+                        for icol in range(ncol):
+                            xc = dxc * (icol + 1)
+                            yc = dyc * (icol + 1)
+                            if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < drc / 2:
+                                found_inside = True
+                                raise BreakIt
+                except BreakIt:
+                    pass
+                if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2:
+                    found_inside = True
 
-        point_mass = np.asarray([part._inertias.mass_matrix_global for part in part_list])
+                if not found_inside:
+                    printv('   Is flange outside cylinders')
+                    # print(i)
+                    index_1.append(True)
+                else:
+                    index_1.append(False)
 
-        # Gravity
-        point_mass_gravity_force = point_mass[:, 2, 2][:, np.newaxis] * np.asarray([0, 0, self._settings.gravity])[
-                                                                        np.newaxis, :]  # Use m33
-        point_mass_centers = np.asarray([-part._inertias.reduction_point for part in part_list])
-        f_gravity = nemoh.get_section_values(point_mass_gravity_force, point_mass_centers, section_point,
-                                             section_normal)
-        #print('\nGravity force')
-        #tb.matprint(f_gravity)
+        # Next find elements between cylinders
+        # Hardcoded first radial, first bay
+        # TODO: Make generic
+        vec_a = self._point_mass_centers - [0, 0, 0]  # First bay starts at origin
+        dot_a = np.dot(vec_a, [1, 0, 0])  # dot product i positive for coordinates on the positive side of the plane
+        index_2 = dot_a > 0
 
-        # Hydro static / Buoyancy
-        f_bouyancy = nemoh.get_section_values(self._loads._force['Buoyancy'], self._loads._pd.ppanel_centers,
-                                              section_point,
-                                              section_normal)
-        #print('\nBuoyancy force')
-        #tb.matprint(f_bouyancy)
+        vec_b = self._point_mass_centers - [da, 0, 0]  # First bay ends at first radial column center
+        dot_b = np.dot(vec_b, [1, 0, 0])  # dot product i positive for coordinates on the positive side of the plane
+        index_3 = dot_b < 0  #
 
-        # Collect all forces acting on the section
-        # Froude-Krylof and diffraction
-        f_fk = nemoh.get_section_values(self._loads._force['Froude-Krylof'], self._loads.pd.ppanel_centers, section_point,
-                                        section_normal)
-        f_diff = nemoh.get_section_values(self._loads._force['Diffraction'], self._loads.pd.ppanel_centers, section_point,
-                                          section_normal)
+        return index_1 and index_2 and index_3  # Return union of the three indexes
 
-        # Calculate radiation force transferfunctions R = H * eta
+    def sum_forces(self, index, forces, coordinates, moment_ref_point):
 
-        # get_rao create complex motion at origin per freq in all dofs for given wave dir
+        vec = coordinates - moment_ref_point
 
-        rad = self._loads._force['Radiation'].copy()  # Dont mess with original
-        # rad = np.swapaxes(rad,1,2) # Modify radiation axes to align axes with RAO for broadcasting
-        f_rad_all_panels_all_dof = rad[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis, np.newaxis]
-        f_rad_all_panels = np.sum(f_rad_all_panels_all_dof, axis=2)  # TODO: Move this work to init. Will be reused
+        if 1 in index:  # At least one item is on the considered side of the section surface
+            if forces.ndim == 4:  # Dynamic [freq, dir, panel, f]
+                section_forces = forces[:, :, index, :]
+                section_moments = np.cross(vec[np.newaxis, np.newaxis, index, :],
+                                               section_forces)  # Calculate moment about section
+                # Concatenate along 4th dimension contaning [fx, fy, fz] and [mx, mz, mz]
+                # Then sum along 3rd dimension holding the panels or point mass indices
+                return np.sum(np.concatenate((section_forces, section_moments), axis=3), axis=2)
+            elif forces.ndim == 2:  # Static [panel, f]
+                section_forces = forces[index, :]
+                section_moments = np.cross(vec[index, :], section_forces)  # Calculate moment about section
+                # Concatenate along 2nd dimension contaning [fx, fy, fz] and [mx, mz, mz]
+                # Then sum along 1st dimension holding the panels or point mass indices
+                return np.sum(np.concatenate((section_forces, section_moments), axis=1), axis=0)
+        else:
+            return np.zeros(6)
 
-        # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        f_rad = nemoh.get_section_values(f_rad_all_panels, self._loads.pd.ppanel_centers,
-                                         section_point,
-                                         section_normal)
+    def assemble_forces(self, imass, ipanel, moment_ref_point):
 
-        # Gen dynamic position of panels and calc hydro static pressure
-        rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
-        panel_pos = np.zeros([self._loads._nw, self._loads._nbeta, self._loads.pd.npanels, 3], dtype=complex)
-        for ifreq in range(self._loads._nw):
-            for ibeta in range(self._loads._nbeta):
-                rot = self._rao[ifreq, ibeta, 3:6]
-                tra = self._rao[ifreq, ibeta, 0:3]
-                rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)  # TODO: Vectorize
-
-        rtm = rao_tra_mat[:, :, np.newaxis, :, :]
-        # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
-        pc = np.append(self._loads.pd.ppanel_centers, np.ones((self._loads.pd.npanels, 1)), 1)
-        # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
-        pc = pc[np.newaxis, np.newaxis, :, :, np.newaxis]
-        # Perform matmul and remove artificial dim and appended 1. This code is fast ...
-        panel_pos[:, :, :, :] = np.squeeze(np.matmul(rtm, pc), axis=4)[:, :, :, 0:3]
-        panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
-        # panel_pos += self._rao[:, :, np.newaxis, 0:3]
-        dp = (self._loads.rho_sw * abs(self._loads.gravity)) * panel_pos[:, :, :, 2]  # Change in pressure
-        f_dz = -dp[:, :, :, np.newaxis] * self._loads._an[np.newaxis, np.newaxis, :, :]
-
-        f_dz_s = nemoh.get_section_values(f_dz, self._loads.pd.ppanel_centers, section_point,
-                                          section_normal)
-
-        # Get dynamic acceleration of part masses and calc inertia force
-        # TODO: Include rotation/inertia moment from parts
-
-        pmc = np.append(point_mass_centers, np.ones((point_mass_centers.shape[0], 1)), 1)
-        pmc = pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
-        point_mass_pos = np.squeeze(np.matmul(rtm, pmc), axis=4)[:, :, :, 0:3]
-
-        point_mass_pos -= point_mass_centers[np.newaxis, np.newaxis, :] # Subtract mean position
-        w2 = self._loads.w ** 2
-        part_dynacc = point_mass_pos * w2[:, np.newaxis, np.newaxis, np.newaxis]
-        part_inertia_force = -part_dynacc * point_mass[np.newaxis, np.newaxis, :, np.newaxis, 0, 0]
-        f_inertia = nemoh.get_section_values(part_inertia_force,
-                                             point_mass_centers, section_point,
-                                             section_normal)
+        f_gravity = self.sum_forces(imass, self._point_mass_gravity_force, self._point_mass_centers, moment_ref_point)
+        f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers, moment_ref_point)
+        f_bouyancy = self.sum_forces(ipanel, self._panel_pressure_buoyancy_force, self._panel_pressure_centers, moment_ref_point)
+        f_fk = self.sum_forces(ipanel, self._panel_pressure_froude_krylof_force, self._panel_pressure_centers, moment_ref_point)
+        f_diff = self.sum_forces(ipanel, self._panel_pressure_diffraction_force, self._panel_pressure_centers, moment_ref_point)
+        f_rad = self.sum_forces(ipanel, self._panel_pressure_radiation_force, self._panel_pressure_centers, moment_ref_point)
+        f_dz_s = self.sum_forces(ipanel, self._panel_pressure_diff_static_force, self._panel_pressure_centers, moment_ref_point)
 
         force_out = dict()
         force_out['Static'] = dict()
         force_out['Dynamic'] = dict()
-
 
         force_out['Static']['Total'] = f_gravity + f_bouyancy
         force_out['Static']['Gravity'] = f_gravity
@@ -168,8 +225,6 @@ class TransferFunctions(object):
         force_out['Dynamic']['Inertia'] = f_inertia
 
         return force_out
-
-
 
 
     def force_comp(f):
@@ -188,8 +243,6 @@ class TransferFunctions(object):
             my = f[4]
             mz = f[5]
 
-
-
     def radial_cross_section(self):
         fdi = self._settings.job_data['floater']
 
@@ -204,11 +257,6 @@ class TransferFunctions(object):
         h_lfst = fdi['Lower flange stiffener height']
         t_ufst = fdi['Upper flange stiffener thickness']
         h_ufst = fdi['Upper flange stiffener height']
-
-        # Neutral axis relative to bottom of cylinder
-        #z0 =
-
-
 
 
     def flange_normal_stress(self, f):
@@ -292,6 +340,20 @@ class Environment():
 
     def tp2tz(self,tp,gamma):
         return (0.6673 + 0.05037*gamma - 0.006230*gamma**2 + 0.0003341*gamma**3)*tp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

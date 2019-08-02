@@ -14,13 +14,13 @@ import calculations
 import model_set_up as msu
 import nemoh
 import stability
-from MOLO_Nemoh import nemoh_frontend as nf
+from Nemoh_Frontend import nemoh_frontend as nf
 from common import SettingsClass
 from pyNemoh.structure import BaseStructure
 from loads import Sea_and_Inertia_Loads
 
 if __name__ == '__main__':
-    ANALYSES_ROOT = Path(r'C:\analyses')
+    ANALYSES_ROOT = Path(r'C:\MOLO_Optimization')
     PARK_LABEL = 'site_01'
     WTG_LABEL = 'wtg_01'
 
@@ -33,25 +33,7 @@ if __name__ == '__main__':
 
     h5_bs = BaseStructure()
 
-    filling_ratio = [0.0, 0.0, 0.0]
 
-    # settings.floater_data = {
-    #         "Type"                    : "OY",
-    #         "Central column diameter" : 7.0,
-    #         "Central column thickness": 0.04,
-    #         "Draught"                 : 0,
-    #         "Gap factor"              : 0.8,
-    #         "Lower flange thickness"  : 0.08,
-    #         "Number of radial columns": 3,
-    #         "Radial column diameter"  : 8.5,
-    #         "Radial column thickness" : 0.04,
-    #         "Radial height"           : 15,
-    #         "Upper flange thickness"  : 0.08,
-    #         "Ballast filling ratio"   : [0,
-    #                                      filling_ratio
-    #                                      ],
-    #         "Thin panel offset"       : 0.2
-    # }
     settings.load_cases = {  # 121, np.pi / 15, np.pi
             "num_wave_frequencies": 41,
             "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
@@ -71,7 +53,6 @@ if __name__ == '__main__':
     settings.use_symmmetri = True
 
     settings.do_equilibriate = True
-    #fio = settings.fio
 
     settings.thin_panel_offset = 0.5
 
@@ -122,9 +103,19 @@ if __name__ == '__main__':
         loads = Sea_and_Inertia_Loads(settings)
         tran_fun = calculations.TransferFunctions(settings, loads)
         env = calculations.Environment(settings)
-        f_sf1 = tran_fun.section_forces([1, 0, 0], [1, 0, 0])
-        sig_dyn_tot = tran_fun.flange_normal_stress(f_sf1['Dynamic']['Total'])
-        sig_stat_tot = tran_fun.flange_normal_stress(f_sf1['Static']['Total'])
+
+
+        # Get section forces
+        section_point = [1,0,0]
+        section_normal = [1,0,0]
+        imass,ipanel = tran_fun.get_section_index(section_point, section_normal)
+        f_sec1 = tran_fun.assemble_forces(imass, ipanel, moment_ref_point=section_point)
+
+        imass,ipanel = tran_fun.get_flange_panel_index()
+        f_part1 = tran_fun.assemble_forces(imass, ipanel)
+
+        sig_dyn_tot = tran_fun.flange_normal_stress(f_sec1['Dynamic']['Total'])
+        sig_stat_tot = tran_fun.flange_normal_stress(f_sec1['Static']['Total'])
 
 
         hs = 12
@@ -141,9 +132,8 @@ if __name__ == '__main__':
         for i in range(loads._nbeta):
             print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i]*180/np.pi, sig_r_max[i] / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
-        plt.plot(2 * np.pi / loads.w, sig_r)
-
-        plt.show()
+        #plt.plot(2 * np.pi / loads.w, sig_r)
+        #plt.show()
 
         SELECT_DOF = 1
         SELECT_AXIS = 2
@@ -198,8 +188,8 @@ if __name__ == '__main__':
             f_diff = loads.p2f('Diffraction', ifreq, idir)
             f_exc = f_fk + f_diff
 
-            print('\n')
-            tb.matprint(np.abs(nemoh.get_section_values(f_exc, loads.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
+            #print('\n')
+            #tb.matprint(np.abs(nemoh.get_section_values(f_exc, loads.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
         # np.set_printoptions(precision=3)
 
         idir = 0
@@ -224,66 +214,5 @@ if __name__ == '__main__':
             axs[2, 1].plot(w, abs(loads._fe[:, idir, 4]), 'tab:blue')
             axs[2, 1].set_title('fe pitch')
             plt.show()
-        #
-        # f = hdp.section_forces()
-        #
-        #
-        # plt.plot(2 * np.pi / hdp.w, abs(f[:, 0, 4]))
-        # plt.show()
 
-        # np.set_printoptions(precision=3)
-
-        # print(abs(sum(nemoh.p2f(hdp._p['Hydro static'], hdp.pd))) / 9.81)
-
-        #
-        f = tran_fun.section_forces([3.5, 0, 0], [1, 0, 0])
-
-        f_dyn = f['Dynamic']
-        w = 2 * np.pi / loads.w
-
-        fig, axs = plt.subplots(2, 3)
-
-        dir = 1
-        for i, dof in enumerate([1, 5]):
-            for key in f_dyn:
-                if not key is 'Total':
-                    axs[i, 0].plot(w, abs(f_dyn[key][:, dir, dof]), label=key)
-
-            axs[i, 0].legend()
-
-            y = abs(f_dyn['Total'][:, dir, dof])
-            axs[i, 1].plot(w, y, label='Total')
-            axs[i, 1].legend()
-
-            axs[i, 2].plot(w, abs(tran_fun._rao[:, dir, dof]), label='RAO')
-            axs[i, 2].axis([5, 15, 0, 0.01])
-            axs[i, 2].legend()
-            # axs[1, i].plot(w, abs(f_varying_buoyancy[:, dof]), 'tab:blue', label='Varying Buoyancy')
-            # axs[1, i].plot(w, abs(f_inertia[:, dof]), 'tab:green', label='Inertia')
-            # axs[1, i].set_title('Varying forces')
-            # axs[1, i].legend()
-
-        #plt.show()
-
-        # Calc velocity and acc (not needed yet)
-        # panel_vel = panel_pos * 1j * hdp.w(ifreq)
-        # panel_acc = panel_pos * hdp.w(ifreq)**2
-
-        # xyz = np.zeros([hdp._pd._npanel, 3])
-        # xyz[:, 2] = 1
-        # nemoh_mesh = Mesh(hdp._pd.ppoints, hdp._pd.ppanels)
-        # h = force.show_force(nemoh_mesh, hdp._pd.ppanel_centers, np.imag(panel_pos * xyz))
-        # h.show()
-
-        # print('\nSum of all parts:\t{:5.2f} tonne'.format(sum([part.mass for part in part_list]) / 1000))
-
-        # print('\nFz\t{: 7.2f} MN'.format(f_gravity[2] / 1000000))
-        # print('Mx\t{: 7.2f} MNm'.format(f_gravity[3] / 1000000))
-        # print('my\t{: 7.2f} MNm'.format(f_gravity[4] / 1000000))
-
-        # print(hdp.ma_zero)
-        # print(hdp.ma_inf)
-
-        # this_mesh = Mesh(hdp.pd.ppoints, hdp.pd.ppanels)
-        # this_mesh.show()
-    settings._report._doc.generate_pdf(clean_tex=False)
+    #settings._report._doc.generate_pdf(clean_tex=False)

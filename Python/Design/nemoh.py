@@ -582,41 +582,7 @@ class PanelData(object):
         return self._ppanels.shape[0]
 
 
-def get_section_values(forces, coordinates, section_point, section_normal, moment_ref=None):
-    # Filter forces
-    #assert (forces.ndim == 4 or forces.ndim == 2)
-    if moment_ref == None:
-        moment_ref = 'section'
-    elif not (moment_ref == 'origin' or moment_ref == 'section'):
-        print('moment_axis = {} is not an option'.format(moment_ref))
 
-    vec = coordinates - section_point
-    dot = np.dot(vec, section_normal)  # dot product i positive for coordinates on the positive side of the plane
-    index = dot >= 0
-    if 1 in index: # At least one item is on the considered side of the section surface
-        if forces.ndim == 4:  # Dynamic [freq, dir, panel, f]
-            section_forces = forces[:, :, index, :]
-            if moment_ref == 'origin':
-                section_moments = np.cross(coordinates[np.newaxis, np.newaxis, index, :],
-                                           section_forces)  # Calculate moment about origin
-            else:
-                section_moments = np.cross(vec[np.newaxis, np.newaxis, index, :],
-                                           section_forces)  # Calculate moment about section
-            # Concatenate along 4th dimension contaning [fx, fy, fz] and [mx, mz, mz]
-            # Then sum along 3rd dimension holding the panels or point mass indices
-            return np.sum(np.concatenate((section_forces, section_moments), axis=3), axis=2)
-        elif forces.ndim == 2:  # Static [panel, f]
-            section_forces = forces[index, :]
-            if moment_ref == 'origin':
-                section_moments = np.cross(coordinates[np.newaxis, np.newaxis, index, :],
-                                           section_forces)  # Calculate moment about origin
-            else:
-                section_moments = np.cross(vec[index, :], section_forces)  # Calculate moment about section
-            # Concatenate along 2nd dimension contaning [fx, fy, fz] and [mx, mz, mz]
-            # Then sum along 1st dimension holding the panels or point mass indices
-            return np.sum(np.concatenate((section_forces, section_moments), axis=1), axis=0)
-    else:
-        return np.zeros(6)
 
 
 def diffraction_problem_number(iw, ibeta, Nbeta, Nradiation):

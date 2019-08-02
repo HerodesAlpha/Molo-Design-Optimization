@@ -11,11 +11,11 @@
     ],
     "Central column diameter": 7,
     "Central column thickness": 0.04,
-    "Draught": 7,
+    "Draught": 0,
     "Gap factor": 0.8,
     "Radial": {
         "Column": {
-            "Diameter": 8.5,
+            "Diameter": 8.0,
             "Thickness": 0.04
         },
         "Flange": {
