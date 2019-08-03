@@ -9,14 +9,30 @@ import pickle
 import tool_box as tb
 
 
-
-
 class TransferFunctions(object):
-    def __init__(self, settings,loads):
-        #super().__init__(settings)
+    def __init__(self, settings, loads):
+        # super().__init__(settings)
         self._settings = settings
         self._loads = loads
-        self_env = Environment(settings)
+
+        self._h = self._settings.job_data['floater']['Radial']['Heigth']
+        self._d_rc = self._settings.job_data['floater']['Radial']['Column']['Diameter']
+        self._d_cc = self._settings.job_data['floater']['Central column diameter']
+        self._t_lf = self._settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']
+        self._t_uf = self._settings.job_data['floater']['Radial']['Flange']['Upper']['Plate']['Thickness']
+
+        self._t_lfst = self._settings.job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal'][
+            'Thickness']
+        self._h_lfst = self._settings.job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal'][
+            'Height']
+        self._t_ufst = self._settings.job_data['floater']['Radial']['Flange']['Upper']['Stiffener']['Longitudinal'][
+            'Thickness']
+        self._h_ufst = self._settings.job_data['floater']['Radial']['Flange']['Upper']['Stiffener']['Longitudinal'][
+            'Height']
+
+        self._gaf = self._settings.job_data['floater']['Gap factor']
+        self._nr = self._settings.job_data['floater']['Number of radials']
+        self._nc = self._settings.job_data['floater']['Radial']['Number of columns']
 
         # Set up RAOs
         self._rao = np.zeros([self._loads.nw, self._loads._nbeta, 6], dtype=complex)
@@ -30,20 +46,18 @@ class TransferFunctions(object):
         self._part_list = self._unit_model.get_parts_without_children()
         self._point_mass = np.asarray([part._inertias.mass_matrix_global for part in self._part_list])
 
-
         self._point_mass_centers = np.asarray([-part._inertias.reduction_point for part in self._part_list])
         self._panel_pressure_centers = self._loads._pd.ppanel_centers
 
         self._projected_panel_area = self._loads._an[np.newaxis, np.newaxis, :, :]
 
-
         # Gravity
-        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, np.newaxis] * np.asarray([0, 0, self._settings.gravity])[
-                                                                        np.newaxis, :]  # Use m33
+        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, np.newaxis] * np.asarray(
+                [0, 0, self._settings.gravity])[
+                                                                                    np.newaxis, :]  # Use m33
 
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
-
 
         # Froude-Krylof
         self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
@@ -51,11 +65,11 @@ class TransferFunctions(object):
         # Diffraction
         self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
 
-
         # Radiation
         self._panel_pressure_radiation_unit_force = self._loads._force['Radiation'].copy()  # Dont mess with original
         # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        self._panel_pressure_radiation_force_all_dof = self._panel_pressure_radiation_unit_force[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis, np.newaxis]
+        self._panel_pressure_radiation_force_all_dof = self._panel_pressure_radiation_unit_force[:, np.newaxis, :, :,
+                                                       :] * self._rao[:, :, :, np.newaxis, np.newaxis]
         self._panel_pressure_radiation_force = np.sum(self._panel_pressure_radiation_force_all_dof, axis=2)
 
         # RAO transformation matrix
@@ -77,18 +91,21 @@ class TransferFunctions(object):
         self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rtm, self._pc), axis=4)[:, :, :, 0:3]
         self._panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
         # panel_pos += self._rao[:, :, np.newaxis, 0:3]
-        self._pressures_diff_static = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :, 2]  # Change in pressure
-        self._panel_pressure_diff_static_force = -self._pressures_diff_static[:, :, :, np.newaxis] * self._projected_panel_area
+        self._pressures_diff_static = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
+                                                                                        2]  # Change in pressure
+        self._panel_pressure_diff_static_force = -self._pressures_diff_static[:, :, :,
+                                                  np.newaxis] * self._projected_panel_area
 
         # Get dynamic acceleration of part masses and calc inertia force
         # TODO: Include rotation/inertia moment from parts
         self._pmc = np.append(self._point_mass_centers, np.ones((self._point_mass_centers.shape[0], 1)), 1)
         self._pmc = self._pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
         self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rtm, self._pmc), axis=4)[:, :, :, 0:3]
-        self._dynamic_point_mass_pos -= self._point_mass_centers[np.newaxis, np.newaxis, :] # Subtract mean position
+        self._dynamic_point_mass_pos -= self._point_mass_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
         self._w2 = self._loads.w ** 2
         self._part_dynacc = self._dynamic_point_mass_pos * self._w2[:, np.newaxis, np.newaxis, np.newaxis]
-        self._point_mass_dynamic_inertia_force = -self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :, np.newaxis, 0, 0]
+        self._point_mass_dynamic_inertia_force = -self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :,
+                                                                      np.newaxis, 0, 0]
 
     def get_rao(self, idir):
         fe = self._loads._fe[:, idir, :]
@@ -112,11 +129,13 @@ class TransferFunctions(object):
 
     def get_section_index(self, section_point, section_normal):
 
-        def do_dot(coordinates):
+        def mask(coordinates):
             vec = coordinates - section_point
-            dot = np.dot(vec, section_normal)  # dot product i positive for coordinates on the positive side of the plane
+            dot = np.dot(vec,
+                         section_normal)  # dot product i positive for coordinates on the positive side of the plane
             return dot >= 0
-        return do_dot(self._point_mass_centers), do_dot(self._panel_pressure_centers)
+
+        return mask(self._point_mass_centers), mask(self._panel_pressure_centers)
 
     def get_flange_panel_index(self):
         def printv(string):
@@ -126,58 +145,56 @@ class TransferFunctions(object):
         class BreakIt(Exception):
             pass
 
-        drc = self._settings.job_data['floater']['Radial column diameter']
-        dcc = self._settings.job_data['floater']['Central column diameter']
-        gaf = self._settings.job_data['floater']['Gap factor']
-        ncol = self._settings.job_data['floater']['Number of radial columns']
+        def mask(coordinates):
+            n = coordinates.shape[0]
+            da = (1 + self._gaf) * self._d_rc
+            dtheta = 2 * np.pi / 3
+            theta = [i * dtheta for i in range(3)]
+            index_1 = np.zeros((n), dtype=bool)
+            for i in range(n):
+                found_inside = False
+                is_flange_element = False
+                xp = coordinates[i, 0]
+                yp = coordinates[i, 1]
+                xc = yc = 0
 
-        da = (1 + gaf) * drc
-        dtheta = 2 * np.pi / 3
-        theta = [i * dtheta for i in range(3)]
-        index_1 = []
-        for i in range(self._point_mass_centers.shape[0]):
-            found_inside = False
-            is_flange_element = False
-            xp = self._point_mass_centers[i, 0]
-            yp = self._point_mass_centers[i, 1]
-            xc = yc = 0
+                if coordinates[i, 2] <= np.min(
+                        coordinates[:, 2]) + 0.01:  # Flange element coordinate is at lowest position
+                    # Next, find elements not inside the cylinders
+                    try:
+                        for irad in range(3):
+                            dxc = np.cos(theta[irad]) * da
+                            dyc = np.sin(theta[irad]) * da
+                            for icol in range(self._nc):
+                                xc = dxc * (icol + 1)
+                                yc = dyc * (icol + 1)
+                                if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < self._d_rc / 2:
+                                    found_inside = True
+                                    raise BreakIt
+                    except BreakIt:
+                        pass
+                    if np.sqrt((xp) ** 2 + (yp) ** 2) < self._d_cc / 2:
+                        found_inside = True
 
-            if self._point_mass_centers[i,2] <= np.min(self._point_mass_centers[:,2]) + 0.01:  # Flange element coordinate is at lowest position
-                # Next, find elements not inside the cylinders
-                try:
-                    for irad in range(3):
-                        dxc = np.cos(theta[irad]) * da
-                        dyc = np.sin(theta[irad]) * da
-                        for icol in range(ncol):
-                            xc = dxc * (icol + 1)
-                            yc = dyc * (icol + 1)
-                            if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < drc / 2:
-                                found_inside = True
-                                raise BreakIt
-                except BreakIt:
-                    pass
-                if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2:
-                    found_inside = True
+                    if not found_inside:
+                        printv('   Is flange outside cylinders')
+                        # print(i)
+                        index_1[i] = True
 
-                if not found_inside:
-                    printv('   Is flange outside cylinders')
-                    # print(i)
-                    index_1.append(True)
-                else:
-                    index_1.append(False)
+            # Next find elements between cylinders
+            # Hardcoded first radial, first bay
+            # TODO: Make generic
+            vec_a = coordinates - [0, 0, 0]  # First bay starts at origin
+            dot_a = np.dot(vec_a, [1, 0, 0])  # dot product i positive for coordinates on the positive side of the plane
+            index_2 = dot_a > 0
 
-        # Next find elements between cylinders
-        # Hardcoded first radial, first bay
-        # TODO: Make generic
-        vec_a = self._point_mass_centers - [0, 0, 0]  # First bay starts at origin
-        dot_a = np.dot(vec_a, [1, 0, 0])  # dot product i positive for coordinates on the positive side of the plane
-        index_2 = dot_a > 0
+            vec_b = coordinates - [da, 0, 0]  # First bay ends at first radial column center
+            dot_b = np.dot(vec_b, [1, 0, 0])  # dot product i positive for coordinates on the positive side of the plane
+            index_3 = dot_b < 0  #
 
-        vec_b = self._point_mass_centers - [da, 0, 0]  # First bay ends at first radial column center
-        dot_b = np.dot(vec_b, [1, 0, 0])  # dot product i positive for coordinates on the positive side of the plane
-        index_3 = dot_b < 0  #
+            return np.logical_and(np.logical_and(index_1, index_2),index_3)  # Return union of the three indexes
 
-        return index_1 and index_2 and index_3  # Return union of the three indexes
+        return mask(self._point_mass_centers), mask(self._panel_pressure_centers)
 
     def sum_forces(self, index, forces, coordinates, moment_ref_point):
 
@@ -187,7 +204,7 @@ class TransferFunctions(object):
             if forces.ndim == 4:  # Dynamic [freq, dir, panel, f]
                 section_forces = forces[:, :, index, :]
                 section_moments = np.cross(vec[np.newaxis, np.newaxis, index, :],
-                                               section_forces)  # Calculate moment about section
+                                           section_forces)  # Calculate moment about section
                 # Concatenate along 4th dimension contaning [fx, fy, fz] and [mx, mz, mz]
                 # Then sum along 3rd dimension holding the panels or point mass indices
                 return np.sum(np.concatenate((section_forces, section_moments), axis=3), axis=2)
@@ -203,12 +220,18 @@ class TransferFunctions(object):
     def assemble_forces(self, imass, ipanel, moment_ref_point):
 
         f_gravity = self.sum_forces(imass, self._point_mass_gravity_force, self._point_mass_centers, moment_ref_point)
-        f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers, moment_ref_point)
-        f_bouyancy = self.sum_forces(ipanel, self._panel_pressure_buoyancy_force, self._panel_pressure_centers, moment_ref_point)
-        f_fk = self.sum_forces(ipanel, self._panel_pressure_froude_krylof_force, self._panel_pressure_centers, moment_ref_point)
-        f_diff = self.sum_forces(ipanel, self._panel_pressure_diffraction_force, self._panel_pressure_centers, moment_ref_point)
-        f_rad = self.sum_forces(ipanel, self._panel_pressure_radiation_force, self._panel_pressure_centers, moment_ref_point)
-        f_dz_s = self.sum_forces(ipanel, self._panel_pressure_diff_static_force, self._panel_pressure_centers, moment_ref_point)
+        f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers,
+                                    moment_ref_point)
+        f_bouyancy = self.sum_forces(ipanel, self._panel_pressure_buoyancy_force, self._panel_pressure_centers,
+                                     moment_ref_point)
+        f_fk = self.sum_forces(ipanel, self._panel_pressure_froude_krylof_force, self._panel_pressure_centers,
+                               moment_ref_point)
+        f_diff = self.sum_forces(ipanel, self._panel_pressure_diffraction_force, self._panel_pressure_centers,
+                                 moment_ref_point)
+        f_rad = self.sum_forces(ipanel, self._panel_pressure_radiation_force, self._panel_pressure_centers,
+                                moment_ref_point)
+        f_dz_s = self.sum_forces(ipanel, self._panel_pressure_diff_static_force, self._panel_pressure_centers,
+                                 moment_ref_point)
 
         force_out = dict()
         force_out['Static'] = dict()
@@ -225,7 +248,6 @@ class TransferFunctions(object):
         force_out['Dynamic']['Inertia'] = f_inertia
 
         return force_out
-
 
     def force_comp(f):
         if f.ndim == 3:
@@ -258,72 +280,74 @@ class TransferFunctions(object):
         t_ufst = fdi['Upper flange stiffener thickness']
         h_ufst = fdi['Upper flange stiffener height']
 
-
     def flange_normal_stress(self, f):
-
 
         # Get forces at section center
         # TODO: Change z to section center, now at waterline
 
-        fdi = self._settings.job_data['floater']
-        h = fdi['Radial']['Heigth']
-        d_rc = fdi['Radial']['Column']['Diameter']
-        d_cc = fdi['Central column diameter']
-        w = d_rc
-        t_lf = fdi['Radial']['Flange']['Lower']['Plate']['Thickness']
-        t_uf = fdi['Radial']['Flange']['Upper']['Plate']['Thickness']
 
-        t_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Thickness']
-        h_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
-        t_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Thickness']
-        h_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Height']
-
-        a_reinf = 2*4*t_uf*3*t_uf
-        a = w * t_uf + a_reinf
-        wz = t_uf * w ** 2 / 6  +  a_reinf * w/2
+        a_reinf = 2 * 4 * self._t_uf * 3 * self._t_uf
+        a = self._d_rc * self._t_uf + a_reinf
+        wz = self._t_uf * self._d_rc ** 2 / 6 + a_reinf * self._d_rc / 2
 
         def sig(f):
             if f.ndim == 3:
-                sig_ax = f[:, :, 0] / (2*a)
-                sig_by = f[:, :, 4] / (h*a)
+                sig_ax = f[:, :, 0] / (2 * a)
+                sig_by = f[:, :, 4] / (self._h * a)
                 sig_bz = f[:, :, 5] / (2 * wz)
             else:
-                sig_ax = f[0] / (2*a)
-                sig_by = f[4] / (h*a)
+                sig_ax = f[0] / (2 * a)
+                sig_by = f[4] / (self._h * a)
                 sig_bz = f[5] / (2 * wz)
             return sig_ax + sig_by + sig_bz
 
         return sig(f)
 
 
-class Environment():
-    def __init__(self, settings):
-        pass
+    def flange_lateral_force(self, f):
 
-    def gamma(self,hs,tp):
-        x = tp / np.sqrt(hs)
+
+        def f_lat(f):
+            if f.ndim == 3:
+                fz = f[:, :, 5]
+            else:
+                fz = f[5]
+            return fz
+
+        return f_lat(f)
+
+
+class Short_Term_Wave_Conditions():
+    def __init__(self, hs, tp):
+        self._hs = hs
+        self._tp = tp
+        self._gamma = self.gamma()
+        self._tz = self.tp2tz()
+
+    def gamma(self):
+        x = self._tp / np.sqrt(self._hs)
         if x <= 3.6:
-            return  5
+            return 5
         elif x < 5:
             return np.exp(5.75 - 1.15 * x)
         else:
-            return  1
+            return 1
 
-    def s_jonswap(self, hs, wp, w, gamma=None):
+    def s_jonswap(self, w, gamma=None):
         sig_a = 0.07
         sig_b = 0.09
         delta_sig = sig_b - sig_a
+        wp = 2 * np.pi / self._tp
 
-        tp = 2 * np.pi / wp
         if gamma == None:
-            gamma = self.gamma(hs,tp)
+            gamma = self._gamma
 
             # print('Gamma {}'.format(gamma))
 
         a_gamma = 1 - 0.287 * np.log(gamma)
 
         def spec_pm(w):
-            return (5 / 16) * (hs ** 2) * (wp ** 4) * (w ** (-5)) * np.exp(-(5 / 4) * ((w / wp) ** (-4)))
+            return (5 / 16) * (self._hs ** 2) * (wp ** 4) * (w ** (-5)) * np.exp(-(5 / 4) * ((w / wp) ** (-4)))
 
         def spec_j(w):
             def sig(w):
@@ -338,26 +362,15 @@ class Environment():
         else:
             return spec_j(w)
 
-    def tp2tz(self,tp,gamma):
-        return (0.6673 + 0.05037*gamma - 0.006230*gamma**2 + 0.0003341*gamma**3)*tp
+    def tp2tz(self):
+        return (0.6673 + 0.05037 * self._gamma - 0.006230 * self._gamma ** 2 + 0.0003341 * self._gamma ** 3) * self._tp
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def expected_largest_maximum(self, x, w, gamma=None):
+        x_r = np.abs(x ** 2) * self.s_jonswap(w, gamma)[:, np.newaxis]
+        dw = w[1] - w[0]
+        sig_r_m0 = sum(x_r) * dw
+        nz = 3 * 3600 / self._tz
+        return np.sqrt(sig_r_m0) * (np.sqrt(2 * np.log(nz)) + 0.5772 / np.sqrt(2 * np.log(nz)))
 
 
 class DNVGL_RP_C201():

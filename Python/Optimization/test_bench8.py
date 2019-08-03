@@ -18,6 +18,8 @@ from Nemoh_Frontend import nemoh_frontend as nf
 from common import SettingsClass
 from pyNemoh.structure import BaseStructure
 from loads import Sea_and_Inertia_Loads
+from meshmagick.mesh import Mesh
+import meshmagick.hydrostatics as hs
 
 if __name__ == '__main__':
     ANALYSES_ROOT = Path(r'C:\MOLO_Optimization')
@@ -26,13 +28,12 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = True
+    settings.create_model = False
     settings.calc_intact_stability = False
     settings.run_nemoh = False
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
-
 
     settings.load_cases = {  # 121, np.pi / 15, np.pi
             "num_wave_frequencies": 41,
@@ -102,38 +103,62 @@ if __name__ == '__main__':
 
         loads = Sea_and_Inertia_Loads(settings)
         tran_fun = calculations.TransferFunctions(settings, loads)
-        env = calculations.Environment(settings)
+
+
+        imass, ipanel = tran_fun.get_flange_panel_index()
+        f_part1 = tran_fun.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
+
+        mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
+        mesh.show()
+
 
 
         # Get section forces
-        section_point = [1,0,0]
-        section_normal = [1,0,0]
-        imass,ipanel = tran_fun.get_section_index(section_point, section_normal)
+        section_point = [3.5, 0, 0]
+        section_normal = [1, 0, 0]
+        imass, ipanel = tran_fun.get_section_index(section_point, section_normal)
         f_sec1 = tran_fun.assemble_forces(imass, ipanel, moment_ref_point=section_point)
 
-        imass,ipanel = tran_fun.get_flange_panel_index()
-        f_part1 = tran_fun.assemble_forces(imass, ipanel)
+        mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
+        mesh.show()
+
+
+
+
 
         sig_dyn_tot = tran_fun.flange_normal_stress(f_sec1['Dynamic']['Total'])
         sig_stat_tot = tran_fun.flange_normal_stress(f_sec1['Static']['Total'])
 
+        f_dyn_lat = tran_fun.flange_lateral_force(f_part1['Dynamic']['Total'])
+        f_stat_lat = tran_fun.flange_lateral_force(f_part1['Static']['Total'])
 
         hs = 12
         tp = 14
-        gamma = env.gamma(hs, tp)
-        sig_r = np.abs(sig_dyn_tot ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
-        dw = loads.w[1] - loads.w[0]
-        sig_r_m0 = sum(sig_r) * dw
-        tz = env.tp2tz(tp, gamma)
-        nz = 3 * 3600 / tz
-        sig_r_max = np.sqrt(sig_r_m0)*(np.sqrt(2*np.log(nz))+0.5772/np.sqrt(2*np.log(nz)))
+        # gamma = env.gamma(hs, tp)
+        # sig_r = np.abs(sig_dyn_tot ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
+        # dw = loads.w[1] - loads.w[0]
+        # sig_r_m0 = sum(sig_r) * dw
+        # tz = env.tp2tz(tp, gamma)
+        # nz = 3 * 3600 / tz
+        # sig_r_max = np.sqrt(sig_r_m0)*(np.sqrt(2*np.log(nz))+0.5772/np.sqrt(2*np.log(nz)))
 
-        print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs,tp))
+        stwc1 = calculations.Short_Term_Wave_Conditions(hs=hs, tp=tp)
+
+        print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i]*180/np.pi, sig_r_max[i] / 10 ** 6))
+            print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i] * 180 / np.pi,
+                                                              stwc1.expected_largest_maximum(sig_dyn_tot, loads.w)[
+                                                                  i] / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
-        #plt.plot(2 * np.pi / loads.w, sig_r)
-        #plt.show()
+
+        print('\nExpected largest maximum dynamic lateral force for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
+        for i in range(loads._nbeta):
+            print('\tWavedir {:5.1f} deg: {:6.1f} kN'.format(loads._beta[i] * 180 / np.pi,
+                                                             stwc1.expected_largest_maximum(f_dyn_lat, loads.w)[
+                                                                 i] / 10 ** 3))
+        print('\nStatic lateral force: {:1.1f} kN'.format(f_stat_lat / 10 ** 3))
+        # plt.plot(2 * np.pi / loads.w, sig_r)
+        # plt.show()
 
         SELECT_DOF = 1
         SELECT_AXIS = 2
@@ -167,7 +192,6 @@ if __name__ == '__main__':
 
         idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
 
-
         if True:
             print('\nEigenvalue sollution WITH added mass')
             tb.eigenvalprint(loads.m + loads.ma[ifreq, :, :], loads.k)
@@ -188,8 +212,8 @@ if __name__ == '__main__':
             f_diff = loads.p2f('Diffraction', ifreq, idir)
             f_exc = f_fk + f_diff
 
-            #print('\n')
-            #tb.matprint(np.abs(nemoh.get_section_values(f_exc, loads.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
+            # print('\n')
+            # tb.matprint(np.abs(nemoh.get_section_values(f_exc, loads.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
         # np.set_printoptions(precision=3)
 
         idir = 0
@@ -215,4 +239,4 @@ if __name__ == '__main__':
             axs[2, 1].set_title('fe pitch')
             plt.show()
 
-    #settings._report._doc.generate_pdf(clean_tex=False)
+    # settings._report._doc.generate_pdf(clean_tex=False)

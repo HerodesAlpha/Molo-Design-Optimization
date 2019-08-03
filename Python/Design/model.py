@@ -174,7 +174,7 @@ class FloaterClass(AssemblyClass, object):
         self._t_ufst = floater_data.t_ufst
         self._h_ufst = floater_data.h_ufst
 
-        self._n_strips = 10  # Number of flange strips in longitudinal direction
+        self._n_strips = 100  # Number of flange strips in longitudinal direction
 
         # self._l_radial = 0
         # self._m_rc = 0

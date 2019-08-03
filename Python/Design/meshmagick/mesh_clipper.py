@@ -24,7 +24,7 @@ class MeshClipper(object):
         False by default. If True, some messages on operations that are handled are printed.
     """
 
-    def __init__(self, source_mesh, plane=Plane(), vicinity_tol=1e-3, assert_closed_boundaries=False, verbose=False):
+    def __init__(self, source_mesh, plane=Plane(), vicinity_tol=1e-3, assert_closed_boundaries=True, verbose=False):
         self._source_mesh = source_mesh
         self._plane = plane
 

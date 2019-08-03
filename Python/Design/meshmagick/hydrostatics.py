@@ -564,7 +564,7 @@ class Hydrostatics(object):
             clipper = self.hs_data['clipper']
             clipped_mesh = clipper.clipped_mesh
         except KeyError:
-            clipper = MeshClipper(self.mesh, assert_closed_boundaries=True, verbose=False)
+            clipper = MeshClipper(self.mesh, assert_closed_boundaries=False, verbose=False)
             self.hs_data['clipper'] = clipper
             clipped_mesh = clipper.clipped_mesh
 

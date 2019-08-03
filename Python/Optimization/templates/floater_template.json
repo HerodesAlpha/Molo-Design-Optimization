@@ -13,6 +13,7 @@
     "Central column thickness": 0.04,
     "Draught": 0,
     "Gap factor": 0.8,
+    "Number of radials": 3,
     "Radial": {
         "Column": {
             "Diameter": 8.0,
