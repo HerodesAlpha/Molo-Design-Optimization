@@ -16,9 +16,11 @@ from report import DesignReport
 class PhysicalQuantities():
     # This is the only place allowed to put physical quantities
     def __init__(self):
-        self._rho_sw = 1025
-        self._gravity = -9.81  # In global coordinate system
-        self._rho_st = 7850
+        self._rho_sw = 1025         # Density of sea water
+        self._gravity = -9.81       # Gravity acceleration in global coordinate system
+        self._rho_st = 7850         # Density of steel
+        self._emod_st = 2.1e+11     # E-modulus of steel
+
 
     @property
     def rho_sw(self):
@@ -31,6 +33,14 @@ class PhysicalQuantities():
     @property
     def rho_st(self):
         return self._rho_st
+
+
+    @property
+    def emod_st(self):
+        return self._emod_st
+
+
+
 
 
 class FileIOClass(object):

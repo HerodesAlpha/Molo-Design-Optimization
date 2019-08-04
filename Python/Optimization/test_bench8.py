@@ -120,7 +120,7 @@ if __name__ == '__main__':
         f_sec1 = tran_fun.assemble_forces(imass, ipanel, moment_ref_point=section_point)
 
         mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
-        mesh.show()
+        #mesh.show()
 
 
 
@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
         idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
 
-        if True:
+        if False:
             print('\nEigenvalue sollution WITH added mass')
             tb.eigenvalprint(loads.m + loads.ma[ifreq, :, :], loads.k)
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         # --------------------------------------------------------------------------------------------------------------
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
-        if True:
+        if False:
             h = tran_fun.get_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / loads.w
