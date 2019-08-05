@@ -107,9 +107,9 @@ class AssemblyClass(ModelClass, object):
             self.inertias._point += part.inertias._point * part.mass
         self.inertias._point /= sum_mass_matrix_global[0, 0]
 
-        self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * self.mass
+        self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * sum_mass_matrix_global[0,0]
         self._inertias.cog = np.zeros(3)  # Just to be sure
-        # self.print_vector_matrix_global()
+        self.print_vector_matrix_global()
 
 
 class UnitClass(AssemblyClass, object):
@@ -132,6 +132,7 @@ class WtgClass(AssemblyClass, object):
         self._rna_data = rna_data
         #
         self._rho_st = rho_st
+
         self.parts_list.append(RNAClass(self._rna_data))
         self.parts_list.append(TowerClass(self._twr_data, self._rho_st))
         self.aggregate_inertias_from_parts(self.parts_list)
