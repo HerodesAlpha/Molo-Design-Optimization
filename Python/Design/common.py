@@ -74,7 +74,7 @@ class FileIOClass(object):
         assert (Path(self._gmsh_exe).exists())
 
         self._freecad_path = r'C:\Program Files\FreeCAD 0.18\bin'
-        assert (Path(self._freecad_path).exists())
+        # assert (Path(self._freecad_path).exists())
         sys.path.append(self._freecad_path)
 
         # else:

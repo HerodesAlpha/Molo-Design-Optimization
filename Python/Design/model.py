@@ -21,11 +21,11 @@ class ModelClass(object):
             assert (len(red_point) == 3)
             self._inertias._point = np.asarray(red_point)
 
-    def set_reduction_point(self, vector):
-        # Recursively update reduction point on myself and my children
-        assert len(vector) == 3
-        for part in self.get_all_parts():
-            part._inertias.reduction_point = vector  # Will update global mass matrix also
+    # def set_reduction_point(self, vector):
+    #     # Recursively update reduction point on myself and my children
+    #     assert len(vector) == 3
+    #     for part in self.get_all_parts():
+    #         part._inertias.reduction_point = vector  # Will update global mass matrix also
 
     def move_reduction_point(self, vector):
         # Recursively update reduction point on myself and my children
@@ -105,7 +105,7 @@ class AssemblyClass(ModelClass, object):
         self.inertias._point = np.zeros(3)
         for part in parts_list:  # Calculate reference point for this assembly
             self.inertias._point += part.inertias._point * part.mass
-            self.inertias._point /= sum_mass_matrix_global[0, 0]
+        self.inertias._point /= sum_mass_matrix_global[0, 0]
 
         self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * self.mass
         self._inertias.cog = np.zeros(3)  # Just to be sure
@@ -119,13 +119,6 @@ class UnitClass(AssemblyClass, object):
         ModelClass.__init__(self)
 
         self._models = models
-        self.__update_global__()
-        # self.print_vector_matrix_global()
-
-        # self._inertias.reduction_point = self._red_point
-        # self.__set_cog_relative_to_point__()
-
-    def __update_global__(self):
         for model in self._models:
             self.parts_list.append(model)
         self.aggregate_inertias_from_parts(self.parts_list)
@@ -139,16 +132,8 @@ class WtgClass(AssemblyClass, object):
         self._rna_data = rna_data
         #
         self._rho_st = rho_st
-        # self.parts_list = []
-        self.__update_global__()
-
-        # self.print_vector_matrix_global()
-
-    def __update_global__(self):
         self.parts_list.append(RNAClass(self._rna_data))
         self.parts_list.append(TowerClass(self._twr_data, self._rho_st))
-        # for part in self.parts_list:
-        #     print(part._inertias.inertia_matrix_global)
         self.aggregate_inertias_from_parts(self.parts_list)
 
 
@@ -174,33 +159,20 @@ class FloaterClass(AssemblyClass, object):
         self._t_ufst = floater_data.t_ufst
         self._h_ufst = floater_data.h_ufst
 
-        self._n_strips = 100  # Number of flange strips in longitudinal direction
+        self._n_strips = 200  # Number of flange strips in longitudinal direction
 
-        # self._l_radial = 0
-        # self._m_rc = 0
-        # self._m_hc = 0
-        # self._m_lf = 0
-        # self._m_uf = 0
-        # self._m_radial = 0
-        # self._m_hub = 0
-        # self._m_ballast = 0
-        # self._m_global = 0
         self._w_lf = self._dia_rc
         self._w_uf = self._dia_rc
-        # self.parts_list = []
+        self._generate_parts()
 
-        self.__update_global__()
+        self.aggregate_inertias_from_parts(self.parts_list)
 
         self.print_vector_matrix_global()
 
-        # self._inertias.reduction_point = self._red_point
-        # self.__set_cog_relative_to_point__()
 
-    def __update_global__(self):
-        self._inertias.reset()
+    def _generate_parts(self):
+        # self._inertias.reset()
 
-        # self._w_lf = self._dia_rc
-        # self._w_uf = self._dia_rc
 
         da = (1 + self._gap) * self._dia_rc
         a = da * self._nc / self._n_strips
@@ -331,8 +303,7 @@ class FloaterClass(AssemblyClass, object):
                                                     rho_bal=self._rho_bal,
                                                     red_point=rot_mat @ [xr, yr, zrc_bal]))
 
-        # Set inertias and CoG relative to bottom of tower
-        self.aggregate_inertias_from_parts(self.parts_list)
+
 
     @property
     def nc(self):

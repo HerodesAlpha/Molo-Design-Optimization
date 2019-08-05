@@ -190,6 +190,9 @@ def init_models(settings):  #
     # for part in unit_model.get_all_parts():
     #     part.print_vector_matrix_global()
     unit_model.move_reduction_point([0, 0, hs_floater.hs_data['draught']])
+
+    for part in unit_model.parts_list:
+        part.print_vector_matrix_global()
     settings.draught = hs_floater.hs_data['draught']
 
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]

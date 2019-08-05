@@ -305,7 +305,12 @@ class TransferFunctions(object):
 
 
     def flange_lateral_pressure(self, f):
-        return f/(self._d_rc *self._d_rc * self._gaf)
+        if f.ndim == 3:
+            return f[:,:,2]/(self._d_rc *self._d_rc * self._gaf)
+        else:
+            return f[2]/(self._d_rc *self._d_rc * self._gaf)
+
+
 
 
 

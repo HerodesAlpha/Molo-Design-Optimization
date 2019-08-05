@@ -28,8 +28,8 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
-    settings.calc_intact_stability = False
+    settings.create_model = True
+    settings.calc_intact_stability = True
     settings.run_nemoh = False
     settings.postprocessing = True
 
@@ -122,15 +122,11 @@ if __name__ == '__main__':
         mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
         #mesh.show()
 
-
-
-
-
         sig_dyn_tot = tran_fun.flange_normal_stress(f_sec1['Dynamic']['Total'])
         sig_stat_tot = tran_fun.flange_normal_stress(f_sec1['Static']['Total'])
 
-        f_dyn_lat = tran_fun.flange_lateral_force(f_part1['Dynamic']['Total'])
-        f_stat_lat = tran_fun.flange_lateral_force(f_part1['Static']['Total'])
+        p_dyn_lat = tran_fun.flange_lateral_pressure(f_part1['Dynamic']['Total'])
+        p_stat_lat = tran_fun.flange_lateral_pressure(f_part1['Static']['Total'])
 
         hs = 12
         tp = 14
@@ -151,12 +147,12 @@ if __name__ == '__main__':
                                                                   i] / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
 
-        print('\nExpected largest maximum dynamic lateral force for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
+        print('\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.1f} kN'.format(loads._beta[i] * 180 / np.pi,
-                                                             stwc1.expected_largest_maximum(f_dyn_lat, loads.w)[
+            print('\tWavedir {:5.1f} deg: {:6.1f} kPa'.format(loads._beta[i] * 180 / np.pi,
+                                                             stwc1.expected_largest_maximum(p_dyn_lat, loads.w)[
                                                                  i] / 10 ** 3))
-        print('\nStatic lateral force: {:1.1f} kN'.format(f_stat_lat / 10 ** 3))
+        print('\nStatic lateral force: {:1.1f} kPa'.format(p_stat_lat / 10 ** 3))
         # plt.plot(2 * np.pi / loads.w, sig_r)
         # plt.show()
 
