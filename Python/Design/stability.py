@@ -19,7 +19,7 @@ def righting_moment_curve(settings, hs_floater):
     hs_floater.verbose_off()
     # Init
     thetax = thetay = 0
-    dthetay = (np.pi / 180) / .1
+    dthetay = (np.pi / 180) / 4
     dthetax = 0
 
     ifile = 0

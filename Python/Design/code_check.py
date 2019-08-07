@@ -1,11 +1,11 @@
 import numpy as np
-
+import environmental_conditions as ec
 
 # Code check of t
 
 # Tripping of stiffener, use stiffened plate criteria?
 
-class panel():
+class Panel():
     def __init__(self, settings):
         self._settings = settings
         self._h = self._settings.job_data['floater']['Radial']['Heigth']
@@ -25,11 +25,14 @@ class panel():
             'Number of']
         self._gaf = self._settings.job_data['floater']['Gap factor']
 
-        self._l = self._d_rc*self._gaf
+        self._l = self._d_rc * self._gaf
 
-        self._a = 0
-        self._y = 0
-        self._i = 0
+        self._w_p = None
+        self._a = None
+        self._y_e = None
+        self._i = None
+        self._z_y = None
+        self._w_z = None
 
         self.init_cross_section()
 
@@ -44,27 +47,60 @@ class panel():
         t_s = self._t_lfst  # Width of stiffener
         h_s = self._h_lfst  # Height of stiffener
 
+        # Section areas
         a_p = w_p * t_s
         a_s = h_s * t_s
-        y_ = ((a_p * t_p / 2) + n_s * (a_s * (h_s / 2 + t_p))) / (a_p + n_s * a_p)
+        a_tot = a_p + n_s * a_s
+
+        # Elastic neutral axis
+        y_e = ((a_p * t_p / 2) + n_s * (a_s * (h_s / 2 + t_p))) / (a_p + n_s * a_p)
+
+        # Moment of inertia
         i_p = i(w_p, t_p)
         i_s = i(t_s, h_s)
-        i_panel = i_p + a_p * (y_ - t_p / 2)**2 + i_s + a_s * (y_ - (t_p + h_s / 2))**2
-        self._y = y_
-        self._i = i_panel
-        self._a = a_p + n_s * a_s
+        i_panel = i_p + a_p * (y_e - t_p / 2) ** 2 + i_s + a_s * (y_e - (t_p + h_s / 2)) ** 2
 
-    def utilization(self,sigma_y):
+        # Plastic section modulus about y (in plane, lateral to radial)
+        if a_p / a_tot >= 0.5:  # Is neutral axis in plate?
+            y_p = (t_p + n_s * a_s / w_p) / 2
+            z_y = a_tot * y_p / 2
+        else:  # or in stiffener
+            y_p = t_p + (a_tot / 2 - a_p) / (n_s * t_s)
+            z_y = a_tot * (t_p + h_s - y_p) / 2
+
+        # Elastic section modulus about z (vertical)
+        w_z = self._t_uf * self._d_rc ** 2 / 6
+        dw = w_p / (n_s - 1)
+        for i in range(int(n_s / 2)):  # Number of stiffeners cannot be odd
+            # Add in pairs
+            w_z += 2 * a_s * ((i + 1) * dw) ** 2
+
+        self._y_e = y_e
+        self._i = i_panel
+        self._a = a_tot
+        self._z_y = z_y
+        self._w_p = w_p
+        self._w_z = w_z
+
+    def dynamic_panel_utilization(self, sigma_y, bc, f_sec,f_part, hs, tp, freq):
         # From Ultimate Load Analysis of Marine Structures
         # Tore H. Søreide
         # Section 5.5 Beam-Columns with no torsional buckling
 
-        e = self._settings.emod_st
-        l_e = self._l # TODO: Check setting effective buckling length equal system length
-        lambda_0 = l_e/np.sqrt(self._i / self._a)
-        lambda_y = np.pi*np.sqrt(e/sigma_y)
+        nfreq=f_sec.shape[0]
+        nbeta=f_sec.shape[1]
 
-        lambda_red = lambda_0/lambda_y
+        stwc1 = ec.Short_Term_Wave_Conditions(hs, tp)
+
+        e = self._settings.emod_st
+        l = self._l
+        l_e = self._l  # TODO: Check setting effective buckling length equal system length
+        a = self._a
+        i = self._i
+
+        lambda_0 = l_e / np.sqrt(i / a)
+        lambda_y = np.pi * np.sqrt(e / sigma_y)
+        lambda_red = lambda_0 / lambda_y
 
         # Using buckling curve from EN 1993.1.1:2005 section  6.3.1.2:
         # A     section area
@@ -78,16 +114,84 @@ class panel():
                 'c' : 0.49,
                 'd' : 0.76
         }
-        curve_name='c'
+        curve_name = 'c'
         phi = 0.5 * (1 + alpha[curve_name] * (lambda_red - 0.2) + lambda_red ** 2)
         chi = 1 / (phi + np.sqrt(phi ** 2 - lambda_red ** 2))
 
-        # eq. 5.155
-        m_p = sigma_y * w_p
+        # eq. 5.147
+        kappa = chi  # Different notation between EN 1993 and Tore
+        sigma_k = sigma_y * kappa
 
-        # eq. 5.156
-        interaction_formula = p / p_k + c * m / ((1 - p / p_e) * m_p)
-        return interaction_formula
+        sigma_x = self.axial_stress(f_sec)
+        p_lat = self.lateral_pressure(f_part)
+
+        #--------------------------------------------------
+        #   Loop trough all frequencies and compute the
+        #   interaction function for each combination of
+        #   sigma_x and p_lat
+        # -------------------------------------------------
+        int_for = np.zeros([nfreq, nbeta], dtype='complex')
+        for ifreq in range(nfreq):
+            for ibeta in range(nbeta):
+                # eq. 5.153 or 5.154, also table 5.21 b) and e)
+                # Equivalent moments due to evenly distributed loads
+                q = p_lat[ifreq,ibeta] / self._w_p
+                cxm = None
+                if bc == 'fixed':
+                    cxm = 0.85 * q * l ** 2 / 16
+                elif bc == 'pinned':
+                    cxm = q * l ** 2 / 8
+                else:
+                    print('No such boundary condition: {}'.format(bc))
+                    exit()
+
+                # eq. 5.155
+                m_p = sigma_y * self._z_y
+
+                # eq. 5.156
+                p_k = sigma_k * a
+                sigma_e = np.pi ** 2 * e / lambda_0 ** 2
+                p_e = sigma_e * a
+                p = sigma_x[ifreq,ibeta] * a
+
+                int_for[ifreq,ibeta] = p / p_k + cxm / ((1 - p / p_e) * m_p)
+
+        # Now get expected max for each direction
+        int_for_max = np.zeros(nbeta, dtype='float')
+        for ibeta in range(nbeta):
+            x = int_for[:,ibeta]
+            this_max =stwc1.expected_largest_maximum(x, freq)
+            int_for_max[ibeta] = this_max
+
+        return int_for_max
+
+    def axial_stress(self, f):
+        a = self._a
+        wz = self._w_z
+        h = self._h
+
+        # Get forces at section center
+        # TODO: Change z to section center, now at waterline
+
+        def sig(f):
+            if f.ndim == 3:
+                sig_ax = f[:, :, 0] / (2 * a)
+                # Simplified, assuming neutral axis at center
+                sig_by = f[:, :, 4] / (h * a)
+                sig_bz = f[:, :, 5] / (2 * wz)
+            else:
+                sig_ax = f[0] / (2 * a)
+                sig_by = f[4] / (h * a)
+                sig_bz = f[5] / (2 * wz)
+            return sig_ax + sig_by + sig_bz
+        return sig(f)
+
+    def lateral_pressure(self, f):
+        a = self._l * self._w_p
+        if f.ndim == 3:
+            return f[:, :, 2] / a
+        else:
+            return f[2] / a
 
 
 # class EN_1993_1_1_2005():

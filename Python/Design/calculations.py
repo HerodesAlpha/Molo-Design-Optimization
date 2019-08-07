@@ -280,33 +280,7 @@ class TransferFunctions(object):
         t_ufst = fdi['Upper flange stiffener thickness']
         h_ufst = fdi['Upper flange stiffener height']
 
-    def flange_normal_stress(self, f):
 
-        # Get forces at section center
-        # TODO: Change z to section center, now at waterline
-
-        a_reinf = 2 * 4 * self._t_uf * 3 * self._t_uf
-        a = self._d_rc * self._t_uf + a_reinf
-        wz = self._t_uf * self._d_rc ** 2 / 6 + a_reinf * self._d_rc / 2
-
-        def sig(f):
-            if f.ndim == 3:
-                sig_ax = f[:, :, 0] / (2 * a)
-                sig_by = f[:, :, 4] / (self._h * a)
-                sig_bz = f[:, :, 5] / (2 * wz)
-            else:
-                sig_ax = f[0] / (2 * a)
-                sig_by = f[4] / (self._h * a)
-                sig_bz = f[5] / (2 * wz)
-            return sig_ax + sig_by + sig_bz
-
-        return sig(f)
-
-    def flange_lateral_pressure(self, f):
-        if f.ndim == 3:
-            return f[:, :, 2] / (self._d_rc * self._d_rc * self._gaf)
-        else:
-            return f[2] / (self._d_rc * self._d_rc * self._gaf)
 
 
 

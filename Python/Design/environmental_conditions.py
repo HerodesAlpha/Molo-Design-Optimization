@@ -50,7 +50,7 @@ class Short_Term_Wave_Conditions():
         return (0.6673 + 0.05037 * self._gamma - 0.006230 * self._gamma ** 2 + 0.0003341 * self._gamma ** 3) * self._tp
 
     def expected_largest_maximum(self, h, w):
-        r = np.abs(h ** 2) * self.s_jonswap(w)[:, np.newaxis]
+        r = np.abs(h**2) * self.s_jonswap(w)
         dw = w[1] - w[0]
         sig_r_m0 = sum(r) * dw
         nz = 3 * 3600 / self._tz

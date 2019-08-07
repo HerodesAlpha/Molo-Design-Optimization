@@ -20,6 +20,8 @@ from pyNemoh.structure import BaseStructure
 from loads import Sea_and_Inertia_Loads
 from meshmagick.mesh import Mesh
 import meshmagick.hydrostatics as hs
+import code_check as cc
+import environmental_conditions as ec
 
 if __name__ == '__main__':
     ANALYSES_ROOT = Path(r'C:\MOLO_Optimization')
@@ -30,7 +32,7 @@ if __name__ == '__main__':
 
     settings.create_model = True
     settings.calc_intact_stability = True
-    settings.run_nemoh = False
+    settings.run_nemoh = True
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -103,15 +105,13 @@ if __name__ == '__main__':
 
         loads = Sea_and_Inertia_Loads(settings)
         tran_fun = calculations.TransferFunctions(settings, loads)
-
+        panel_cc = cc.Panel(settings)
 
         imass, ipanel = tran_fun.get_flange_panel_index()
         f_part1 = tran_fun.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
 
-        mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
-        mesh.show()
-
-
+        # mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
+        # mesh.show()
 
         # Get section forces
         section_point = [3.5, 0, 0]
@@ -120,15 +120,15 @@ if __name__ == '__main__':
         f_sec1 = tran_fun.assemble_forces(imass, ipanel, moment_ref_point=section_point)
 
         mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
-        #mesh.show()
+        # mesh.show()
 
-        sig_dyn_tot = tran_fun.flange_normal_stress(f_sec1['Dynamic']['Total'])
-        sig_stat_tot = tran_fun.flange_normal_stress(f_sec1['Static']['Total'])
+        sig_dyn_tot = panel_cc.axial_stress(f_sec1['Dynamic']['Total'])
+        sig_stat_tot = panel_cc.axial_stress(f_sec1['Static']['Total'])
 
-        p_dyn_lat = tran_fun.flange_lateral_pressure(f_part1['Dynamic']['Total'])
-        p_stat_lat = tran_fun.flange_lateral_pressure(f_part1['Static']['Total'])
+        p_dyn_lat = panel_cc.lateral_pressure(f_part1['Dynamic']['Total'])
+        p_stat_lat = panel_cc.lateral_pressure(f_part1['Static']['Total'])
 
-        hs = 12
+        hs = 8
         tp = 14
         # gamma = env.gamma(hs, tp)
         # sig_r = np.abs(sig_dyn_tot ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
@@ -138,33 +138,27 @@ if __name__ == '__main__':
         # nz = 3 * 3600 / tz
         # sig_r_max = np.sqrt(sig_r_m0)*(np.sqrt(2*np.log(nz))+0.5772/np.sqrt(2*np.log(nz)))
 
-        stwc1 = calculations.Short_Term_Wave_Conditions(hs=hs, tp=tp)
+        stwc1 = ec.Short_Term_Wave_Conditions(hs=hs, tp=tp)
 
         print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
         for i in range(loads._nbeta):
             print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i] * 180 / np.pi,
-                                                              stwc1.expected_largest_maximum(sig_dyn_tot, loads.w)[
-                                                                  i] / 10 ** 6))
+                                                              stwc1.expected_largest_maximum(sig_dyn_tot[:,i], loads.w) / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
 
-        print('\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
+        print(
+            '\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
         for i in range(loads._nbeta):
             print('\tWavedir {:5.1f} deg: {:6.1f} kPa'.format(loads._beta[i] * 180 / np.pi,
-                                                             stwc1.expected_largest_maximum(p_dyn_lat, loads.w)[
-                                                                 i] / 10 ** 3))
+                                                              stwc1.expected_largest_maximum(p_dyn_lat[:,i], loads.w)/ 10 ** 3))
         print('\nStatic lateral force: {:1.1f} kPa'.format(p_stat_lat / 10 ** 3))
-        # plt.plot(2 * np.pi / loads.w, sig_r)
-        # plt.show()
 
-        SELECT_DOF = 1
-        SELECT_AXIS = 2
-        SELECT_FREC = 1
-
-        # print('\nSection forces')
-        # for i in range(6):
-        #     print('\tDOF{}: {:8.1f}'.format(i + 1, np.sqrt(
-        #         abs(sum(hydro.spec_response(hdp.f_sec[:, i][::3], hdp.w, hs=10, wp=2 * np.pi / 14))))))
-        # write_report(root, hdp, case_label)
+        print('\n\nUtilizations')
+        sigma_y = 235000000 / 1.15
+        bc = 'pinned'
+        dpu = panel_cc.dynamic_panel_utilization(sigma_y, bc, f_sec1['Dynamic']['Total'], f_part1['Dynamic']['Total'], hs, tp, freq=loads.w)
+        for i in range(loads._nbeta):
+            print('\tWavedir {:5.1f} deg: {:6.2f}'.format(loads._beta[i] * 180 / np.pi, dpu[i]))
 
         ifreq = 0
         idir = 0

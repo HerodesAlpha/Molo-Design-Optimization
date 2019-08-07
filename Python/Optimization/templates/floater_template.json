@@ -11,12 +11,12 @@
     ],
     "Central column diameter": 7,
     "Central column thickness": 0.04,
-    "Draught": 0,
+    "Draught": 7,
     "Gap factor": 0.8,
     "Number of radials": 3,
     "Radial": {
         "Column": {
-            "Diameter": 8.0,
+            "Diameter": 8.5,
             "Thickness": 0.04
         },
         "Flange": {
@@ -29,7 +29,7 @@
                     "Longitudinal": {
                         "Height": 0.5,
                         "Number of": 4,
-                        "Thickness": 0.05
+                        "Thickness": 0.04
                     }
                 }
             },
@@ -42,7 +42,7 @@
                     "Longitudinal": {
                         "Height": 0.5,
                         "Number of": 4,
-                        "Thickness": 0.05
+                        "Thickness": 0.04
                     }
                 }
             }
@@ -50,6 +50,6 @@
         "Heigth": 15,
         "Number of columns": 3
     },
-    "Thin panel offset": 1.0,
+    "Thin panel offset": 0.5,
     "Type": "MOLO"
 }
