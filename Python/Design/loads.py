@@ -183,9 +183,6 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 f[i, j] = -f_normal[i] * self.pd.ppanel_normals[i, j]
         return f
 
-    def f(self):
-
-        pass
 
     @property
     def w(self):

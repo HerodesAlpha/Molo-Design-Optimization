@@ -30,9 +30,9 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = True
-    settings.calc_intact_stability = True
-    settings.run_nemoh = True
+    settings.create_model = False
+    settings.calc_intact_stability = False
+    settings.run_nemoh = False
     settings.postprocessing = True
 
     h5_bs = BaseStructure()
@@ -143,22 +143,33 @@ if __name__ == '__main__':
         print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
         for i in range(loads._nbeta):
             print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i] * 180 / np.pi,
-                                                              stwc1.expected_largest_maximum(sig_dyn_tot[:,i], loads.w) / 10 ** 6))
+                                                              stwc1.expected_largest_maximum(sig_dyn_tot[:, i],
+                                                                                             loads.w) / 10 ** 6))
         print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
 
         print(
-            '\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
+                '\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs,
+                                                                                                                   tp))
         for i in range(loads._nbeta):
             print('\tWavedir {:5.1f} deg: {:6.1f} kPa'.format(loads._beta[i] * 180 / np.pi,
-                                                              stwc1.expected_largest_maximum(p_dyn_lat[:,i], loads.w)/ 10 ** 3))
+                                                              stwc1.expected_largest_maximum(p_dyn_lat[:, i],
+                                                                                             loads.w) / 10 ** 3))
         print('\nStatic lateral force: {:1.1f} kPa'.format(p_stat_lat / 10 ** 3))
 
         print('\n\nUtilizations')
+        gamma_m = 1.15
+        load_factor = 1.3
         sigma_y = 235000000 / 1.15
         bc = 'pinned'
-        dpu = panel_cc.dynamic_panel_utilization(sigma_y, bc, f_sec1['Dynamic']['Total'], f_part1['Dynamic']['Total'], hs, tp, freq=loads.w)
+        dpu = panel_cc.dynamic_panel_utilization(sigma_y, bc, f_sec1['Dynamic']['Total'], f_part1['Dynamic']['Total'],
+                                                 hs, tp, freq=loads.w, pos_y_side=True)
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.2f}'.format(loads._beta[i] * 180 / np.pi, dpu[i]))
+            print('\tWavedir {:5.1f} deg: {:6.2f}'.format(loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
+
+        dpu = panel_cc.dynamic_panel_utilization(sigma_y, bc, f_sec1['Dynamic']['Total'], f_part1['Dynamic']['Total'],
+                                                 hs, tp, freq=loads.w, pos_y_side=False)
+        for i in range(loads._nbeta):
+            print('\tWavedir {:5.1f} deg: {:6.2f}'.format(loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
 
         ifreq = 0
         idir = 0

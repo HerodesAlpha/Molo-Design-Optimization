@@ -82,10 +82,11 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-    def dynamic_panel_utilization(self, sigma_y, bc, f_sec,f_part, hs, tp, freq):
+    def dynamic_panel_utilization(self, sigma_y, bc, f_sec,f_part, hs, tp, freq, pos_y_side = None):
         # From Ultimate Load Analysis of Marine Structures
         # Tore H. Søreide
         # Section 5.5 Beam-Columns with no torsional buckling
+
 
         nfreq=f_sec.shape[0]
         nbeta=f_sec.shape[1]
@@ -122,7 +123,8 @@ class Panel():
         kappa = chi  # Different notation between EN 1993 and Tore
         sigma_k = sigma_y * kappa
 
-        sigma_x = self.axial_stress(f_sec)
+
+        sigma_x = self.axial_stress(f_sec,pos_y_side)
         p_lat = self.lateral_pressure(f_part)
 
         #--------------------------------------------------
@@ -165,7 +167,11 @@ class Panel():
 
         return int_for_max
 
-    def axial_stress(self, f):
+    def axial_stress(self, f,pos_y_side=None):
+        if pos_y_side== None:
+            pos_y_side=True
+
+        # Compression is positive
         a = self._a
         wz = self._w_z
         h = self._h
@@ -175,15 +181,18 @@ class Panel():
 
         def sig(f):
             if f.ndim == 3:
-                sig_ax = f[:, :, 0] / (2 * a)
+                sig_ax = -f[:, :, 0] / (2 * a)
                 # Simplified, assuming neutral axis at center
                 sig_by = f[:, :, 4] / (h * a)
                 sig_bz = f[:, :, 5] / (2 * wz)
             else:
-                sig_ax = f[0] / (2 * a)
+                sig_ax = -f[0] / (2 * a)
                 sig_by = f[4] / (h * a)
                 sig_bz = f[5] / (2 * wz)
-            return sig_ax + sig_by + sig_bz
+            if pos_y_side:
+                return sig_ax + sig_by + sig_bz
+            else:
+                return sig_ax + sig_by - sig_bz
         return sig(f)
 
     def lateral_pressure(self, f):
