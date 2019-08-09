@@ -152,3 +152,6 @@ def intact_stability(settings, hs_floater):
             plot.add_plot(width=NoEscape(width))
             plot.add_caption('Intact Stability')
             plt.close()
+
+
+    return r

@@ -30,8 +30,8 @@ if __name__ == '__main__':
 
     settings = SettingsClass(ANALYSES_ROOT, PARK_LABEL, WTG_LABEL)
 
-    settings.create_model = False
-    settings.calc_intact_stability = False
+    settings.create_model = True
+    settings.calc_intact_stability = True
     settings.run_nemoh = False
     settings.postprocessing = True
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         print('\n--------------------------------------------------------------------------------------------')
         print('STABILITY ANALYSIS')
         print('--------------------------------------------------------------------------------------------')
-        stability.intact_stability(settings, hs_floater)
+        area_ratio = stability.intact_stability(settings, hs_floater)
 
     if settings.create_model and settings.run_nemoh:
         print('\n--------------------------------------------------------------------------------------------')
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         p_dyn_lat = panel_cc.lateral_pressure(f_part1['Dynamic']['Total'])
         p_stat_lat = panel_cc.lateral_pressure(f_part1['Static']['Total'])
 
-        hs = 8
+        hs = 12
         tp = 14
         # gamma = env.gamma(hs, tp)
         # sig_r = np.abs(sig_dyn_tot ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
@@ -240,4 +240,4 @@ if __name__ == '__main__':
             axs[2, 1].set_title('fe pitch')
             plt.show()
 
-    # settings._report._doc.generate_pdf(clean_tex=False)
+    settings._report._doc.generate_pdf(clean_tex=False)

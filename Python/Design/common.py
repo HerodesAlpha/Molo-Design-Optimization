@@ -263,6 +263,7 @@ class SettingsClass(PhysicalQuantities, object):
         else:
             self._case_label = type
         print('\nMODEL: {}'.format(self._molo_model))
+        print('\nCASE: {}'.format(self._case_label))
 
     @property
     def floater_data(self):

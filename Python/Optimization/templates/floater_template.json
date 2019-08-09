@@ -22,14 +22,14 @@
         "Flange": {
             "Lower": {
                 "Plate": {
-                    "Thickness": 0.04,
+                    "Thickness": 0.025,
                     "Width": "NA"
                 },
                 "Stiffener": {
                     "Longitudinal": {
-                        "Height": 0.5,
+                        "Height": 0.8,
                         "Number of": 4,
-                        "Thickness": 0.04
+                        "Thickness": 0.07
                     }
                 }
             },

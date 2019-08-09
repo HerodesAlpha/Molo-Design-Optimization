@@ -71,7 +71,7 @@ class DesignReport(Document):
 
         with header.create(Foot("C")):
             today = datetime.today()
-            header.append(NoEscape(r"{\textcopyright} 2019 Eivind S{\o}nju"))
+            header.append(NoEscape(r"Copyright {\textcopyright} 2019 Verbun AS"))
 
 
         with header.create(Foot("R")):
