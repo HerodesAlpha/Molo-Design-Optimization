@@ -8,9 +8,8 @@ from design_engine import Candidate
 def create_candidate(analyses_root, park_label, wtg_label,state=None):
     if state == None:
         state = 'New'
-    c = Candidate(analyses_root, park_label, wtg_label)
-    c.settings.case_label = 'molo_model'
-    c.init_model(state='New')
+    c = Candidate(analyses_root, park_label, wtg_label, case_label_type = 'molo_model')
+    c.init_model(state='Old')
     return c
 
 if __name__ == '__main__':

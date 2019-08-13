@@ -138,7 +138,7 @@ class FileIOClass(object):
 
 
 class SettingsClass(PhysicalQuantities, object):
-    def __init__(self, analyses_root, park_label, wtg_label):
+    def __init__(self, analyses_root, park_label, wtg_label, case_label_type):
         super().__init__()
 
         self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis', 'design_basis']
@@ -151,7 +151,6 @@ class SettingsClass(PhysicalQuantities, object):
         self._analyses_root = analyses_root
         self._park_label = park_label
         self._wtg_label = wtg_label
-        self._case_label = None
 
         self._fio = None
         self._report = None
@@ -178,6 +177,15 @@ class SettingsClass(PhysicalQuantities, object):
         self._postprocessing = False
         self.set_molo_label()
 
+        if case_label_type == None:
+            self._case_label = None  # Auto numbering in FileIOClass
+        elif case_label_type == 'molo_model':
+            self._case_label = self._molo_model
+        else:
+            self._case_label = case_label_type
+        print('\nMODEL: {}'.format(self._molo_model))
+        print('\nCASE: {}'.format(self._case_label))
+
     def set_molo_label(self):
         nrc = self._job_data['floater']['Radial']['Number of columns']
         rcd = self._job_data['floater']['Radial']['Column']['Diameter']
@@ -188,6 +196,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._molo_label = '{}-{}'.format(mt,self._molo_model)
 
     def set_file_structure_and_report(self):
+
         self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
         # print(self._job_data['analysis']['simulations'])
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
@@ -253,17 +262,6 @@ class SettingsClass(PhysicalQuantities, object):
     @property
     def case_label(self):
         return self._case_label
-
-    @case_label.setter
-    def case_label(self, type=None):
-        if type == None:
-            self._case_label = None  # Auto numbering
-        elif type == 'molo_model':
-            self._case_label = self._molo_model
-        else:
-            self._case_label = type
-        print('\nMODEL: {}'.format(self._molo_model))
-        print('\nCASE: {}'.format(self._case_label))
 
     @property
     def floater_data(self):

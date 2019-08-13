@@ -20,12 +20,12 @@ from meshmagick.mesh import Mesh
 
 import code_check as cc
 import environmental_conditions as ec
-
+import json
 
 class Candidate():
-    def __init__(self, analyses_root, park_label, wtg_label):
+    def __init__(self, analyses_root, park_label, wtg_label, case_label_type):
 
-        self.settings = SettingsClass(analyses_root, park_label, wtg_label)
+        self.settings = SettingsClass(analyses_root, park_label, wtg_label, case_label_type)
         self.h5_bs = BaseStructure()
 
         # TODO: Allow for none equidistant frequencies
@@ -64,6 +64,9 @@ class Candidate():
         elif state == 'Old':
             self.unit_model = pickle.load(open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
             self.hs_floater = pickle.load(open(self.settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
+            for item in self.settings._json_list:
+                with open(self.settings.fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
+                    self.settings._job_data[item] = json.loads(f.read())
         else:
             print('init_model state is either New or Old')
             exit()
@@ -113,15 +116,23 @@ class Candidate():
 
         self.hs = 12
         self.tp = 14
-        # gamma = env.gamma(hs, tp)
-        # sig_r = np.abs(sig_dyn_tot ** 2) * env.s_jonswap(hs=hs, wp=2 * np.pi / tp, w=loads.w, gamma=gamma)[:, np.newaxis]
-        # dw = loads.w[1] - loads.w[0]
-        # sig_r_m0 = sum(sig_r) * dw
-        # tz = env.tp2tz(tp, gamma)
-        # nz = 3 * 3600 / tz
-        # sig_r_max = np.sqrt(sig_r_m0)*(np.sqrt(2*np.log(nz))+0.5772/np.sqrt(2*np.log(nz)))
+        self.tz = 10
 
-        self.stwc1 = ec.Short_Term_Wave_Conditions(hs=self.hs, tp=self.tp)
+
+        yr=50
+        self.ltwc1 = ec.Long_Term_Wave_Conditions(area=80)
+        vhs, vtp = self.ltwc1.contour_line(yr)
+
+        plt.plot( vtp , vhs, 'tab:orange')
+        plt.title('{} yr contourlines'.format(yr))
+        plt.ylabel('Hs')
+        plt.xlabel('Tz')
+        plt.show()
+
+
+
+
+        self.stwc1 = ec.Short_Term_Wave_Conditions(hs=self.hs, tz=self.tz)
 
         print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(self.hs,
                                                                                                               self.tp))
