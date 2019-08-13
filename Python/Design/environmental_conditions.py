@@ -3,7 +3,7 @@ from scipy.stats import norm, lognorm,weibull_min
 from data_tables import world_wide_distribution_parameters as wwdp
 
 
-class Short_Term_Wave_Conditions():
+class Short_Term_Wave_Conditions(object):
     def __init__(self, hs, tp=None, tz=None, gamma=None):
         self._hs = hs
         self._tp = tp
@@ -31,11 +31,11 @@ class Short_Term_Wave_Conditions():
         else:
             x = tp / np.sqrt(hs)
             if x <= 3.6:
-                return 5
+                return 5.0
             elif x < 5:
                 return np.exp(5.75 - 1.15 * x)
             else:
-                return 1
+                return 1.0
 
     def s_jonswap(self, w):
         sig_a = 0.07
@@ -53,8 +53,8 @@ class Short_Term_Wave_Conditions():
                 return sig_a if w <= wp else sig_b
 
             sig_ab = np.array(list(map(sig, w)))
-
-            return a_gamma * spec_pm(w) * self._gamma ** np.exp(-0.5 * ((w - wp) / sig_ab * wp))
+            pm=spec_pm(w)
+            return a_gamma * pm * self._gamma ** np.exp(-0.5 * ((w - wp) / sig_ab * wp))
 
         if self._gamma == 1:
             return spec_pm(w)
@@ -66,19 +66,31 @@ class Short_Term_Wave_Conditions():
                                                                                                                     hs) ** 3) * tp
 
     def tz2tp(self, tz, hs):
-        reltol = 0.01
+        reltol = 0.001
         tp = tz
         while not np.isclose(self.tp2tz(tp, hs), tz, reltol):
             tp *= 1 + reltol
         return tp
 
     def expected_largest_maximum(self, h, w):
-        r = np.abs(h ** 2) * self.s_jonswap(w)
+        s=self.s_jonswap(w)
+        r = np.abs(h ** 2) * s
         dw = w[1] - w[0]
         sig_r_m0 = sum(r) * dw
         nz = 3 * 3600 / self._tz
         return np.sqrt(sig_r_m0) * (np.sqrt(2 * np.log(nz)) + 0.5772 / np.sqrt(2 * np.log(nz)))
 
+    @property
+    def hs(self):
+        return self._hs
+
+    @property
+    def tp(self):
+        return self._tp
+
+    @property
+    def tz(self):
+        return self._tz
 
 class Long_Term_Wave_Conditions():
     def __init__(self, area):
@@ -95,7 +107,7 @@ class Long_Term_Wave_Conditions():
     def contour_line(self, return_period):  # Return period in years, statistics conditioned for 3hr storms
         pf = 1 / (return_period * 365 * 8)
         beta = norm.ppf((1 - pf), 0, 1)
-        phi = np.linspace(0, 2 * np.pi, 100, endpoint=True)
+        phi = np.linspace(-np.pi/2, np.pi/2, 40, endpoint=True)
         u1 = np.cos(phi) * beta
         u2 = np.sin(phi) * beta
 
@@ -107,4 +119,4 @@ class Long_Term_Wave_Conditions():
         sigma = 0.07 + self._b1 * np.exp(self._b2 * hs)
         tz = self.logninv(x, mu, sigma)
 
-        return hs, tz
+        return np.transpose(np.vstack((hs, tz)))

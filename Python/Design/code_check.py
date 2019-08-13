@@ -82,7 +82,7 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-    def dynamic_panel_utilization(self, sigma_y, bc, f_sec,f_part, hs, tp, freq, pos_y_side = None):
+    def dynamic_panel_utilization(self, sigma_y, bc, f_sec,f_part, stwc1, freq, pos_y_side = None):
         # From Ultimate Load Analysis of Marine Structures
         # Tore H. Søreide
         # Section 5.5 Beam-Columns with no torsional buckling
@@ -91,7 +91,7 @@ class Panel():
         nfreq=f_sec.shape[0]
         nbeta=f_sec.shape[1]
 
-        stwc1 = ec.Short_Term_Wave_Conditions(hs, tp)
+        #stwc1 = ec.Short_Term_Wave_Conditions(hs, tp)
 
         e = self._settings.emod_st
         l = self._l
@@ -162,7 +162,7 @@ class Panel():
         int_for_max = np.zeros(nbeta, dtype='float')
         for ibeta in range(nbeta):
             x = int_for[:,ibeta]
-            this_max =stwc1.expected_largest_maximum(x, freq)
+            this_max = stwc1.expected_largest_maximum(x, freq)
             int_for_max[ibeta] = this_max
 
         return int_for_max
