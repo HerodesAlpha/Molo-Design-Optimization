@@ -1,6 +1,6 @@
 from pathlib import Path
 import numpy as np
-from design_engine import Candidate
+from design_engine import Candidate, Parameter_Space
 
 
 
@@ -18,7 +18,12 @@ if __name__ == '__main__':
     analyses_root = Path(r'C:\MOLO_Optimization')
     park_label = 'site_01'
     wtg_label = 'wtg_01'
-    c1 = create_candidate(analyses_root, park_label, wtg_label,'Old')
+    p = Parameter_Space()
+    p.height = 15
+    p.ncol=3
+    p.gap=0.8
+    p.column_diameter=8
+    c1 = create_candidate(analyses_root, park_label, wtg_label,p,'Old')
     c1.settings.load_cases = {  # 121, np.pi / 15, np.pi
             "num_wave_frequencies": 41,
             "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)

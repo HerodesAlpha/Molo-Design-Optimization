@@ -16,11 +16,10 @@ from report import DesignReport
 class PhysicalQuantities():
     # This is the only place allowed to put physical quantities
     def __init__(self):
-        self._rho_sw = 1025         # Density of sea water
-        self._gravity = -9.81       # Gravity acceleration in global coordinate system
-        self._rho_st = 7850         # Density of steel
-        self._emod_st = 2.1e+11     # E-modulus of steel
-
+        self._rho_sw = 1025  # Density of sea water
+        self._gravity = -9.81  # Gravity acceleration in global coordinate system
+        self._rho_st = 7850  # Density of steel
+        self._emod_st = 2.1e+11  # E-modulus of steel
 
     @property
     def rho_sw(self):
@@ -34,13 +33,9 @@ class PhysicalQuantities():
     def rho_st(self):
         return self._rho_st
 
-
     @property
     def emod_st(self):
         return self._emod_st
-
-
-
 
 
 class FileIOClass(object):
@@ -70,7 +65,7 @@ class FileIOClass(object):
         self._templates_dir = Path(os.getcwd()).joinpath('templates')
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
-                getpass.getuser())
+            getpass.getuser())
         assert (Path(self._gmsh_exe).exists())
 
         self._freecad_path = r'C:\Program Files\FreeCAD 0.18\bin'
@@ -138,15 +133,13 @@ class FileIOClass(object):
 
 
 class SettingsClass(PhysicalQuantities, object):
-    def __init__(self, analyses_root, park_label, wtg_label, case_label_type):
+    def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):
         super().__init__()
-
-        self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis', 'design_basis']
 
         self._mesh_name = None
         self._do_equilibrate = True
 
-        self._job_data = dict()
+        self._job_data = parameter_space.job_data
 
         self._analyses_root = analyses_root
         self._park_label = park_label
@@ -155,15 +148,6 @@ class SettingsClass(PhysicalQuantities, object):
         self._fio = None
         self._report = None
 
-        # Collect template data
-        for item in self._json_list:
-            with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'r') as f:
-                self._job_data[item] = json.loads(f.read())
-
-        # Save updated template to template dir
-        for item in self._json_list:
-            with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'w') as f:
-                f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
 
         self._thin_panels = self._job_data['analysis']['simulations']['default']['calculation']['thin_panels']
         self._use_dipols = self._job_data['analysis']['simulations']['default']['calculation'][
@@ -193,7 +177,7 @@ class SettingsClass(PhysicalQuantities, object):
         rh = self._job_data['floater']['Radial']['Heigth']
         mt = self._job_data['floater']['Type']
         self._molo_model = '{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(nrc, rcd * 10, gf * 10, rh * 10)
-        self._molo_label = '{}-{}'.format(mt,self._molo_model)
+        self._molo_label = '{}-{}'.format(mt, self._molo_model)
 
     def set_file_structure_and_report(self):
 
@@ -205,16 +189,15 @@ class SettingsClass(PhysicalQuantities, object):
         print(str(self._fio.case_dir))
         self._report = DesignReport(self)
 
-
     def save_job_settings(self):
         # Save updated settings to analysis directory
-        for item in self._json_list:
+        for item in self._job_data:
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'w') as f:
                 f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
 
     def load_job_settings(self):
         # Load current settings from analysis directory
-        for item in self._json_list:
+        for item in self._job_data:
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
                 self._job_data[item] = json.loads(f.read())
 
