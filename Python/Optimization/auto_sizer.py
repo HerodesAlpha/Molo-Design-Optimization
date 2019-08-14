@@ -5,10 +5,11 @@ from design_engine import Candidate
 
 
 
-def create_candidate(analyses_root, park_label, wtg_label,state=None):
+
+def create_candidate(analyses_root, park_label, wtg_label, p,state=None):
     if state == None:
         state = 'New'
-    c = Candidate(analyses_root, park_label, wtg_label, case_label_type = 'molo_model')
+    c = Candidate(analyses_root, park_label, wtg_label, p, case_label_type = 'molo_model')
     c.init_model(state='Old')
     return c
 

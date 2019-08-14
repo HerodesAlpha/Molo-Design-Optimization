@@ -17,10 +17,13 @@ from common import SettingsClass
 from pyNemoh.structure import BaseStructure
 from loads import Sea_and_Inertia_Loads
 from meshmagick.mesh import Mesh
-
 import code_check as cc
 import environmental_conditions as ec
 import json
+
+class Parameter_Space():
+    def __init__(self):
+        pass
 
 class Candidate():
     def __init__(self, analyses_root, park_label, wtg_label, case_label_type):
@@ -96,72 +99,27 @@ class Candidate():
         self.imass, self.ipanel = self.tran_fun.get_flange_panel_index()
         self.f_part1 = self.tran_fun.assemble_forces(self.imass, self.ipanel, moment_ref_point=[0, 0, 0])
 
-        # mesh = Mesh(loads.pd.ppoints, loads.pd.ppanels[ipanel])
-        # mesh.show()
+        # Consider first radial
 
         # Get section forces
-        section_point = [3.5, 0, 0]
+        sp_x = self.settings.floater_data['Central column diameter']/2
+        sp_z = self.settings.floater_data['Radial height']/2 - self.hs_floater.hs_data['draught']
+        section_point = [sp_x, 0, sp_z] # Used for moment reference
         section_normal = [1, 0, 0]
         self.imass, self.ipanel = self.tran_fun.get_section_index(section_point, section_normal)
         self.f_sec1 = self.tran_fun.assemble_forces(self.imass, self.ipanel, moment_ref_point=section_point)
 
-        mesh = Mesh(self.loads.pd.ppoints, self.loads.pd.ppanels[self.ipanel])
-        # mesh.show()
-
-        self.sig_dyn_tot = self.panel_cc.axial_stress(self.f_sec1['Dynamic']['Total'])
-        self.sig_stat_tot = self.panel_cc.axial_stress(self.f_sec1['Static']['Total'])
-
-        p_dyn_lat = self.panel_cc.lateral_pressure(self.f_part1['Dynamic']['Total'])
-        p_stat_lat = self.panel_cc.lateral_pressure(self.f_part1['Static']['Total'])
-
-        self.hs = 12
-        self.tp = 14
-        self.tz = 10
-
-
-        yr=50
+        yr = 50
         self.ltwc1 = ec.Long_Term_Wave_Conditions(area=4)
         self.cl = self.ltwc1.contour_line(yr)
 
-        plt.plot( self.cl[:,1] , self.cl[:,0], 'tab:orange')
-        plt.title('{} yr contourlines'.format(yr))
-        plt.ylabel('Hs')
-        plt.xlabel('Tz')
-        plt.show()
-
-
-
-
         # Create list of short terms from contour line
-        self.stwc1_list =[]
-        for hs,tz in self.cl:
+        self.stwc1_list = []
+        for hs, tz in self.cl:
             self.stwc1_list.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
-
-        # self.stwc1 = ec.Short_Term_Wave_Conditions(hs=self.hs, tz=self.tz)
-
-        # print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(self.hs,
-        #                                                                                                       self.tp))
-        # for i in range(self.loads._nbeta):
-        #     print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(self.loads._beta[i] * 180 / np.pi,
-        #                                                       self.stwc1.expected_largest_maximum(
-        #                                                               self.sig_dyn_tot[:, i],
-        #                                                               self.loads.w) / 10 ** 6))
-        # print('\nStatic stress: {:1.1f} MPa'.format(self.sig_stat_tot / 10 ** 6))
-        #
-        # print(
-        #         '\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(
-        #             self.hs,
-        #             self.tp))
-        # for i in range(self.loads._nbeta):
-        #     print('\tWavedir {:5.1f} deg: {:6.1f} kPa'.format(self.loads._beta[i] * 180 / np.pi,
-        #                                                       self.stwc1.expected_largest_maximum(p_dyn_lat[:, i],
-        #                                                                                           self.loads.w) / 10 ** 3))
-        # print('\nStatic lateral force: {:1.1f} kPa'.format(p_stat_lat / 10 ** 3))
-
-
         for stwcl in self.stwc1_list:
-            print('\n\nUtilizations for Hs = {:5.2f} and Tz = {:5.2f}'.format(stwcl.hs,stwcl.tz ))
+            print('\n\nUtilizations for Hs = {:5.2f} and Tz = {:5.2f}'.format(stwcl.hs, stwcl.tz))
             gamma_m = 1.15
             load_factor = 1.3
             sigma_y = 235000000 / 1.15
@@ -178,74 +136,11 @@ class Candidate():
             for i in range(self.loads._nbeta):
                 print('\tWavedir {:5.1f} deg: {:6.2f}'.format(self.loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
 
-        ifreq = 0
-        idir = 0
-        irad = 4
-        # nprob = len(NEMOH_DIR) + sum(NEMOH_DOF)
-        # iprob = 2
-        # nfreq  = len(w)
-        # problem = (ifreq - 1) * nprob + iprob
-
-        # print('Problem: {}'.format(problem))
-        NEMOH_DOF = [1, 1, 1, 1, 1, 1]
-
-        if False:
-            # hdp.show_pressure(ifreq, idir, pressure_type='Froude-Krylof',axis=2)
-            # hdp.show_pressure(ifreq, idir, pressure_type='Diffraction', axis=2)
-            tran_fun.show_pressure(ifreq, irad, pressure_type='Radiation', axis=0)
-            pass
-
-        # print(hdp.ma[0,:,0,0])
-        # print(hdp._fe_amp[0,:,dof])
-
-        idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
-
-        if False:
-            print('\nEigenvalue sollution WITH added mass')
-            tb.eigenvalprint(loads.m + loads.ma[ifreq, :, :], loads.k)
-
-            print('\n')
-
-            print('\nRadiation damping:')
-            tb.matprint(loads.c_hyd[ifreq])
-            print('\nWater plane stiffness:')
-            tb.matprint(loads.k)
-            print('\nStatic mass [tonne]:')
-            tb.matprint(loads.m / 1000)
-            print('\nAdded mass [tonne]:')
-            tb.matprint(loads.ma[ifreq] / 1000)
-            print('\nExcitation force:')
-            tb.matprint(np.abs(loads.fe[ifreq, idir, :]))
-            f_fk = loads.p2f('Froude-Krylof', ifreq, idir)
-            f_diff = loads.p2f('Diffraction', ifreq, idir)
-            f_exc = f_fk + f_diff
-
-            # print('\n')
-            # tb.matprint(np.abs(nemoh.get_section_values(f_exc, loads.pd.ppanel_centers, [0, 0, 0], [1, 0, 0])))
-        # np.set_printoptions(precision=3)
-
-        idir = 0
-
-        # --------------------------------------------------------------------------------------------------------------
-        # PLOT RESULTS
-        # --------------------------------------------------------------------------------------------------------------
-        if False:
-            h = tran_fun.get_rao(idir)
-            fig, axs = plt.subplots(3, 2)
-            w = 2 * np.pi / loads.w
-            axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')
-            axs[0, 0].set_title('Rao heave')
-            axs[0, 1].plot(w, abs(h[:, 4]), 'tab:orange')
-            axs[0, 1].set_title('Rao pitch')
-            axs[1, 0].plot(w, loads.ma[:, 2, 2] + loads.m[2, 2], 'tab:green')
-            axs[1, 0].set_title('m+ma heave')
-            axs[1, 1].plot(w, loads.ma[:, 4, 4] + loads.m[4, 4], 'tab:green')
-            axs[1, 1].set_title('m+ma pitch')
-            axs[2, 0].plot(w, abs(loads._fe[:, idir, 2]), 'tab:blue')
-            axs[2, 0].set_title('fe heave')
-            axs[2, 1].plot(w, abs(loads._fe[:, idir, 4]), 'tab:blue')
-            axs[2, 1].set_title('fe pitch')
-            plt.show()
+        plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
+        plt.title('{} yr contourlines'.format(yr))
+        plt.ylabel('Hs')
+        plt.xlabel('Tz')
+        plt.show()
 
     def print_report(self):
         self.settings._report._doc.generate_pdf(clean_tex=False)

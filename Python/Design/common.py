@@ -206,7 +206,6 @@ class SettingsClass(PhysicalQuantities, object):
         self._report = DesignReport(self)
 
 
-
     def save_job_settings(self):
         # Save updated settings to analysis directory
         for item in self._json_list:
