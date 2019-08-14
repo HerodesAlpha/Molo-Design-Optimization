@@ -55,7 +55,6 @@ class Parameter_Space():
     def column_diameter(self, val):
         self._job_data['floater']['Radial']['Column']['Diameter'] = val
 
-
     @property
     def ncol(self):
         return self._job_data['floater']['Number of columns']
@@ -79,7 +78,6 @@ class Parameter_Space():
     @height.setter
     def height(self, val):
         self._job_data['floater']['Radial']['Heigth'] = val
-
 
     @property
     def job_data(self):
@@ -111,8 +109,10 @@ class Candidate():
             print('--------------------------------------------------------------------------------------------')
 
             self.unit_model, self.hs_floater = msu.init_models(self.settings)
-            pickle.dump(self.unit_model, open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
-            pickle.dump(self.hs_floater, open(self.settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
+            with open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'wb') as f:
+                pickle.dump(self.unit_model, f)
+            with open(self.settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb') as f:
+                pickle.dump(self.hs_floater, f)
 
             self.settings.thin_panels = []
 
@@ -135,7 +135,7 @@ class Candidate():
             print('init_model state is either New or Old')
             exit()
 
-    def run_intact_stability(self):
+    def intact_stability_ratio(self):
         print('\n--------------------------------------------------------------------------------------------')
         print('STABILITY ANALYSIS')
         print('--------------------------------------------------------------------------------------------')
@@ -152,7 +152,7 @@ class Candidate():
         nf.run(self.settings._job_data['analysis'], self.queue)
         self.ql.stop()
 
-    def run_postprocessing(self):
+    def structural_utilization(self):
         self.loads = Sea_and_Inertia_Loads(self.settings)
         self.tran_fun = calculations.TransferFunctions(self.settings, self.loads)
         self.panel_cc = cc.Panel(self.settings)
@@ -180,29 +180,33 @@ class Candidate():
         for hs, tz in self.cl:
             self.stwc1_list.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
-        for stwcl in self.stwc1_list:
-            print('\n\nUtilizations for Hs = {:5.2f} and Tz = {:5.2f}'.format(stwcl.hs, stwcl.tz))
+        dpu = np.zeros([np.shape(self.stwc1_list)[0], self.loads.nbeta, 2])
+        for istwcl, stwcl in enumerate(self.stwc1_list):
+
             gamma_m = 1.15
             load_factor = 1.3
             sigma_y = 235000000 / 1.15
+            # Check lower, inner panel
             bc = 'pinned'
-            dpu = self.panel_cc.dynamic_panel_utilization(sigma_y, bc, self.f_sec1['Dynamic']['Total'],
-                                                          self.f_part1['Dynamic']['Total'],
-                                                          stwcl, freq=self.loads.w, pos_y_side=True)
-            for i in range(self.loads._nbeta):
-                print('\tWavedir {:5.1f} deg: {:6.2f}'.format(self.loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
 
-            dpu = self.panel_cc.dynamic_panel_utilization(sigma_y, bc, self.f_sec1['Dynamic']['Total'],
-                                                          self.f_part1['Dynamic']['Total'],
-                                                          stwcl, freq=self.loads.w, pos_y_side=False)
-            for i in range(self.loads._nbeta):
-                print('\tWavedir {:5.1f} deg: {:6.2f}'.format(self.loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
+            for ibeta in range(self.loads.nbeta):
+                f_sec = self.f_sec1['Dynamic']['Total'][:, ibeta, :]
+                f_part = self.f_part1['Dynamic']['Total'][:, ibeta, :]
+                sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
+                sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
+                p_lat = self.panel_cc.lateral_pressure(f_part)
+                dpu[istwcl, ibeta, 0] = self.panel_cc.dynamic_panel_utilization(sigma_y, bc, sigma_x_p, p_lat, stwcl,
+                                                                                freq=self.loads.w)
+                dpu[istwcl, ibeta, 1] = self.panel_cc.dynamic_panel_utilization(sigma_y, bc, sigma_x_n, p_lat, stwcl,
+                                                                                freq=self.loads.w)
 
-        plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
-        plt.title('{} yr contourlines'.format(yr))
-        plt.ylabel('Hs')
-        plt.xlabel('Tz')
-        plt.show()
+        return dpu.max()
+
+        # plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
+        # plt.title('{} yr contourlines'.format(yr))
+        # plt.ylabel('Hs')
+        # plt.xlabel('Tz')
+        # plt.show()
 
     def print_report(self):
         self.settings._report._doc.generate_pdf(clean_tex=False)

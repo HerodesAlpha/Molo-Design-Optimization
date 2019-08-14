@@ -247,4 +247,8 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         return self._nw
 
 
+    @property
+    def nbeta(self):
+        return self._nbeta
+
 

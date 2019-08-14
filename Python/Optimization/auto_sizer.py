@@ -3,35 +3,38 @@ import numpy as np
 from design_engine import Candidate, Parameter_Space
 
 
-
-
-
-def create_candidate(analyses_root, park_label, wtg_label, p,state=None):
+def create_candidate(analyses_root, park_label, wtg_label, p, state=None):
     if state == None:
         state = 'New'
-    c = Candidate(analyses_root, park_label, wtg_label, p, case_label_type = 'molo_model')
-    c.init_model(state='Old')
+    c = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
+    c.init_model(state=state)
     return c
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     analyses_root = Path(r'C:\MOLO_Optimization')
     park_label = 'site_01'
     wtg_label = 'wtg_01'
     p = Parameter_Space()
     p.height = 15
-    p.ncol=3
-    p.gap=0.8
-    p.column_diameter=8
-    c1 = create_candidate(analyses_root, park_label, wtg_label,p,'Old')
-    c1.settings.load_cases = {  # 121, np.pi / 15, np.pi
-            "num_wave_frequencies": 41,
-            "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
-            "max_wave_frequencies": 2 * np.pi / 4,
-            "num_wave_directions" : 2,
-            "min_wave_directions" : 0,  # deg
-            "max_wave_directions" : 90,
-    }
-    #c1.run_intact_stability()
-    #c1.run_hydrodynamic_analysis()
-    c1.run_postprocessing()
+    p.ncol = 3
+    p.gap = 0.8
+    for d in np.arange(7.8, 8.8, 0.2, dtype=float):
+        p.column_diameter = d
+        state = 'New'
+
+        c1 = create_candidate(analyses_root, park_label, wtg_label, p, state)
+        c1.settings.load_cases = {  # 121, np.pi / 15, np.pi
+                "num_wave_frequencies": 41,
+                "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
+                "max_wave_frequencies": 2 * np.pi / 4,
+                "num_wave_directions" : 2,
+                "min_wave_directions" : 0,  # deg
+                "max_wave_directions" : 90,
+        }
+        if c1.intact_stability_ratio() >= 1.4:
+            c1.run_hydrodynamic_analysis()
+            print('Max UR: {:1.2f}'.format(c1.structural_utilization()))
+        else:
+            print('Intact stability ratio < 1.4')
+

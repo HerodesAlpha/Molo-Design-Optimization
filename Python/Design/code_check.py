@@ -82,16 +82,13 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-    def dynamic_panel_utilization(self, sigma_y, bc, f_sec,f_part, stwc1, freq, pos_y_side = None):
+    def dynamic_panel_utilization(self, sigma_y, bc, sigma_x,p_lat, stwc1, freq):
         # From Ultimate Load Analysis of Marine Structures
         # Tore H. Søreide
         # Section 5.5 Beam-Columns with no torsional buckling
 
 
-        nfreq=f_sec.shape[0]
-        nbeta=f_sec.shape[1]
-
-        #stwc1 = ec.Short_Term_Wave_Conditions(hs, tp)
+        nfreq=freq.shape[0]
 
         e = self._settings.emod_st
         l = self._l
@@ -124,48 +121,39 @@ class Panel():
         sigma_k = sigma_y * kappa
 
 
-        sigma_x = self.axial_stress(f_sec,pos_y_side)
-        p_lat = self.lateral_pressure(f_part)
-
         #--------------------------------------------------
         #   Loop trough all frequencies and compute the
         #   interaction function for each combination of
         #   sigma_x and p_lat
         # -------------------------------------------------
-        int_for = np.zeros([nfreq, nbeta], dtype='complex')
+        int_for = np.zeros(nfreq, dtype='complex')
         for ifreq in range(nfreq):
-            for ibeta in range(nbeta):
-                # eq. 5.153 or 5.154, also table 5.21 b) and e)
-                # Equivalent moments due to evenly distributed loads
-                q = p_lat[ifreq,ibeta] / self._w_p
-                cxm = None
-                if bc == 'fixed':
-                    cxm = 0.85 * q * l ** 2 / 16
-                elif bc == 'pinned':
-                    cxm = q * l ** 2 / 8
-                else:
-                    print('No such boundary condition: {}'.format(bc))
-                    exit()
 
-                # eq. 5.155
-                m_p = sigma_y * self._z_y
+            # eq. 5.153 or 5.154, also table 5.21 b) and e)
+            # Equivalent moments due to evenly distributed loads
+            q = p_lat[ifreq] / self._w_p
+            cxm = None
+            if bc == 'fixed':
+                cxm = 0.85 * q * l ** 2 / 16
+            elif bc == 'pinned':
+                cxm = q * l ** 2 / 8
+            else:
+                print('No such boundary condition: {}'.format(bc))
+                exit()
 
-                # eq. 5.156
-                p_k = sigma_k * a
-                sigma_e = np.pi ** 2 * e / lambda_0 ** 2
-                p_e = sigma_e * a
-                p = sigma_x[ifreq,ibeta] * a
+            # eq. 5.155
+            m_p = sigma_y * self._z_y
 
-                int_for[ifreq,ibeta] = p / p_k + cxm / ((1 - p / p_e) * m_p)
+            # eq. 5.156
+            p_k = sigma_k * a
+            sigma_e = np.pi ** 2 * e / lambda_0 ** 2
+            p_e = sigma_e * a
+            p = sigma_x[ifreq] * a
+
+            int_for[ifreq] = p / p_k + cxm / ((1 - p / p_e) * m_p)
 
         # Now get expected max for each direction
-        int_for_max = np.zeros(nbeta, dtype='float')
-        for ibeta in range(nbeta):
-            x = int_for[:,ibeta]
-            this_max = stwc1.expected_largest_maximum(x, freq)
-            int_for_max[ibeta] = this_max
-
-        return int_for_max
+        return stwc1.expected_largest_maximum(int_for, freq)
 
     def axial_stress(self, f,pos_y_side=None):
         if pos_y_side== None:
@@ -180,11 +168,11 @@ class Panel():
         # TODO: Change z to section center, now at waterline
 
         def sig(f):
-            if f.ndim == 3:
-                sig_ax = -f[:, :, 0] / (2 * a)
+            if f.ndim == 2:
+                sig_ax = -f[:, 0] / (2 * a)
                 # Simplified, assuming neutral axis at center
-                sig_by = f[:, :, 4] / (h * a)
-                sig_bz = f[:, :, 5] / (2 * wz)
+                sig_by = f[:, 4] / (h * a)
+                sig_bz = f[:, 5] / (2 * wz)
             else:
                 sig_ax = -f[0] / (2 * a)
                 sig_by = f[4] / (h * a)
@@ -197,8 +185,8 @@ class Panel():
 
     def lateral_pressure(self, f):
         a = self._l * self._w_p
-        if f.ndim == 3:
-            return f[:, :, 2] / a
+        if f.ndim == 2:
+            return f[:, 2] / a
         else:
             return f[2] / a
 

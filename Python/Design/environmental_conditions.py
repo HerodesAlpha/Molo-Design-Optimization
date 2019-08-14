@@ -110,7 +110,7 @@ class Long_Term_Wave_Conditions():
     def contour_line(self, return_period):  # Return period in years, statistics conditioned for 3hr storms
         pf = 1 / (return_period * 365 * 8)
         beta = norm.ppf((1 - pf), 0, 1)
-        phi = np.linspace(-np.pi / 3, np.pi / 3, 40, endpoint=True)
+        phi = np.linspace(-np.pi / 4, np.pi / 4, 40, endpoint=True)
         u1 = np.cos(phi) * beta
         u2 = np.sin(phi) * beta
 
