@@ -245,6 +245,12 @@ class SettingsClass(PhysicalQuantities, object):
     def case_label(self):
         return self._case_label
 
+
+    @property
+    def park_data(self):
+        self.load_job_settings()
+        return self._job_data['park']
+
     @property
     def floater_data(self):
         self.load_job_settings()

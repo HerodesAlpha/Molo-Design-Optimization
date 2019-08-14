@@ -1,1 +1,8 @@
-{}
+{
+    "Design Basis": {
+        "Area": 4,
+        "ULS": {
+            "Return period": 50
+        }
+    }
+}

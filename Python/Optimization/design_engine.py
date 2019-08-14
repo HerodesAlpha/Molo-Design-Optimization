@@ -170,8 +170,9 @@ class Candidate():
         self.imass, self.ipanel = self.tran_fun.get_section_index(section_point, section_normal)
         self.f_sec1 = self.tran_fun.assemble_forces(self.imass, self.ipanel, moment_ref_point=section_point)
 
-        yr = 50
-        self.ltwc1 = ec.Long_Term_Wave_Conditions(area=4)
+        yr = self.settings.park_data['Design Basis']['ULS']['Return period']
+        area = self.settings.park_data['Design Basis']['Area']
+        self.ltwc1 = ec.Long_Term_Wave_Conditions(area=area)
         self.cl = self.ltwc1.contour_line(yr)
 
         # Create list of short terms from contour line

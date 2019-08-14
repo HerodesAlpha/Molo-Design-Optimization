@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import norm, lognorm,weibull_min
+from scipy.stats import norm, lognorm, weibull_min
 from data_tables import world_wide_distribution_parameters as wwdp
 
 
@@ -53,7 +53,7 @@ class Short_Term_Wave_Conditions(object):
                 return sig_a if w <= wp else sig_b
 
             sig_ab = np.array(list(map(sig, w)))
-            pm=spec_pm(w)
+            pm = spec_pm(w)
             return a_gamma * pm * self._gamma ** np.exp(-0.5 * ((w - wp) / sig_ab * wp))
 
         if self._gamma == 1:
@@ -62,8 +62,10 @@ class Short_Term_Wave_Conditions(object):
             return spec_j(w)
 
     def tp2tz(self, tp, hs):
-        return (0.6673 + 0.05037 * self.gamma(tp, hs) - 0.006230 * self.gamma(tp, hs) ** 2 + 0.0003341 * self.gamma(tp,
-                                                                                                                    hs) ** 3) * tp
+        return (0.6673
+                + 0.05037 * self.gamma(tp, hs)
+                - 0.006230 * self.gamma(tp, hs) ** 2
+                + 0.0003341 * self.gamma(tp, hs) ** 3) * tp
 
     def tz2tp(self, tz, hs):
         reltol = 0.001
@@ -73,7 +75,7 @@ class Short_Term_Wave_Conditions(object):
         return tp
 
     def expected_largest_maximum(self, h, w):
-        s=self.s_jonswap(w)
+        s = self.s_jonswap(w)
         r = np.abs(h ** 2) * s
         dw = w[1] - w[0]
         sig_r_m0 = sum(r) * dw
@@ -92,6 +94,7 @@ class Short_Term_Wave_Conditions(object):
     def tz(self):
         return self._tz
 
+
 class Long_Term_Wave_Conditions():
     def __init__(self, area):
         self._alpha_s = wwdp[area - 1, 1]
@@ -107,13 +110,13 @@ class Long_Term_Wave_Conditions():
     def contour_line(self, return_period):  # Return period in years, statistics conditioned for 3hr storms
         pf = 1 / (return_period * 365 * 8)
         beta = norm.ppf((1 - pf), 0, 1)
-        phi = np.linspace(-np.pi/2, np.pi/2, 40, endpoint=True)
+        phi = np.linspace(-np.pi / 3, np.pi / 3, 40, endpoint=True)
         u1 = np.cos(phi) * beta
         u2 = np.sin(phi) * beta
 
         # hs = self._beta_s * (-np.log(1 - norm.cdf(u1, 0, 1))) ** (1 / self._alpha_s)
         x_hs = norm.cdf(u1, 0, 1)
-        hs = weibull_min(self._beta_s).ppf(x_hs)*self._alpha_s
+        hs = weibull_min(self._beta_s).ppf(x_hs) * self._alpha_s
         x = norm.cdf(u2, 0, 1)
         mu = 0.70 + self._a1 * hs ** self._a2
         sigma = 0.07 + self._b1 * np.exp(self._b2 * hs)
