@@ -19,10 +19,10 @@ if __name__ == '__main__':
     p.height = 15
     p.ncol = 3
     p.gap = 0.8
-    for d in np.arange(7.8, 8.8, 0.2, dtype=float):
+    for d in np.arange(8.0, 8.8, 0.2, dtype=float):
         p.column_diameter = d
-        state = 'New'
-
+        state = 'Old'
+        a = False
         c1 = create_candidate(analyses_root, park_label, wtg_label, p, state)
         c1.settings.load_cases = {  # 121, np.pi / 15, np.pi
                 "num_wave_frequencies": 41,
@@ -32,9 +32,12 @@ if __name__ == '__main__':
                 "min_wave_directions" : 0,  # deg
                 "max_wave_directions" : 90,
         }
-        if c1.intact_stability_ratio() >= 1.4:
-            c1.run_hydrodynamic_analysis()
+        if not a:
             print('Max UR: {:1.2f}'.format(c1.structural_utilization()))
         else:
-            print('Intact stability ratio < 1.4')
+            if c1.intact_stability_ratio() >= 1.4:
+                c1.run_hydrodynamic_analysis()
+                print('Max UR: {:1.2f}'.format(c1.structural_utilization()))
+            else:
+                print('Intact stability ratio < 1.4')
 
