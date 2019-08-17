@@ -1,5 +1,8 @@
 import numpy as np
 import environmental_conditions as ec
+from scipy.optimize import minimize
+from scipy.optimize import Bounds
+
 
 # Code check of t
 
@@ -82,13 +85,31 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-    def dynamic_panel_utilization(self, sigma_y, bc, sigma_x,p_lat, stwc1, freq):
+    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, stwc1, freq):
+
+        def objective_function(x):
+            x = np.zeros(3)
+            x[0] = self._t_lf  # Thickness of plate
+            x[1] = self._t_lfst = x[1]  # Width of stiffener
+            x[2] = self._h_lfst = x[2]  # Height of stiffener
+            self.init_cross_section()
+            return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, stwc1, freq) - 1
+
+        x0 = np.array([self._t_lf, self._t_lfst, self._h_lfst], dtype=float)
+        bounds = Bounds([0.02, 0.02, 0.2], [0.1, 0.1, 2])
+        res = minimize(objective_function, x0, method='trust-constr', options={'verbose': 1}, bounds=bounds)
+        self._t_lf = res.x[0]
+        self._t_lfst = res.x[1]
+        self._h_lfst = res.x[2]
+        self.init_cross_section()
+        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, stwc1, freq)
+
+    def dynamic_panel_utilization(self, sigma_y, bc, sigma_x, p_lat, stwc1, freq):
         # From Ultimate Load Analysis of Marine Structures
         # Tore H. Søreide
         # Section 5.5 Beam-Columns with no torsional buckling
 
-
-        nfreq=freq.shape[0]
+        nfreq = freq.shape[0]
 
         e = self._settings.emod_st
         l = self._l
@@ -120,8 +141,7 @@ class Panel():
         kappa = chi  # Different notation between EN 1993 and Tore
         sigma_k = sigma_y * kappa
 
-
-        #--------------------------------------------------
+        # --------------------------------------------------
         #   Loop trough all frequencies and compute the
         #   interaction function for each combination of
         #   sigma_x and p_lat
@@ -155,9 +175,9 @@ class Panel():
         # Now get expected max for each direction
         return stwc1.expected_largest_maximum(int_for, freq)
 
-    def axial_stress(self, f,pos_y_side=None):
-        if pos_y_side== None:
-            pos_y_side=True
+    def axial_stress(self, f, pos_y_side=None):
+        if pos_y_side == None:
+            pos_y_side = True
 
         # Compression is positive
         a = self._a
@@ -181,6 +201,7 @@ class Panel():
                 return sig_ax + sig_by + sig_bz
             else:
                 return sig_ax + sig_by - sig_bz
+
         return sig(f)
 
     def lateral_pressure(self, f):

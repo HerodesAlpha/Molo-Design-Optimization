@@ -167,8 +167,8 @@ class SettingsClass(PhysicalQuantities, object):
             self._case_label = self._molo_model
         else:
             self._case_label = case_label_type
-        print('\nMODEL: {}'.format(self._molo_model))
-        print('\nCASE: {}'.format(self._case_label))
+        #print('\nMODEL: {}'.format(self._molo_model))
+        #print('CASE: {}'.format(self._case_label))
 
     def set_molo_label(self):
         nrc = self._job_data['floater']['Radial']['Number of columns']
@@ -186,7 +186,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()
 
-        print(str(self._fio.case_dir))
+        #print(str(self._fio.case_dir))
         self._report = DesignReport(self)
 
     def save_job_settings(self):
@@ -206,16 +206,6 @@ class SettingsClass(PhysicalQuantities, object):
         if db_file.is_file():
             db_file.unlink()
             print('\ndb.hdf5 deleted from {}\n'.format(str(self._fio.nemoh_root)))
-
-    # @property
-    # def simulation_dir(self):
-    #     self.load_job_settings()
-    #     return self._job_data['analysis']['simulations']['sim01']['simulation_dir']
-    #
-    # @simulation_dir.setter
-    # def simulation_dir(self, val):
-    #     self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = val
-    #     self.save_job_settings()
 
     @property
     def mesh_file(self):

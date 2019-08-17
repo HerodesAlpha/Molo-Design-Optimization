@@ -83,6 +83,15 @@ class Parameter_Space():
     def job_data(self):
         return self._job_data
 
+    @property
+    def stiffener_height(self):
+        return self._job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
+
+    @stiffener_height.setter
+    def stiffener_height(self,val):
+        self._job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height'] = val
+
+
 
 class Candidate():
     def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):
@@ -141,7 +150,7 @@ class Candidate():
         print('--------------------------------------------------------------------------------------------')
         return stability.intact_stability(self.settings, self.hs_floater)
 
-    def run_hydrodynamic_analysis(self):
+    def hydrodynamic_analysis(self):
         print('\n--------------------------------------------------------------------------------------------')
         print('NEMOH ANALYSIS')
         print('--------------------------------------------------------------------------------------------')
@@ -152,7 +161,7 @@ class Candidate():
         nf.run(self.settings._job_data['analysis'], self.queue)
         self.ql.stop()
 
-    def structural_utilization(self):
+    def structural_analysis(self):
         self.loads = Sea_and_Inertia_Loads(self.settings)
         self.tran_fun = calculations.TransferFunctions(self.settings, self.loads)
         self.panel_cc = cc.Panel(self.settings)
@@ -195,12 +204,12 @@ class Candidate():
                 sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
                 sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
                 p_lat = self.panel_cc.lateral_pressure(f_part)
-                dpu[istwcl, ibeta, 0] = self.panel_cc.dynamic_panel_utilization(sigma_y, bc, sigma_x_p, p_lat, stwcl,
-                                                                                freq=self.loads.w)
-                dpu[istwcl, ibeta, 1] = self.panel_cc.dynamic_panel_utilization(sigma_y, bc, sigma_x_n, p_lat, stwcl,
-                                                                                freq=self.loads.w)
+                dpu[istwcl, ibeta, 0] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_p, p_lat, stwcl,
+                                                                            freq=self.loads.w)
+                dpu[istwcl, ibeta, 1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, stwcl,
+                                                                            freq=self.loads.w)
 
-        return dpu.max()
+        return {'Max UR':dpu.max()}
 
         # plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
         # plt.title('{} yr contourlines'.format(yr))

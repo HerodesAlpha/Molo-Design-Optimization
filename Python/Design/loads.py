@@ -33,7 +33,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             # self._sym = sym
 
             step = 0
-            sys.stdout.write("\nInit hydro:\n")
+            # sys.stdout.write("\nInit hydro:\n")
             # -------------------------------------------------------
 
             with open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), 'rb') as f:
@@ -69,22 +69,22 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)  # TODO: Get vertices and points
             self._an = self.pd.ppanel_areas[:, np.newaxis] * self.pd.ppanel_normals
             # -------------------------------------------------------
-            step += 1
-            sys.stdout.write("\t({})Get forces\n".format(step))
+            # step += 1
+            # sys.stdout.write("\t({})Get forces\n".format(step))
             self._fe = hdf5_db[h5_bs.H5_RESULTS_EXCITATION_FORCES][:]
             # -------------------------------------------------------
-            step += 1
-            sys.stdout.write("\t({})Get static mass and waterplane stiffness\n".format(step))
+            #step += 1
+            # sys.stdout.write("\t({})Get static mass and waterplane stiffness\n".format(step))
             self._m, self._k = tb.load_M_and_K(settings.fio.data_io_dir)
             # -------------------------------------------------------
-            step += 1
-            sys.stdout.write("\t({})Get added mass and damping\n".format(step))
+            # step += 1
+            # sys.stdout.write("\t({})Get added mass and damping\n".format(step))
             self._ma = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS][:] #TODO: Calc added mass inf
             self._c_hyd = hdf5_db[h5_bs.H5_RESULTS_RADIATION_DAMPING][:]
             # -------------------------------------------------------
 
-            step += 1
-            sys.stdout.write("\t({})Get pressures and forces\n".format(step))
+            # step += 1
+            # sys.stdout.write("\t({})Get pressures and forces\n".format(step))
             pressure_file = settings.fio.data_io_dir.joinpath('hydro_pressures.pkl')
             force_file = settings.fio.data_io_dir.joinpath('hydro_forces.pkl')
 
@@ -106,28 +106,28 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 self._pressure = dict()
                 self._force = dict()
 
-                sys.stdout.write("\t\tStatic buoyancy pressure\n")
+                # sys.stdout.write("\t\tStatic buoyancy pressure\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
                 assert lower_face_corrected_z_pos
                 self._pressure['Buoyancy'] = (self._rho_sw * self._gravity) * self._pd.ppanel_centers[:, 2]
 
-                sys.stdout.write("\t\tStatic buoyancy force\n")
+                # sys.stdout.write("\t\tStatic buoyancy force\n")
                 self._force['Buoyancy'] = -self._pressure['Buoyancy'][:,np.newaxis]*self._an
 
 
-                sys.stdout.write("\t\tFroude-Krylof pressure\n")
+                # sys.stdout.write("\t\tFroude-Krylof pressure\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
                 self._pressure['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
 
-                sys.stdout.write("\t\tFroude-Krylof force\n")
+                # sys.stdout.write("\t\tFroude-Krylof force\n")
                 self._force['Froude-Krylof'] = -self._pressure['Froude-Krylof'][:,:,:,np.newaxis]*self._an[np.newaxis,np.newaxis,:,:]
 
                 nemoh_pressure = hdf5_db[h5_bs.H5_RESULTS_PRESSURE][:]
 
-                sys.stdout.write("\t\tDiffraction pressure\n")
+                # sys.stdout.write("\t\tDiffraction pressure\n")
                 self._pressure['Diffraction'] = np.zeros([self._nw, self._nbeta, self._pd.npanels], dtype=complex)
 
-                sys.stdout.write("\t\tDiffraction force\n")
+                # sys.stdout.write("\t\tDiffraction force\n")
                 for iw in range(self._nw):
                     for ibeta in range(self._nbeta):
                         pn = nemoh.diffraction_problem_number(iw, ibeta, self._nbeta, self._ndof)
@@ -135,10 +135,10 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                         self._pressure['Diffraction'][iw, ibeta, :] = nemoh_pressure[pn - 1, :]
                 self._force['Diffraction'] = -self._pressure['Diffraction'][:,:,:,np.newaxis]*self._an[np.newaxis,np.newaxis,:,:]
 
-                sys.stdout.write("\t\tRadiation pressure\n")
+                # sys.stdout.write("\t\tRadiation pressure\n")
                 self._pressure['Radiation'] = np.zeros([self._nw, self._ndof, self._pd.npanels], dtype=complex)
 
-                sys.stdout.write("\t\tRadiation force\n")
+                # sys.stdout.write("\t\tRadiation force\n")
                 for iw in range(self._nw):
                     for iradiation in range(self._ndof):
                         pn = nemoh.radiation_problem_number(iw, iradiation, self._nbeta, self._ndof)
@@ -152,7 +152,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 with open(force_file, "wb") as f:
                     pickle.dump(self._force, f)
 
-            print('\n{} initialized\n'.format(self.__str__()))
+            # print('\n{} initialized\n'.format(self.__str__()))
 
     def show_pressure(self, ifreq, pressure_index, axis, pressure_type):
         # Pressure index is either force degree of freedom or wave direction

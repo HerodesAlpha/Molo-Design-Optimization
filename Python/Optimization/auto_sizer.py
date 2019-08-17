@@ -19,10 +19,10 @@ if __name__ == '__main__':
     p.height = 15
     p.ncol = 3
     p.gap = 0.8
-    for d in np.arange(8.0, 8.8, 0.2, dtype=float):
+    for d in np.arange(8.6, 8.8, 0.2, dtype=float):
         p.column_diameter = d
         state = 'Old'
-        a = False
+
         c1 = create_candidate(analyses_root, park_label, wtg_label, p, state)
         c1.settings.load_cases = {  # 121, np.pi / 15, np.pi
                 "num_wave_frequencies": 41,
@@ -32,12 +32,19 @@ if __name__ == '__main__':
                 "min_wave_directions" : 0,  # deg
                 "max_wave_directions" : 90,
         }
-        if not a:
-            print('Max UR: {:1.2f}'.format(c1.structural_utilization()))
+        if state == 'Old':
+            ur = c1.structural_analysis()['Max UR']
+            # while ur > 1:
+                # p.stiffener_height *= 1.1
+                # c1 = create_candidate(analyses_root, park_label, wtg_label, p, state)
+                # ur = c1.structural_analysis()['Max UR']
+                # print('Max UR: {:1.2f}'.format(ur))
+            print('Required stiffener height is : {:1.2f}'.format(p.stiffener_height))
         else:
             if c1.intact_stability_ratio() >= 1.4:
-                c1.run_hydrodynamic_analysis()
-                print('Max UR: {:1.2f}'.format(c1.structural_utilization()))
+                c1.hydrodynamic_analysis()
+                results = c1.structural_analysis()
+                print('Max UR: {:1.2f}'.format(results['Max UR']))
             else:
                 print('Intact stability ratio < 1.4')
 
