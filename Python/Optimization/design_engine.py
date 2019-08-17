@@ -209,7 +209,7 @@ class Candidate():
                 dpu[istwcl, ibeta, 1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, stwcl,
                                                                             freq=self.loads.w)
 
-        return {'Max UR':dpu.max()}
+        return {'Max UR':dpu.max(), 'panel_cc': self.panel_cc}
 
         # plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
         # plt.title('{} yr contourlines'.format(yr))

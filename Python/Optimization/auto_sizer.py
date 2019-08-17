@@ -33,13 +33,16 @@ if __name__ == '__main__':
                 "max_wave_directions" : 90,
         }
         if state == 'Old':
-            ur = c1.structural_analysis()['Max UR']
+            res = c1.structural_analysis()
             # while ur > 1:
                 # p.stiffener_height *= 1.1
                 # c1 = create_candidate(analyses_root, park_label, wtg_label, p, state)
                 # ur = c1.structural_analysis()['Max UR']
                 # print('Max UR: {:1.2f}'.format(ur))
-            print('Required stiffener height is : {:1.2f}'.format(p.stiffener_height))
+            print('Max UR is : {:1.2f}'.format(res['Max UR']))
+            print(res['panel_cc']._h_lfst)
+            print(res['panel_cc']._t_lfst)
+
         else:
             if c1.intact_stability_ratio() >= 1.4:
                 c1.hydrodynamic_analysis()
