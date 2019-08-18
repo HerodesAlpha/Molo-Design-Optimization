@@ -185,29 +185,28 @@ class Candidate():
         self.cl = self.ltwc1.contour_line(yr)
 
         # Create list of short terms from contour line
-        self.stwc1_list = []
+        self.contourline = []
         for hs, tz in self.cl:
-            self.stwc1_list.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
+            self.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
-        dpu = np.zeros([np.shape(self.stwc1_list)[0], self.loads.nbeta, 2])
-        for istwcl, stwcl in enumerate(self.stwc1_list):
+        dpu = np.zeros([self.loads.nbeta, 2],dtype=float)
 
-            gamma_m = 1.15
-            load_factor = 1.3
-            sigma_y = 235000000 / 1.15
-            # Check lower, inner panel
-            bc = 'pinned'
+        gamma_m = 1.15
+        load_factor = 1.3
+        sigma_y = 235000000 /gamma_m
+        # Check lower, inner panel
+        bc = 'pinned'
 
-            for ibeta in range(self.loads.nbeta):
-                f_sec = self.f_sec1['Dynamic']['Total'][:, ibeta, :]
-                f_part = self.f_part1['Dynamic']['Total'][:, ibeta, :]
-                sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
-                sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
-                p_lat = self.panel_cc.lateral_pressure(f_part)
-                dpu[istwcl, ibeta, 0] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_p, p_lat, stwcl,
-                                                                            freq=self.loads.w)
-                dpu[istwcl, ibeta, 1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, stwcl,
-                                                                            freq=self.loads.w)
+        for ibeta in range(self.loads.nbeta):
+            f_sec = self.f_sec1['Dynamic']['Total'][:, ibeta, :]
+            f_part = self.f_part1['Dynamic']['Total'][:, ibeta, :]
+            sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
+            sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
+            p_lat = self.panel_cc.lateral_pressure(f_part)
+            dpu[ibeta, 0] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_p, p_lat, self.contourline,
+                                                                        freq=self.loads.w)
+            dpu[ibeta, 1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, self.contourline,
+                                                                        freq=self.loads.w)
 
         return {'Max UR':dpu.max(), 'panel_cc': self.panel_cc}
 

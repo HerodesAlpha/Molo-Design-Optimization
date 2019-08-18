@@ -1,7 +1,8 @@
 from pathlib import Path
 import numpy as np
 from design_engine import Candidate, Parameter_Space
-
+import sys
+import warnings
 
 def create_candidate(analyses_root, park_label, wtg_label, p, state=None):
     if state == None:
@@ -12,6 +13,10 @@ def create_candidate(analyses_root, park_label, wtg_label, p, state=None):
 
 
 if __name__ == '__main__':
+
+    if not sys.warnoptions:
+        warnings.simplefilter("ignore")
+
     analyses_root = Path(r'C:\MOLO_Optimization')
     park_label = 'site_01'
     wtg_label = 'wtg_01'
@@ -39,9 +44,10 @@ if __name__ == '__main__':
                 # c1 = create_candidate(analyses_root, park_label, wtg_label, p, state)
                 # ur = c1.structural_analysis()['Max UR']
                 # print('Max UR: {:1.2f}'.format(ur))
-            print('Max UR is : {:1.2f}'.format(res['Max UR']))
-            print(res['panel_cc']._h_lfst)
-            print(res['panel_cc']._t_lfst)
+            print('\nMax UR is : {:1.2f}'.format(res['Max UR']))
+            print('Height of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._h_lfst))
+            print('Thickness of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._t_lfst))
+
 
         else:
             if c1.intact_stability_ratio() >= 1.4:
