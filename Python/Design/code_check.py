@@ -87,7 +87,7 @@ class Panel():
         self._w_z = w_z
 
 
-    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
+    def hold_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
 
         try:
             for self._t_lf in np.arange(0,0.01,0.001):
@@ -105,27 +105,28 @@ class Panel():
         return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq)
 
 
-    # def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
-    #
-    #     def objective_function(x):
-    #         #x = np.zeros(3)
-    #         print('{x[0]: 8.5f} {x[1]: 8.5f} {x[2]: 8.5f}'.format(x=x))
-    #         self._t_lf=x[0]  # Thickness of plate
-    #         self._t_lfst=x[1]  # Width of stiffener
-    #         self._h_lfst=x[2]  # Height of stiffener
-    #         self.init_cross_section()
-    #         return np.abs(self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq) - 1)
-    #
-    #     x0 = np.array([self._t_lf, self._t_lfst, self._h_lfst], dtype=float)
-    #     x0 = np.array([0.02, 0.02, 0.2], dtype=float)*1.1
-    #     bounds = Bounds([0.02, 0.02, 0.2], [0.1, 0.1, 2])
-    #     res = minimize(objective_function, x0, method='trust-constr', options={'verbose': 0}, bounds=bounds)
-    #     self._t_lf = res.x[0]
-    #     self._t_lfst = res.x[1]
-    #     self._h_lfst = res.x[2]
-    #     self.init_cross_section()
-    #
-    #     return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq)
+    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
+        def objective_function(x):
+            #x = np.zeros(3)
+
+            self._t_lf=x[0]  # Thickness of plate
+            self._t_lfst=x[1]  # Width of stiffener
+            self._h_lfst=x[2]  # Height of stiffener
+            self.init_cross_section()
+            y = np.abs(self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq) - 1)
+            #print('{x[0]: 8.5f} {x[1]: 8.5f} {x[2]: 8.5f} {y: 8.5f}'.format(x=x,y = y))
+            return y
+        x0 = np.array([self._t_lf, self._t_lfst, self._h_lfst], dtype=float)
+        x0 = np.array([0.02, 0.02, 0.2], dtype=float)
+        bounds = Bounds([0.02, 0.02, 0.2], [0.1, 0.1, 6])
+        res = minimize(objective_function, x0, method='tnc', options={'gtol': 1e-2}, bounds=bounds)
+        print(res)
+        self._t_lf = res.x[0]
+        self._t_lfst = res.x[1]
+        self._h_lfst = res.x[2]
+        self.init_cross_section()
+
+        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq)
 
     def dynamic_panel_utilization(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
         # From Ultimate Load Analysis of Marine Structures

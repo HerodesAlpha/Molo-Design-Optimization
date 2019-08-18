@@ -135,8 +135,10 @@ class Candidate():
             print('')
             tb.eigenvalprint(self.m, self.k)
         elif state == 'Old':
-            self.unit_model = pickle.load(open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
-            self.hs_floater = pickle.load(open(self.settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
+            with open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
+                self.unit_model = pickle.load(f)
+            with open(self.settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb') as f:
+                self.hs_floater = pickle.load(f)
             for item in self.settings._job_data:
                 with open(self.settings.fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
                     self.settings._job_data[item] = json.loads(f.read())

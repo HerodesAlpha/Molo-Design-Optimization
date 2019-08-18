@@ -15,7 +15,7 @@ def create_candidate(analyses_root, park_label, wtg_label, p, state=None):
 if __name__ == '__main__':
 
     if not sys.warnoptions:
-        warnings.simplefilter("ignore")
+        warnings.simplefilter("default")
 
     analyses_root = Path(r'C:\MOLO_Optimization')
     park_label = 'site_01'
@@ -46,7 +46,8 @@ if __name__ == '__main__':
                 # print('Max UR: {:1.2f}'.format(ur))
             print('\nMax UR is : {:1.2f}'.format(res['Max UR']))
             print('Height of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._h_lfst))
-            print('Thickness of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._t_lfst))
+            print('Thickness of lower flange : {:1.2f}'.format(res['panel_cc']._t_lfst))
+            print('Thickness of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._t_lf))
 
 
         else:
