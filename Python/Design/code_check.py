@@ -119,6 +119,7 @@ class Panel():
         x0 = np.array([self._t_lf, self._t_lfst, self._h_lfst], dtype=float)
         x0 = np.array([0.02, 0.02, 0.2], dtype=float)
         bounds = Bounds([0.02, 0.02, 0.2], [0.1, 0.1, 6])
+
         res = minimize(objective_function, x0, method='tnc', options={'gtol': 1e-2}, bounds=bounds)
         print(res)
         self._t_lf = res.x[0]
