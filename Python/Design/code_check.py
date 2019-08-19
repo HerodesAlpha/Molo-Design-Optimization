@@ -2,7 +2,7 @@ import numpy as np
 import environmental_conditions as ec
 from scipy.optimize import minimize
 from scipy.optimize import Bounds
-
+from scipy.optimize import broyden1,broyden2, newton_krylov
 
 class BreakIt(Exception): pass
 
@@ -105,7 +105,7 @@ class Panel():
 
         return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
-    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+    def hold2_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         def objective_function(x):
             # x = np.zeros(3)
 
@@ -129,6 +129,34 @@ class Panel():
         self.init_cross_section()
 
         return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
+
+    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+        ones=np.ones(3,dtype=float)
+
+        def objective_function(x):
+            # x = np.zeros(3)
+
+            self._t_lf = x[0]  # Thickness of plate
+            self._t_lfst = x[1]  # Width of stiffener
+            self._h_lfst = x[2]  # Height of stiffener
+            self.init_cross_section()
+            y = np.abs(self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir) - 1)
+            # print('{x[0]: 8.5f} {x[1]: 8.5f} {x[2]: 8.5f} {y: 8.5f}'.format(x=x,y = y))
+            return [0.1*y,0.5*y,y]
+
+        x0 = np.array([self._t_lf, self._t_lfst, self._h_lfst], dtype=float)
+        x0 = np.array([0.02, 0.02, 0.2], dtype=float)
+        bounds = Bounds([0.02, 0.02, 0.2], [0.1, 0.1, 6])
+
+        res = newton_krylov(objective_function,xin=[0.02, 0.02, 0.2])
+        #print(res)
+        self._t_lf = res[0]
+        self._t_lfst = res[1]
+        self._h_lfst = res[2]
+        self.init_cross_section()
+
+        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
+
 
     def dynamic_panel_utilization(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         # From Ultimate Load Analysis of Marine Structures
