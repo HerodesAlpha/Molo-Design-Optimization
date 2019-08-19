@@ -3,7 +3,9 @@ import environmental_conditions as ec
 from scipy.optimize import minimize
 from scipy.optimize import Bounds
 
+
 class BreakIt(Exception): pass
+
 
 # Code check of t
 
@@ -86,15 +88,14 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-
-    def hold_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
+    def hold_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
 
         try:
-            for self._t_lf in np.arange(0,0.01,0.001):
-                for self._t_lfst in np.arange(0,0.01,0.001):
-                    for self._h_lfst in np.arange(0,2.0,0.01):
+            for self._t_lf in np.arange(0, 0.01, 0.001):
+                for self._t_lfst in np.arange(0, 0.01, 0.001):
+                    for self._h_lfst in np.arange(0, 2.0, 0.01):
                         self.init_cross_section()
-                        if self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq) < 1:
+                        if self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir) < 1:
                             print(self._t_lf)
                             print(self._t_lfst)
                             print(self._h_lfst)
@@ -102,36 +103,36 @@ class Panel():
         except BreakIt:
             pass
 
-        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq)
+        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
-
-    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
+    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         def objective_function(x):
-            #x = np.zeros(3)
+            # x = np.zeros(3)
 
-            self._t_lf=x[0]  # Thickness of plate
-            self._t_lfst=x[1]  # Width of stiffener
-            self._h_lfst=x[2]  # Height of stiffener
+            self._t_lf = x[0]  # Thickness of plate
+            self._t_lfst = x[1]  # Width of stiffener
+            self._h_lfst = x[2]  # Height of stiffener
             self.init_cross_section()
-            y = np.abs(self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq) - 1)
-            #print('{x[0]: 8.5f} {x[1]: 8.5f} {x[2]: 8.5f} {y: 8.5f}'.format(x=x,y = y))
+            y = np.abs(self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir) - 1)
+            # print('{x[0]: 8.5f} {x[1]: 8.5f} {x[2]: 8.5f} {y: 8.5f}'.format(x=x,y = y))
             return y
+
         x0 = np.array([self._t_lf, self._t_lfst, self._h_lfst], dtype=float)
         x0 = np.array([0.02, 0.02, 0.2], dtype=float)
         bounds = Bounds([0.02, 0.02, 0.2], [0.1, 0.1, 6])
 
         res = minimize(objective_function, x0, method='tnc', options={'gtol': 1e-2}, bounds=bounds)
-        print(res)
+        #print(res)
         self._t_lf = res.x[0]
         self._t_lfst = res.x[1]
         self._h_lfst = res.x[2]
         self.init_cross_section()
 
-        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq)
+        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
-    def dynamic_panel_utilization(self, sigma_y, bc, sigma_x, p_lat, contourline, freq):
+    def dynamic_panel_utilization(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         # From Ultimate Load Analysis of Marine Structures
-        # Tore H. Søreide
+        # Tore H. Sï¿½reide
         # Section 5.5 Beam-Columns with no torsional buckling
 
         nfreq = freq.shape[0]
@@ -152,11 +153,11 @@ class Panel():
         # n_cr  elastic critical force for the relevant buckling mode based on the gross sectional properties
         # alpha imperfection factor
         alpha = {
-                'a0': 0.13,
-                'a' : 0.21,
-                'b' : 0.34,
-                'c' : 0.49,
-                'd' : 0.76
+            'a0': 0.13,
+            'a': 0.21,
+            'b': 0.34,
+            'c': 0.49,
+            'd': 0.76
         }
         curve_name = 'c'
         phi = 0.5 * (1 + alpha[curve_name] * (lambda_red - 0.2) + lambda_red ** 2)
@@ -171,39 +172,42 @@ class Panel():
         #   interaction function for each combination of
         #   sigma_x and p_lat
         # -------------------------------------------------
-        int_for = np.zeros(nfreq, dtype='complex')
-        for ifreq in range(nfreq):
+        int_for = np.zeros([nfreq, nwdir], dtype='complex')
+        elm_contour =np.zeros([nwdir,len(contourline)], dtype='float')
+        for iwdir in range(nwdir):
+            for ifreq in range(nfreq):
 
-            # eq. 5.153 or 5.154, also table 5.21 b) and e)
-            # Equivalent moments due to evenly distributed loads
-            q = p_lat[ifreq] / self._w_p
-            cxm = None
-            if bc == 'fixed':
-                cxm = 0.85 * q * l ** 2 / 16
-            elif bc == 'pinned':
-                cxm = q * l ** 2 / 8
-            else:
-                print('No such boundary condition: {}'.format(bc))
-                exit()
 
-            # eq. 5.155
-            m_p = sigma_y * self._z_y
+                # eq. 5.153 or 5.154, also table 5.21 b) and e)
+                # Equivalent moments due to evenly distributed loads
+                q = p_lat[ifreq, iwdir] / self._w_p
+                cxm = None
+                if bc == 'fixed':
+                    cxm = 0.85 * q * l ** 2 / 16
+                elif bc == 'pinned':
+                    cxm = q * l ** 2 / 8
+                else:
+                    print('No such boundary condition: {}'.format(bc))
+                    exit()
 
-            # eq. 5.156
-            p_k = sigma_k * a
-            sigma_e = np.pi ** 2 * e / lambda_0 ** 2
-            p_e = sigma_e * a
-            p = sigma_x[ifreq] * a
+                # eq. 5.155
+                m_p = sigma_y * self._z_y
 
-            int_for[ifreq] = p / p_k + cxm / ((1 - p / p_e) * m_p)
+                # eq. 5.156
+                p_k = sigma_k * a
+                sigma_e = np.pi ** 2 * e / lambda_0 ** 2
+                p_e = sigma_e * a
+                p = sigma_x[ifreq, iwdir] * a
 
-        # Now get expected max for each direction
-        x=[stwcl.expected_largest_maximum(int_for, freq) for stwcl in contourline]
+                int_for[ifreq,iwdir] = p / p_k + cxm / ((1 - p / p_e) * m_p)
 
-        #for item in x:
+            # Now get expected max for each direction
+            elm_contour[iwdir,:] = np.array([stwcl.expected_largest_maximum(int_for[:,iwdir], freq) for stwcl in contourline])
+
+        # for item in x:
         #    print(item)
 
-        return max(x)
+        return elm_contour.flatten().max()
 
     def axial_stress(self, f, pos_y_side=None):
         if pos_y_side == None:
@@ -218,11 +222,11 @@ class Panel():
         # TODO: Change z to section center, now at waterline
 
         def sig(f):
-            if f.ndim == 2:
-                sig_ax = -f[:, 0] / (2 * a)
+            if f.ndim == 3:
+                sig_ax = -f[:, :, 0] / (2 * a)
                 # Simplified, assuming neutral axis at center
-                sig_by = f[:, 4] / (h * a)
-                sig_bz = f[:, 5] / (2 * wz)
+                sig_by = f[:, :, 4] / (h * a)
+                sig_bz = f[:, :, 5] / (2 * wz)
             else:
                 sig_ax = -f[0] / (2 * a)
                 sig_by = f[4] / (h * a)
@@ -236,8 +240,8 @@ class Panel():
 
     def lateral_pressure(self, f):
         a = self._l * self._w_p
-        if f.ndim == 2:
-            return f[:, 2] / a
+        if f.ndim == 3:
+            return f[:, :, 2] / a
         else:
             return f[2] / a
 

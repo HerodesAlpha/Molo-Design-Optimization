@@ -233,8 +233,11 @@ def init_models(settings):  #
     mesh_dat = settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
     settings.mesh_file = str(mesh_dat)
 
-    pickle.dump(nemoh_mesh.vertices, open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), "wb"))
-    pickle.dump(nemoh_mesh.faces, open(settings.fio.data_io_dir.joinpath('nemoh_mesh_faces.pkl'), "wb"))
+    with open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), "wb") as f:
+        pickle.dump(nemoh_mesh.vertices, f)
+
+    with open(settings.fio.data_io_dir.joinpath('nemoh_mesh_faces.pkl'), "wb") as f:
+        pickle.dump(nemoh_mesh.faces, f)
 
     mmio.write_MAR(settings.mesh_file, nemoh_mesh.vertices, nemoh_mesh.faces)
 

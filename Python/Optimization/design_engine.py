@@ -156,7 +156,7 @@ class Candidate():
         print('\n--------------------------------------------------------------------------------------------')
         print('NEMOH ANALYSIS')
         print('--------------------------------------------------------------------------------------------')
-        self.settings.remove_old_db()
+        self.remove_old_db()
         self.queue = multiprocessing.Queue(-1)
         self.ql = QueueListener(self.queue, *logging.getLogger().handlers)
         self.ql.start()
@@ -191,7 +191,7 @@ class Candidate():
         for hs, tz in self.cl:
             self.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
-        dpu = np.zeros([self.loads.nbeta, 2],dtype=float)
+        dpu = np.zeros([2],dtype=float)
 
         gamma_m = 1.15
         load_factor = 1.3
@@ -199,16 +199,18 @@ class Candidate():
         # Check lower, inner panel
         bc = 'pinned'
 
-        for ibeta in range(self.loads.nbeta):
-            f_sec = self.f_sec1['Dynamic']['Total'][:, ibeta, :]
-            f_part = self.f_part1['Dynamic']['Total'][:, ibeta, :]
-            sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
-            sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
-            p_lat = self.panel_cc.lateral_pressure(f_part)
-            dpu[ibeta, 0] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_p, p_lat, self.contourline,
-                                                                        freq=self.loads.w)
-            dpu[ibeta, 1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, self.contourline,
-                                                                        freq=self.loads.w)
+        f_sec = self.f_sec1['Dynamic']['Total']
+        f_part = self.f_part1['Dynamic']['Total']
+        sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
+        sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
+        p_lat = self.panel_cc.lateral_pressure(f_part)
+
+
+
+        dpu[0] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_p, p_lat, self.contourline,
+                                                                    freq=self.loads.w, nwdir=self.loads.nbeta  )
+        dpu[1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, self.contourline,
+                                                                    freq=self.loads.w,nwdir=self.loads.nbeta)
 
         return {'Max UR':dpu.max(), 'panel_cc': self.panel_cc}
 
@@ -220,3 +222,16 @@ class Candidate():
 
     def print_report(self):
         self.settings._report._doc.generate_pdf(clean_tex=False)
+
+    def has_old_db(self):
+        db_file = self.settings._fio.nemoh_root.joinpath('db.hdf5')
+        if db_file.is_file():
+            return True
+        else:
+            return False
+
+    def remove_old_db(self):
+        db_file = self.settings._fio.nemoh_root.joinpath('db.hdf5')
+        if db_file.is_file():
+            db_file.unlink()
+            print('\ndb.hdf5 deleted from {}\n'.format(str(self._fio.nemoh_root)))
