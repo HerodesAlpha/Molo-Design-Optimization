@@ -88,22 +88,22 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-    def hold_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
 
-        try:
-            for self._t_lf in np.arange(0, 0.01, 0.001):
-                for self._t_lfst in np.arange(0, 0.01, 0.001):
-                    for self._h_lfst in np.arange(0, 2.0, 0.01):
+#        try:
+            for self._t_lf in np.linspace(0.035, 0.060, 3):
+                for self._t_lfst in np.linspace(0.050, 0.100, 5):
+                    for self._h_lfst in np.linspace(0, 2.0, 10):
                         self.init_cross_section()
-                        if self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir) < 1:
-                            print(self._t_lf)
-                            print(self._t_lfst)
-                            print(self._h_lfst)
-                            raise BreakIt
-        except BreakIt:
-            pass
+                        ur =self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
+                        print('{:1.3f} {:1.3f} {:1.3f} {:1.3f} '.format(self._t_lf,self._t_lfst,self._h_lfst,ur))
 
-        return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
+#                        if  ur < 1:
+#                            raise BreakIt
+#        except BreakIt:
+#            pass
+
+            return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
     def hold2_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         def objective_function(x):
@@ -130,7 +130,7 @@ class Panel():
 
         return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
-    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+    def hold2_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         ones=np.ones(3,dtype=float)
 
         def objective_function(x):
