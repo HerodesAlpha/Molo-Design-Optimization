@@ -96,7 +96,7 @@ class Panel():
                     for self._h_lfst in np.linspace(0, 2.0, 10):
                         self.init_cross_section()
                         ur =self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
-                        print('{:1.3f} {:1.3f} {:1.3f} {:1.3f} '.format(self._t_lf,self._t_lfst,self._h_lfst,ur))
+                        #print('{:1.3f} {:1.3f} {:1.3f} {:1.3f} '.format(self._t_lf,self._t_lfst,self._h_lfst,ur))
 
 #                        if  ur < 1:
 #                            raise BreakIt

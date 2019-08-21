@@ -160,7 +160,7 @@ class Hydrostatics(object):
                                    'itermax': 100,
                                    'max_nb_restart': 10,
                                    'theta_relax': 2,
-                                   'z_relax': 0.1,
+                                   'z_relax': 1,
                                    'stop_at_unstable': False}
 
         # TODO: ajouter le calcul du tirant d'eau et d'air
@@ -812,6 +812,7 @@ class Hydrostatics(object):
             self._update_hydrostatic_properties()
 
             residual = self.delta_fz
+            #print(residual)
             if math.fabs(residual / self._mg) < reltol:
                 if self.verbose:
                     print('\t-> Convergence obtained after %u iterations' % iter)

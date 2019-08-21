@@ -129,13 +129,13 @@ class TransferFunctions(object):
 
     def get_section_index(self, section_point, section_normal):
 
-        def mask(coordinates):
+        def mask1(coordinates):
             vec = coordinates - section_point
             dot = np.dot(vec,
                          section_normal)  # dot product i positive for coordinates on the positive side of the plane
             return dot >= 0
 
-        return mask(self._point_mass_centers), mask(self._panel_pressure_centers)
+        return mask1(self._point_mass_centers), mask1(self._panel_pressure_centers)
 
     def get_flange_panel_index(self):
         def printv(string):
@@ -145,7 +145,7 @@ class TransferFunctions(object):
         class BreakIt(Exception):
             pass
 
-        def mask(coordinates):
+        def mask2(coordinates):
             n = coordinates.shape[0]
             da = (1 + self._gaf) * self._d_rc
             dtheta = 2 * np.pi / 3
@@ -194,7 +194,7 @@ class TransferFunctions(object):
 
             return np.logical_and(np.logical_and(index_1, index_2), index_3)  # Return union of the three indexes
 
-        return mask(self._point_mass_centers), mask(self._panel_pressure_centers)
+        return mask2(self._point_mass_centers), mask2(self._panel_pressure_centers)
 
     def sum_forces(self, index, forces, coordinates, moment_ref_point):
 

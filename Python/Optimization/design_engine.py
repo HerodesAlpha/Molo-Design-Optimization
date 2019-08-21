@@ -88,9 +88,8 @@ class Parameter_Space():
         return self._job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
 
     @stiffener_height.setter
-    def stiffener_height(self,val):
+    def stiffener_height(self, val):
         self._job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height'] = val
-
 
 
 class Candidate():
@@ -168,18 +167,21 @@ class Candidate():
         self.tran_fun = calculations.TransferFunctions(self.settings, self.loads)
         self.panel_cc = cc.Panel(self.settings)
 
-        self.imass, self.ipanel = self.tran_fun.get_flange_panel_index()
-        self.f_part1 = self.tran_fun.assemble_forces(self.imass, self.ipanel, moment_ref_point=[0, 0, 0])
+        imass, ipanel = self.tran_fun.get_flange_panel_index()
+        self.f_part1 = self.tran_fun.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
+        del imass, ipanel
 
         # Consider first radial
 
         # Get section forces
-        sp_x = self.settings.floater_data['Central column diameter'] / 2
+        sp_x = self.settings.floater_data['Central column diameter'] * (0.5)# + 0.8 + 1 + 0.8 + 1)
         sp_z = self.settings.floater_data['Radial']['Heigth'] / 2 - self.hs_floater.hs_data['draught']
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
-        self.imass, self.ipanel = self.tran_fun.get_section_index(section_point, section_normal)
-        self.f_sec1 = self.tran_fun.assemble_forces(self.imass, self.ipanel, moment_ref_point=section_point)
+
+        imass, ipanel = self.tran_fun.get_section_index(section_point, section_normal)
+        self.f_sec1 = self.tran_fun.assemble_forces(imass, ipanel, moment_ref_point=section_point)
+        del imass, ipanel
 
         yr = self.settings.park_data['Design Basis']['ULS']['Return period']
         area = self.settings.park_data['Design Basis']['Area']
@@ -191,11 +193,11 @@ class Candidate():
         for hs, tz in self.cl:
             self.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
-        dpu = np.zeros([2],dtype=float)
+        dpu = np.zeros([2], dtype=float)
 
         gamma_m = 1.15
         load_factor = 1.3
-        sigma_y = 235000000 /gamma_m
+        sigma_y = 235000000 / gamma_m
         # Check lower, inner panel
         bc = 'pinned'
 
@@ -205,14 +207,26 @@ class Candidate():
         sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
         p_lat = self.panel_cc.lateral_pressure(f_part)
 
-
-
         dpu[0] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_p, p_lat, self.contourline,
-                                                                    freq=self.loads.w, nwdir=self.loads.nbeta  )
+                                                     freq=self.loads.w, nwdir=self.loads.nbeta)
         dpu[1] = self.panel_cc.minimize_panel_setion(sigma_y, bc, sigma_x_n, p_lat, self.contourline,
-                                                                    freq=self.loads.w,nwdir=self.loads.nbeta)
+                                                     freq=self.loads.w, nwdir=self.loads.nbeta)
 
-        return {'Max UR':dpu.max(), 'panel_cc': self.panel_cc}
+        def f_max(f):
+            def f_elm(f):
+                return np.array([stwcl.expected_largest_maximum(f, self.loads.w) for stwcl in self.contourline])
+
+            f_out = np.zeros(6)
+            for idof in range(6):
+                f_out[idof] = np.array([f_elm(f[:, ibeta, idof]) for ibeta in range(self.loads.nbeta)]).max()
+            return f_out
+
+        return {
+            'Max UR': dpu.max(),
+            'panel_cc': self.panel_cc,
+            'section force': f_max(f_sec),
+            'panel force':f_max(f_part)
+        }
 
         # plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
         # plt.title('{} yr contourlines'.format(yr))
