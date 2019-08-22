@@ -359,7 +359,7 @@ def msh_file(settings, mesh_type=None):
         return gmsh_msh_file
 
 
-def save_M_and_K(wdir, M, MMK):
+def save_M_and_K(settings, M, MMK):
     # From meshmagic 3x3 to 6x6
     K = np.zeros((6, 6), dtype='float')
     K[2, 2] = MMK[0, 0]
@@ -372,8 +372,12 @@ def save_M_and_K(wdir, M, MMK):
     K[4, 3] = MMK[1, 2]
     K[4, 4] = MMK[2, 2]
 
-    pickle.dump(M, open(os.path.join(wdir, 'M.pkl'), "wb"))
-    pickle.dump(K, open(os.path.join(wdir, 'K.pkl'), "wb"))
+
+    with open(os.path.join(settings.fio.data_io_dir.joinpath('M.pkl')), "wb") as f:
+        pickle.dump(M, f)
+    with open(os.path.join(settings.fio.data_io_dir.joinpath('K.pkl')), "wb") as f:
+        pickle.dump(K, f)
+
 
 
 def load_M_and_K(wdir):

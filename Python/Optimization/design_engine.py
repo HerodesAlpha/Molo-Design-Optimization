@@ -92,6 +92,15 @@ class Parameter_Space():
         self._job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height'] = val
 
 
+    @property
+    def filling_ratio(self):
+        return self._job_data['floater']['Ballast filling ratio'][1]
+
+    @filling_ratio.setter
+    def filling_ratio(self, val):
+        self._job_data['floater']['Ballast filling ratio'][1] = val
+
+
 class Candidate():
     def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):
 

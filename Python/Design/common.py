@@ -11,7 +11,7 @@ from pathlib import Path
 import getpass
 import sys
 from report import DesignReport
-
+import numpy as np
 
 class PhysicalQuantities():
     # This is the only place allowed to put physical quantities
@@ -164,7 +164,11 @@ class SettingsClass(PhysicalQuantities, object):
         if case_label_type == None:
             self._case_label = None  # Auto numbering in FileIOClass
         elif case_label_type == 'molo_model':
-            self._case_label = self._molo_model
+            nrc = self._job_data['floater']['Radial']['Number of columns']
+            bfr_c=np.array(self._job_data['floater']['Ballast filling ratio'][0])*10
+            bfr_r=np.array(self._job_data['floater']['Ballast filling ratio'][1][:nrc])*10
+            radial_ballast_string = np.array2string(bfr_r.astype(int), precision=0, separator='',suppress_small=True)[1:-1]
+            self._case_label = '{:s}-b{:d}{:s}'.format(self._molo_model,bfr_c.astype(int),radial_ballast_string)
         else:
             self._case_label = case_label_type
         #print('\nMODEL: {}'.format(self._molo_model))

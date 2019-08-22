@@ -183,7 +183,7 @@ def init_models(settings):  #
     # hs_floater.show()
     print(hs_floater.get_hydrostatic_report())
     settings._report.write_hydrostatic_report_latex_table(hs_floater)
-    tb.save_M_and_K(settings.fio.data_io_dir, M=unit_model.inertias.mass_matrix_global,
+    tb.save_M_and_K(settings, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
     # print('\nMass matrix just before adjusting to draught')

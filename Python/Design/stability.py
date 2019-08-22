@@ -19,7 +19,7 @@ def righting_moment_curve(settings, hs_floater):
     hs_floater.verbose_off()
     # Init
     thetax = thetay = 0
-    dthetay = (np.pi / 180) / 4
+    dthetay = (np.pi / 180)
     dthetax = 0
 
     ifile = 0
@@ -108,10 +108,12 @@ def intact_stability(settings, hs_floater):
 
     # Find second intercept
     a = [i > j for i, j in zip(rmc[1, :], whm[1, :])]
-
-    intercept = [i for i, x in enumerate(a) if x][-1]  # Index of last righting moment greater than heeling moment
-
-    r = sum(rmc[1, :intercept]) / sum(whm[1, :intercept])
+    if not any(a):
+        r = 0
+        intercept=0
+    else:
+        intercept = [i for i, x in enumerate(a) if x][-1]  # Index of last righting moment greater than heeling moment
+        r = sum(rmc[1, :intercept]) / sum(whm[1, :intercept])
     if r < 1.4:
         print('Requirements for intact stability is NOT fulfilled')
     else:
