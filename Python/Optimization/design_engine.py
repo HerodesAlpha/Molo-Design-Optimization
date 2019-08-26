@@ -22,7 +22,8 @@ import environmental_conditions as ec
 import json
 import os
 from pathlib import Path
-
+import h5py
+from pyNemoh.structure import BaseStructure
 
 class Parameter_Space():
     def __init__(self):
@@ -230,6 +231,15 @@ class Candidate():
                 f_out[idof] = np.array([f_elm(f[:, ibeta, idof]) for ibeta in range(self.loads.nbeta)]).max()
             return f_out
 
+        with h5py.File(self.settings.fio.structural_dir.joinpath('structural.hdf5'), "w") as hdf5_structural_db:
+            hdf5_structural_db.create_dataset('max utilization ratio', data=dpu.max())
+            #hdf5_structural_db.create_dataset('panel code check', data=self.panel_cc)
+            hdf5_structural_db.create_dataset('section force', data= f_max(f_sec))
+            hdf5_structural_db.create_dataset('panel force', data=f_max(f_part))
+            #hdf5_structural_db.create_dataset('contour line', data=self.contourline)
+            hdf5_structural_db.create_dataset('gamma m', data=gamma_m)
+
+
         return {
             'Max UR': dpu.max(),
             'panel_cc': self.panel_cc,
@@ -246,15 +256,67 @@ class Candidate():
     def print_report(self):
         self.settings._report._doc.generate_pdf(clean_tex=False)
 
-    def has_old_db(self):
+    def has_complete_hydrodynamic_db(self):
         db_file = self.settings._fio.nemoh_root.joinpath('db.hdf5')
         if db_file.is_file():
+            with h5py.File(db_file, "a") as hdf5_hydro_db:
+                if self.h5_bs.H5_RESULTS_EXCITATION_FORCES in hdf5_hydro_db.keys():
+                    return True
+        else:
+            return False
+
+
+
+    def has_gz(self):
+        gz_file = self.settings._fio.stability_dir.joinpath('gz.txt')
+        if gz_file.is_file():
             return True
         else:
             return False
+
 
     def remove_old_db(self):
         db_file = self.settings._fio.nemoh_root.joinpath('db.hdf5')
         if db_file.is_file():
             db_file.unlink()
-            print('\ndb.hdf5 deleted from {}\n'.format(str(self._fio.nemoh_root)))
+            print('\ndb.hdf5 deleted from {}\n'.format(str(self.settings.fio.nemoh_root)))
+
+
+    def has_stability_db(self):
+        f=self.settings.fio.stability_dir.joinpath('stability.hdf5')
+        if f.exists():
+            return True
+        else:
+            return False
+
+    def is_stable(self):
+        f=self.settings.fio.stability_dir.joinpath('stability.hdf5')
+        key='intact_stability_area_ratio'
+        if f.exists():
+            with h5py.File(self.settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
+                if key in hdf5_stability_db.keys():
+                    if hdf5_stability_db.get('intact_stability_area_ratio')[()] > 1.4:
+
+                        return True
+                    else:
+                        return False
+
+        else:
+            return False
+
+    def has_model(self):
+        unit_model = self.settings.fio.data_io_dir.joinpath('unit_model.pkl')
+        hs_floater = self.settings.fio.data_io_dir.joinpath('hs_floater.pkl')
+        if unit_model.exists() and hs_floater.exists():
+            return True
+        else:
+            return False
+
+
+
+    def has_structural_db(self):
+        f=self.settings.fio.stability_dir.joinpath('structural.hdf5')
+        if f.exists():
+            return True
+        else:
+            return False

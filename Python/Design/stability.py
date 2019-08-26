@@ -11,6 +11,7 @@ import imageio
 import os
 import matplotlib.pyplot as plt
 from pylatex import Section, Figure, NoEscape, NewPage
+import h5py
 
 # Stiffness is linear for heel < 10 deg, param. excit. not likely
 
@@ -28,6 +29,8 @@ def righting_moment_curve(settings, hs_floater):
 
     heel_angles = []
     righting_moments = []
+
+    create_movie = False
 
     with imageio.get_writer(settings.fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
         with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
@@ -48,7 +51,7 @@ def righting_moment_curve(settings, hs_floater):
                 heel_angles.append(thetay)
                 righting_moments.append(-hs_floater.residual[2])
 
-                if 1:
+                if create_movie:
                     vtk_polydata = hs_floater.mesh._vtk_polydata()
                     hs_floater.viewer = MMViewer(use_interactor=False)
                     hs_floater.viewer.add_polydata(vtk_polydata)
@@ -80,7 +83,6 @@ def righting_moment_curve(settings, hs_floater):
                 print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay * 180 / np.pi,
                                                                                  val=-hs_floater.residual / 1000000))
 
-
     return np.asarray([heel_angles, righting_moments])
 
 
@@ -110,7 +112,7 @@ def intact_stability(settings, hs_floater):
     a = [i > j for i, j in zip(rmc[1, :], whm[1, :])]
     if not any(a):
         r = 0
-        intercept=0
+        intercept = 0
     else:
         intercept = [i for i, x in enumerate(a) if x][-1]  # Index of last righting moment greater than heeling moment
         r = sum(rmc[1, :intercept]) / sum(whm[1, :intercept])
@@ -154,6 +156,9 @@ def intact_stability(settings, hs_floater):
             plot.add_plot(width=NoEscape(width))
             plot.add_caption('Intact Stability')
             plt.close()
+
+    with h5py.File(settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
+        hdf5_stability_db.create_dataset('intact_stability_area_ratio', data=r)
 
 
     return r

@@ -61,6 +61,7 @@ class FileIOClass(object):
         self._nemoh_results_dir = self._nemoh_root.joinpath('results')
         self._nemoh_mesh_dir = self._nemoh_root.joinpath('mesh')
         self._stability_dir = self._case_dir.joinpath('stability')
+        self._structural_dir = self._case_dir.joinpath('structural')
 
         self._templates_dir = Path(os.getcwd()).joinpath('templates')
 
@@ -86,6 +87,7 @@ class FileIOClass(object):
         self._gmsh_root.mkdir(parents=True, exist_ok=exist_ok_bool)
         self._data_io_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
         self._stability_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
+        self._structural_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
 
     @property
     def case_dir(self):
@@ -126,6 +128,10 @@ class FileIOClass(object):
     @property
     def stability_dir(self):
         return self._stability_dir
+
+    @property
+    def structural_dir(self):
+        return self._structural_dir
 
     @property
     def gmsh_exe(self):

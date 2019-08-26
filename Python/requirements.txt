@@ -10,3 +10,4 @@ pandas
 imageio
 imageio-ffmpeg
 pylatex
+openpyxl
