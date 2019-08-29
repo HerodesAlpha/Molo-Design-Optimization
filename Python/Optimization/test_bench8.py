@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
 import tool_box as tb
-import calculations
+import response
 import model_set_up as msu
 import nemoh
 import stability
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     if settings.postprocessing:
 
         loads = Sea_and_Inertia_Loads(settings)
-        tran_fun = calculations.TransferFunctions(settings, loads)
+        tran_fun = response.ResponseModel(settings, loads)
         panel_cc = cc.Panel(settings)
 
         imass, ipanel = tran_fun.get_flange_panel_index()
@@ -223,7 +223,7 @@ if __name__ == '__main__':
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
         if False:
-            h = tran_fun.get_rao(idir)
+            h = tran_fun.calc_rao(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / loads.w
             axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')

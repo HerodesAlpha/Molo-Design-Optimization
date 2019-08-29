@@ -8,6 +8,7 @@ import pandas
 from contextlib import redirect_stdout
 
 
+
 class BreakIt(Exception): pass
 
 
@@ -45,10 +46,17 @@ if __name__ == '__main__':
     is_stable = False
     #    for d in np.linspace(8.8, 8.8, 1, dtype=float):
     irow = -1
-    for d in np.linspace(8.1, 9.1, 10, dtype=float):
+    for d in np.linspace(8.1, 8.1, 1, dtype=float):
+        # print('d = {:1.2f}'.format(d))
+        # if d < 8.4: continue
         for b in np.linspace(0, 0.2, 3, dtype=float):
+            # print('b = {:1.2f}'.format(b))
+            # if b < 0.2: continue
             for h in np.linspace(15, 30, 4, dtype=float):
+                # print('h = {:1.2f}'.format(h))
+                # if h < 30: continue
                 for g in np.linspace(0.6, 1, 3, dtype=float):
+                    # if g < 0.8: continue
 
                     p.gap = g
                     p.height = h
@@ -75,13 +83,13 @@ if __name__ == '__main__':
                         }
 
                         if not this_candidate.has_stability_db():
-                        #if True:
+                            # if True:
                             try:
                                 with redirect_stdout(fout):
                                     r = this_candidate.intact_stability_ratio()
                                 if r >= 1.4:
                                     is_stable = True
-                                    print('This candidate is stable with r = {:1.0f}%'.format(r*100))
+                                    print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
                                 else:
                                     is_stable = False
                                     print('This candidate is not stable')
@@ -97,30 +105,38 @@ if __name__ == '__main__':
 
                         else:
                             if this_candidate.is_stable():
-                                print('This candidate is stable, but has no hydro_database. Perform hydrodynamic analysis')
+                                print(
+                                        'This candidate is stable, but has no hydro_database. Perform hydrodynamic analysis')
                                 with redirect_stdout(fout):
-                                    #pass
+                                    # pass
                                     this_candidate.hydrodynamic_analysis()
-
-
 
                         if this_candidate.is_stable():
                             if this_candidate.has_complete_hydrodynamic_db():
-                            #if False:
-                                print('This candidate is stable and has hydro database. Perform structural analysis')
+                                # if False:
+                                print(
+                                        'This candidate is stable and has hydro database. Perform structural optimization')
+
+                                this_candidate.init_load_response()
+
                                 irow += 1
                                 with redirect_stdout(fout):
                                     res = this_candidate.structural_analysis()
 
                                     if print_to_screen:
                                         print('Max UR is : {:1.2f}'.format(res['Max UR']))
-                                        print('Height of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._h_lfst))
+                                        print('Height of lower flange stiffener : {:1.2f}'.format(
+                                                res['panel_cc']._h_lfst))
                                         print('Thickness of lower flange : {:1.2f}'.format(res['panel_cc']._t_lfst))
-                                        print('Thickness of lower flange stiffener : {:1.2f}'.format(res['panel_cc']._t_lf))
+                                        print('Thickness of lower flange stiffener : {:1.2f}'.format(
+                                                res['panel_cc']._t_lf))
 
-                                        print('Setion force: {}'.format(np.array2string(res['section force'], precision=2)))
+                                        print('Setion force: {}'.format(
+                                                np.array2string(res['section force'], precision=2)))
 
-                                        print('Panel force: {}'.format(np.array2string(res['panel force'], precision=2)))
+                                        print(
+                                                'Panel force: {}'.format(
+                                                    np.array2string(res['panel force'], precision=2)))
                                         # this_candidate.loads.show_pressure(ifreq=20, pressure_index=1, pressure_type='Radiation', axis=2)
 
                                         print('\nEigenvalue sollution WITH added mass')
@@ -149,6 +165,8 @@ if __name__ == '__main__':
                                                 ]
 
                                 this_candidate.print_report()
+                                print('Optimization finished, results saved and report printed')
+
                             else:
                                 print('This candidate is stable but has no hydro_database. No structural analysis')
                         else:
@@ -156,4 +174,3 @@ if __name__ == '__main__':
 
     df.to_csv(candidate_parent_dir.joinpath('output.csv'))
     df.to_excel(candidate_parent_dir.joinpath('output.xlsx'))
-

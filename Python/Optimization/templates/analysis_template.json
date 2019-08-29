@@ -122,10 +122,10 @@
         "sim01": {
             "floating_bodies": {
                 "sim01.dat": {
-                    "mesh_file": "MOLO_TEST/Test4/MOLO_2c.dat"
+                    "mesh_file": "Not set"
                 }
             },
-            "simulation_dir": "MOLO_TEST/Test4/cli_results/test09"
+            "simulation_dir": "Not set"
         }
     },
     "simulations_to_run": [

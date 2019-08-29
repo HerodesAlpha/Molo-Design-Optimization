@@ -39,9 +39,10 @@ class PhysicalQuantities():
 
 
 class FileIOClass(object):
-    def __init__(self, root_dir, park_label, wtg_label, case_label):
-        case_parent_dir = root_dir.joinpath(park_label).joinpath(wtg_label)
-        if case_label == None:
+    def __init__(self, settings):
+
+        case_parent_dir = settings.analyses_root.joinpath(settings.park_label).joinpath(settings.wtg_label)
+        if settings.case_label == None:
             i = 0
             while 1:
                 i += 1
@@ -49,7 +50,7 @@ class FileIOClass(object):
                     break
             self._case_label = 'case{:04d}'.format(i)
         else:
-            self._case_label = case_label
+            self._case_label = settings.case_label
 
         self._mesh_name = None
 
@@ -63,7 +64,7 @@ class FileIOClass(object):
         self._stability_dir = self._case_dir.joinpath('stability')
         self._structural_dir = self._case_dir.joinpath('structural')
 
-        self._templates_dir = Path(os.getcwd()).joinpath('templates')
+        self._templates_dir = settings.templates_dir
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
             getpass.getuser())
@@ -145,6 +146,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._mesh_name = None
         self._do_equilibrate = True
 
+        self._parameter_space=parameter_space
         self._job_data = parameter_space.job_data
 
         self._analyses_root = analyses_root
@@ -191,7 +193,7 @@ class SettingsClass(PhysicalQuantities, object):
 
     def set_file_structure_and_report(self):
 
-        self._fio = FileIOClass(self._analyses_root, self._park_label, self._wtg_label, self._case_label)
+        self._fio = FileIOClass(self)
         # print(self._job_data['analysis']['simulations'])
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()
@@ -210,6 +212,23 @@ class SettingsClass(PhysicalQuantities, object):
         for item in self._job_data:
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
                 self._job_data[item] = json.loads(f.read())
+
+
+    @property
+    def templates_dir(self):
+        return self._parameter_space.templates_dir
+
+
+    @property
+    def analyses_root(self):
+        return self._analyses_root
+
+    @property
+    def park_label(self):
+        return self._park_label
+    @property
+    def wtg_label(self):
+        return self._wtg_label
 
 
     @property

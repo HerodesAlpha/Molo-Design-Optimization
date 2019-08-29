@@ -168,7 +168,7 @@ class FloaterClass(AssemblyClass, object):
 
         self.aggregate_inertias_from_parts(self.parts_list)
 
-        self.print_vector_matrix_global()
+        #self.print_vector_matrix_global()
 
 
     def _generate_parts(self):

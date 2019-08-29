@@ -9,13 +9,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
 import tool_box as tb
-import calculations
+
 import model_set_up as msu
 import stability
 from Nemoh_Frontend import nemoh_frontend as nf
 from common import SettingsClass
 from pyNemoh.structure import BaseStructure
-from loads import Sea_and_Inertia_Loads
+
 from meshmagick.mesh import Mesh
 import code_check as cc
 import environmental_conditions as ec
@@ -24,25 +24,37 @@ import os
 from pathlib import Path
 import h5py
 from pyNemoh.structure import BaseStructure
+from response import ResponseModel
+from loads import Sea_and_Inertia_Loads
+
 
 class Parameter_Space():
-    def __init__(self):
+    def __init__(self, templates_dir=None):
         self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis', 'design_basis']
         self._job_data = dict()
 
+        if templates_dir==None:
+            self._templates_dir=Path(os.getcwd()).joinpath('templates')
+        else:
+            self._templates_dir=templates_dir
+
         # Collect template data
         for item in self._json_list:
-            with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'r') as f:
+            with open(self._templates_dir.joinpath('{}_template.json'.format(item)), 'r') as f:
                 self._job_data[item] = json.loads(f.read())
 
         # Save updated template to template dir
         for item in self._json_list:
-            with open(Path(os.getcwd()).joinpath('templates').joinpath('{}_template.json'.format(item)), 'w') as f:
+            with open(self._templates_dir.joinpath('{}_template.json'.format(item)), 'w') as f:
                 f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
 
     @property
     def nradial(self):
         return self._job_data['floater']['Number of radials']
+
+    @property
+    def templates_dir(self):
+        return self._templates_dir
 
     @nradial.setter
     def nradial(self, val):
@@ -92,7 +104,6 @@ class Parameter_Space():
     def stiffener_height(self, val):
         self._job_data['floater']['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height'] = val
 
-
     @property
     def filling_ratio(self):
         return self._job_data['floater']['Ballast filling ratio'][1]
@@ -119,6 +130,8 @@ class Candidate():
         self.settings.use_symmmetri = True
         self.settings.do_equilibriate = True
         self.settings.thin_panel_offset = 0.5
+        self.response = None
+        self.loads = None
 
     def init_model(self, state=None):
         if state == 'New':
@@ -155,6 +168,10 @@ class Candidate():
             print('init_model state is either New or Old')
             exit()
 
+    def init_load_response(self):
+        self.loads = Sea_and_Inertia_Loads(self.settings)
+        self.response = ResponseModel(self)
+
     def intact_stability_ratio(self):
         print('\n--------------------------------------------------------------------------------------------')
         print('STABILITY ANALYSIS')
@@ -173,24 +190,23 @@ class Candidate():
         self.ql.stop()
 
     def structural_analysis(self):
-        self.loads = Sea_and_Inertia_Loads(self.settings)
-        self.tran_fun = calculations.TransferFunctions(self.settings, self.loads)
+
         self.panel_cc = cc.Panel(self.settings)
 
-        imass, ipanel = self.tran_fun.get_flange_panel_index()
-        self.f_part1 = self.tran_fun.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
+        imass, ipanel = self.response.get_flange_panel_index()
+        self.f_part1 = self.response.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
         del imass, ipanel
 
         # Consider first radial
 
         # Get section forces
-        sp_x = self.settings.floater_data['Central column diameter'] * (0.5)# + 0.8 + 1 + 0.8 + 1)
+        sp_x = self.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         sp_z = self.settings.floater_data['Radial']['Heigth'] / 2 - self.hs_floater.hs_data['draught']
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
 
-        imass, ipanel = self.tran_fun.get_section_index(section_point, section_normal)
-        self.f_sec1 = self.tran_fun.assemble_forces(imass, ipanel, moment_ref_point=section_point)
+        imass, ipanel = self.response.get_section_index(section_point, section_normal)
+        self.f_sec1 = self.response.assemble_forces(imass, ipanel, moment_ref_point=section_point)
         del imass, ipanel
 
         yr = self.settings.park_data['Design Basis']['ULS']['Return period']
@@ -233,18 +249,17 @@ class Candidate():
 
         with h5py.File(self.settings.fio.structural_dir.joinpath('structural.hdf5'), "w") as hdf5_structural_db:
             hdf5_structural_db.create_dataset('max utilization ratio', data=dpu.max())
-            #hdf5_structural_db.create_dataset('panel code check', data=self.panel_cc)
-            hdf5_structural_db.create_dataset('section force', data= f_max(f_sec))
+            # hdf5_structural_db.create_dataset('panel code check', data=self.panel_cc)
+            hdf5_structural_db.create_dataset('section force', data=f_max(f_sec))
             hdf5_structural_db.create_dataset('panel force', data=f_max(f_part))
-            #hdf5_structural_db.create_dataset('contour line', data=self.contourline)
+            # hdf5_structural_db.create_dataset('contour line', data=self.contourline)
             hdf5_structural_db.create_dataset('gamma m', data=gamma_m)
 
-
         return {
-            'Max UR': dpu.max(),
-            'panel_cc': self.panel_cc,
-            'section force': f_max(f_sec),
-            'panel force':f_max(f_part)
+                'Max UR'       : dpu.max(),
+                'panel_cc'     : self.panel_cc,
+                'section force': f_max(f_sec),
+                'panel force'  : f_max(f_part)
         }
 
         # plt.plot(self.cl[:, 1], self.cl[:, 0], 'tab:orange')
@@ -265,8 +280,6 @@ class Candidate():
         else:
             return False
 
-
-
     def has_gz(self):
         gz_file = self.settings._fio.stability_dir.joinpath('gz.txt')
         if gz_file.is_file():
@@ -274,24 +287,22 @@ class Candidate():
         else:
             return False
 
-
     def remove_old_db(self):
         db_file = self.settings._fio.nemoh_root.joinpath('db.hdf5')
         if db_file.is_file():
             db_file.unlink()
             print('\ndb.hdf5 deleted from {}\n'.format(str(self.settings.fio.nemoh_root)))
 
-
     def has_stability_db(self):
-        f=self.settings.fio.stability_dir.joinpath('stability.hdf5')
+        f = self.settings.fio.stability_dir.joinpath('stability.hdf5')
         if f.exists():
             return True
         else:
             return False
 
     def is_stable(self):
-        f=self.settings.fio.stability_dir.joinpath('stability.hdf5')
-        key='intact_stability_area_ratio'
+        f = self.settings.fio.stability_dir.joinpath('stability.hdf5')
+        key = 'intact_stability_area_ratio'
         if f.exists():
             with h5py.File(self.settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
                 if key in hdf5_stability_db.keys():
@@ -307,15 +318,15 @@ class Candidate():
     def has_model(self):
         unit_model = self.settings.fio.data_io_dir.joinpath('unit_model.pkl')
         hs_floater = self.settings.fio.data_io_dir.joinpath('hs_floater.pkl')
-        if unit_model.exists() and hs_floater.exists():
+        nemoh_mesh = self.settings.fio.data_io_dir.joinpath(
+                'MOLO_{}c_nemoh.dat'.format(self.settings.job_data['floater']['Radial']['Number of columns']))
+        if unit_model.exists() and hs_floater.exists() and nemoh_mesh.exists():
             return True
         else:
             return False
 
-
-
     def has_structural_db(self):
-        f=self.settings.fio.stability_dir.joinpath('structural.hdf5')
+        f = self.settings.fio.stability_dir.joinpath('structural.hdf5')
         if f.exists():
             return True
         else:

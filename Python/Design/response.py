@@ -9,11 +9,11 @@ import pickle
 import tool_box as tb
 
 
-class TransferFunctions(object):
-    def __init__(self, settings, loads):
+class ResponseModel(object):
+    def __init__(self, candidate):
         # super().__init__(settings)
-        self._settings = settings
-        self._loads = loads
+        self._settings = candidate.settings
+        self._loads = candidate.loads
 
         self._h = self._settings.job_data['floater']['Radial']['Heigth']
         self._d_rc = self._settings.job_data['floater']['Radial']['Column']['Diameter']
@@ -37,7 +37,7 @@ class TransferFunctions(object):
         # Set up RAOs
         self._rao = np.zeros([self._loads.nw, self._loads._nbeta, 6], dtype=complex)
         for ibeta in range(self._loads._nbeta):
-            self._rao[:, ibeta, :] = self.get_rao(ibeta)
+            self._rao[:, ibeta, :] = self.calc_rao(ibeta)
 
         # Prepare discrete mass and hydro forces
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
@@ -107,25 +107,34 @@ class TransferFunctions(object):
         self._point_mass_dynamic_inertia_force = -self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :,
                                                                       np.newaxis, 0, 0]
 
-    def get_rao(self, idir):
+    def calc_rao(self, idir):
         fe = self._loads._fe[:, idir, :]
         m = self._loads._m
         ma = self._loads._ma
         c = self._loads._c_hyd
         k = self._loads._k
-        return self.rao(fe, m, ma, c, k, self._loads._w)
-
-    def rao(self, f, m, ma, c, k, vw):
+        vw = self._loads._w
         container = np.zeros([len(vw), 6], dtype=complex)
         for i, w in enumerate(vw):
             this_ma = ma[i, :, :]
             denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * c[i, :, :] + k, dtype=complex)
             daf = scipy.linalg.inv(denom)
-            # daf =np.asarray([[1/x for x in col]for col in denom])
-            x = daf @ f[i, :]
+            x = daf @ fe[i, :]
             container[i, :] = x
-
         return container
+
+
+    # def rao(self, f, m, ma, c, k, vw):
+    #     container = np.zeros([len(vw), 6], dtype=complex)
+    #     for i, w in enumerate(vw):
+    #         this_ma = ma[i, :, :]
+    #         denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * c[i, :, :] + k, dtype=complex)
+    #         daf = scipy.linalg.inv(denom)
+    #         # daf =np.asarray([[1/x for x in col]for col in denom])
+    #         x = daf @ f[i, :]
+    #         container[i, :] = x
+    #
+    #     return container
 
     def get_section_index(self, section_point, section_normal):
 

@@ -40,7 +40,7 @@ class DesignReport(Document):
         with header.create(Head("L")) as header_left:
             with header_left.create(MiniPage(width=NoEscape(r"0.49\textwidth"),
                                              pos='c')) as logo_wrapper:
-                logo_file = str(Path(os.getcwd()).joinpath('templates').joinpath('logo.png'))
+                logo_file = str(settings.templates_dir.joinpath('logo.png'))
                 # logo_file= '{' + logo_file + '}'
                 logo_file = logo_file.replace('\\', '/')
                 # print(str(logo_file))
@@ -315,7 +315,7 @@ def write_report(root, hdp, case_label):
     for sel_dof in hdp.available_dofs:
         with doc.create(Figure(position='htbp')) as plot:
             for sel_dir in hdp.available_dirs:
-                plt.plot((2 * np.pi) / hdp.w, hdp.get_rao(sel_dof, sel_dir))
+                plt.plot((2 * np.pi) / hdp.w, hdp.calc_rao(sel_dof, sel_dir))
             plt.ylabel(dof_label[sel_dof - 1])
 
             plot.add_plot(width=NoEscape(width))
