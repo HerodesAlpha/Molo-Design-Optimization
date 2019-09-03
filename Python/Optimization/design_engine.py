@@ -318,11 +318,22 @@ class Candidate():
     def has_model(self):
         unit_model = self.settings.fio.data_io_dir.joinpath('unit_model.pkl')
         hs_floater = self.settings.fio.data_io_dir.joinpath('hs_floater.pkl')
-        nemoh_mesh = self.settings.fio.data_io_dir.joinpath(
+        nemoh_mesh = self.settings.fio.nemoh_dir.joinpath(
                 'MOLO_{}c_nemoh.dat'.format(self.settings.job_data['floater']['Radial']['Number of columns']))
-        if unit_model.exists() and hs_floater.exists() and nemoh_mesh.exists():
-            return True
+        if unit_model.exists():
+            if hs_floater.exists():
+                if  nemoh_mesh.exists():
+
+                    return True
+                else:
+                    print('nemoh_mesh does not exist')
+                    return False
+
+            else:
+                print('hs_floater does not exist')
+                return False
         else:
+            print('unit_model does not exist')
             return False
 
     def has_structural_db(self):

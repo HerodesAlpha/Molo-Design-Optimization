@@ -8,29 +8,11 @@ import pandas
 from contextlib import redirect_stdout
 import os
 
-
+import matplotlib.pyplot as plt
 class BreakIt(Exception): pass
 
 
 if __name__ == '__main__':
-    print_to_screen = True
-    df = pandas.DataFrame(columns=('MODEL',
-                                   'Height of lower flange stiffener',
-                                   'Thickness of lower flange',
-                                   'Thickness of lower flange stiffener',
-                                   'SFX',
-                                   'SFY',
-                                   'SFZ',
-                                   'SMX',
-                                   'SMY',
-                                   'SMZ',
-                                   'PFX',
-                                   'PFY',
-                                   'PFZ',
-                                   'PMX',
-                                   'PMY',
-                                   'PMZ'))
-
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
@@ -59,110 +41,72 @@ if __name__ == '__main__':
 
         if not this_candidate.has_model():
             state = 'New'
+
         else:
             state = "Old"
+
+        print(state)
         with redirect_stdout(fout):
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
-        # this_candidate.init_model(state='New')
-        this_candidate.settings.load_cases = {  # 121, np.pi / 15, np.pi
-                "num_wave_frequencies": 40,  # TODO: Implement adaptive frequency
-                "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
-                "max_wave_frequencies": 2 * np.pi / 4,
-                "num_wave_directions" : 3,
-                "min_wave_directions" : 0,  # deg
-                "max_wave_directions" : 90,
-        }
+        this_candidate.init_load_response()
 
-        if not this_candidate.has_stability_db():
-            # if True:
-            try:
-                with redirect_stdout(fout):
-                    r = this_candidate.intact_stability_ratio()
-                if r >= 1.4:
-                    is_stable = True
-                    print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
-                else:
-                    is_stable = False
-                    print('This candidate is not stable')
-            except:
-                print('Stability check failed ...')
-                is_stable = False
-        else:
-            print('This candidate has old stability database')
+        # Consider first radial
 
-        if this_candidate.has_complete_hydrodynamic_db():
-            print('This candidate has old hydro database. Do not perform hydrodynamic analysis')
+        # Get section forces
+        sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
+        sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data['draught']
+        section_point = [sp_x, 0, sp_z]  # Used for moment reference
+        section_normal = [1, 0, 0]
+
+        imass, ipanel = this_candidate.response.get_section_index(section_point, section_normal)
+        this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, moment_ref_point=section_point)
+        del imass, ipanel
+
+        w = this_candidate.loads.w
+        f_fk = this_candidate.f_sec1['Dynamic']['Froude-Krylof'][:,0,2]/9810
+        f_rad = this_candidate.f_sec1['Dynamic']['Radiation'][:,0,2]/9810
+        f_diff = this_candidate.f_sec1['Dynamic']['Diffraction'][:,0,2]/9810
+        f_bouy = this_candidate.f_sec1['Dynamic']['Buoyancy'][:,0,2]/9810
+        f_inert = this_candidate.f_sec1['Dynamic']['Inertia'][:,0,2]/9810
+
+        fig, axs = plt.subplots(2)
+        axs[0].plot(w, abs(f_fk), label='Froude-Krylof')
+        axs[0].plot(w, abs(f_rad), label='Diffraction')
+        axs[0].plot(w, abs(f_diff), label='Radiation')
+        axs[0].plot(w, abs(f_bouy), label='Buoyancy')
+        axs[0].plot(w, abs(f_inert), label='Inertia')
+        axs[0].set_title('Magnitude')
+        axs[0].legend()
+        axs[1].plot(w, np.angle(f_fk), label='Froude-Krylof')
+        axs[1].plot(w, np.angle(f_rad), label='Diffraction')
+        axs[1].plot(w, np.angle(f_diff), label='Radiation')
+        axs[1].plot(w, np.angle(f_bouy), label='Buoyancy')
+        axs[1].plot(w, np.angle(f_inert), label='Inertia')
+        axs[1].set_title('Phase')
+        axs[1].legend()
+        plt.show()
+        #
+        # fig, axs = plt.subplots(2)
+        # axs[0, 0].plot(w, abs(f_fk), 'tab:blue', label='Froude-Krylof')
+        # axs[0, 0].plot(w, abs(f_rad), 'tab:green', label='Diffraction')
+        # axs[0, 0].plot(w, abs(f_diff), 'tab:orange', label='Radiation')
+        # axs[0, i].plot(w, abs(f_bouy), 'tab:yellow', label='Buoyancy')
+        # axs[0, i].plot(w, abs(f_inert), 'tab:red', label='Inertia')
+        # axs[0, i].set_title('All forces')
+        # axs[0, i].legend()
 
 
-        else:
-            if this_candidate.is_stable():
-                print(
-                        'This candidate is stable, but has no hydro_database. Perform hydrodynamic analysis')
-                with redirect_stdout(fout):
-                    # pass
-                    this_candidate.hydrodynamic_analysis()
-
-        if this_candidate.is_stable():
-            if this_candidate.has_complete_hydrodynamic_db():
-                # if False:
-                print(
-                        'This candidate is stable and has hydro database. Perform structural optimization')
-
-                this_candidate.init_load_response()
-
-                irow += 1
-                with redirect_stdout(fout):
-                    res = this_candidate.structural_analysis()
-
-                    if print_to_screen:
-                        print('Max UR is : {:1.2f}'.format(res['Max UR']))
-                        print('Height of lower flange stiffener : {:1.2f}'.format(
-                                res['panel_cc']._h_lfst))
-                        print('Thickness of lower flange : {:1.2f}'.format(res['panel_cc']._t_lfst))
-                        print('Thickness of lower flange stiffener : {:1.2f}'.format(
-                                res['panel_cc']._t_lf))
-
-                        print('Setion force: {}'.format(
-                                np.array2string(res['section force'], precision=2)))
-
-                        print(
-                                'Panel force: {}'.format(
-                                        np.array2string(res['panel force'], precision=2)))
-                        # this_candidate.loads.show_pressure(ifreq=20, pressure_index=1, pressure_type='Radiation', axis=2)
-
-                        print('\nEigenvalue sollution WITH added mass')
-                        tb.eigenvalprint(this_candidate.loads.m + this_candidate.loads.ma[0, :, :],
-                                         this_candidate.loads.k)
-
-                        tb.matprint(this_candidate.loads.m + this_candidate.loads.ma[0, :, :])
-                        tb.matprint(this_candidate.loads.k)
-
-                df.loc[irow] = [this_candidate.settings.case_label,
-                                res['panel_cc']._h_lfst,
-                                res['panel_cc']._t_lfst,
-                                res['panel_cc']._t_lf,
-                                res['section force'][0],
-                                res['section force'][1],
-                                res['section force'][2],
-                                res['section force'][3],
-                                res['section force'][4],
-                                res['section force'][5],
-                                res['panel force'][0],
-                                res['panel force'][1],
-                                res['panel force'][2],
-                                res['panel force'][3],
-                                res['panel force'][4],
-                                res['panel force'][5],
-                                ]
-
-                this_candidate.print_report()
-                print('Optimization finished, results saved and report printed')
-
-            else:
-                print('This candidate is stable but has no hydro_database. No structural analysis')
-        else:
-            print('This candidate is not stable')
-
-    df.to_csv(candidate_parent_dir.joinpath('output.csv'))
-    df.to_excel(candidate_parent_dir.joinpath('output.xlsx'))
+        # force_out = dict()
+        # force_out['Static'] = dict()
+        # force_out['Dynamic'] = dict()
+        #
+        # force_out['Static']['Total'] = f_gravity + f_bouyancy
+        # force_out['Static']['Gravity'] = f_gravity
+        # force_out['Static']['Buoyancy'] = f_bouyancy
+        # force_out['Dynamic']['Total'] = f_rad + f_fk + f_diff + f_dz_s + f_inertia
+        # force_out['Dynamic']['Radiation'] = f_rad
+        # force_out['Dynamic']['Froude-Krylof'] = f_fk
+        # force_out['Dynamic']['Diffraction'] = f_diff
+        # force_out['Dynamic']['Buoyancy'] = f_dz_s
+        # force_out['Dynamic']['Inertia'] = f_inertia
