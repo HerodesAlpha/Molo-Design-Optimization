@@ -9,11 +9,14 @@ try:
     import ttk
     import tkMessageBox as tkmb
 
+    import tkFileDialog as filedialog
+
     tk.messagebox = tkmb
 except:
     import tkinter as tk
     import tkinter.messagebox
     import tkinter.ttk as ttk
+    import tkfiledialog as filedialog
 
 import pygubu
 
@@ -52,6 +55,8 @@ class MyApplication:
             self.show_about_dialog()
         if option_id == 'mm_quit':
             self.mainwindow.quit()
+        if option_id == 'mm_get_dir':
+            self.mainwindow.directoryBox()
 
     def btn_menu_clicked(self):
         # this is ugly but I don't want to use menubutton :(
@@ -188,6 +193,16 @@ class MyApplication:
 
         return coords
 
+    def directoryBox(self, title=None, dirName=None):
+        options = {}
+        options['initialdir'] = dirName
+        options['title'] = title
+        options['mustexist'] = False
+        fileName = tkFileDialog.askdirectory(**options)
+        if fileName == "":
+            return None
+        else:
+            return fileName
 
 if __name__ == '__main__':
     app = MyApplication()

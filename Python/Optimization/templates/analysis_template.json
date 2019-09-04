@@ -1,7 +1,7 @@
 {
     "configuration": {
         "clear_old_logs": true,
-        "log_level": "DEBUG"
+        "log_level": "Debug"
     },
     "phase": [],
     "simulations": {
