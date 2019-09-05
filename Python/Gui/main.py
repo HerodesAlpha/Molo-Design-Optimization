@@ -3,20 +3,8 @@ import sys
 import os
 import random
 import math
-
-try:
-    import Tkinter as tk
-    import ttk
-    import tkMessageBox as tkmb
-
-    import tkFileDialog as filedialog
-
-    tk.messagebox = tkmb
-except:
-    import tkinter as tk
-    import tkinter.messagebox
-    import tkinter.ttk as ttk
-    import tkfiledialog as filedialog
+from tkinter import *
+from tkinter import filedialog
 
 import pygubu
 
@@ -198,7 +186,7 @@ class MyApplication:
         options['initialdir'] = dirName
         options['title'] = title
         options['mustexist'] = False
-        fileName = tkFileDialog.askdirectory(**options)
+        fileName = filedialog.askdirectory(**options)
         if fileName == "":
             return None
         else:
