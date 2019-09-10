@@ -50,7 +50,6 @@ if __name__ == '__main__':
         with redirect_stdout(fout):
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
-        this_candidate.settings.critical_damping_ratio= 0.01
         this_candidate.init_load_response()
 
         # Consider first radial
@@ -59,43 +58,21 @@ if __name__ == '__main__':
         sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[
             'draught']
-        #sp_x = - 1000
+        # sp_x = - 1000
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
 
         imass, ipanel = this_candidate.response.get_section_index(section_point, section_normal)
-        this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
+        this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, moment_ref_point=section_point)
         del imass, ipanel
 
-        ibeta = 0
-        idof = 2
+        x = this_candidate.response._panel_pressure_centers
+        y = np.squeeze(this_candidate.response._projected_panel_area)
 
-        stat_force = this_candidate.f_sec1['Static']
+        import csv
 
-        factor = 1 / 9810
+        with open("data.csv", 'w', newline='') as f:
+            writer = csv.writer(f, dialect='excel')
+            writer.writerows(np.hstack((x, y)))
 
-        for key in stat_force:
-            a = np.abs(stat_force[key][2]) * factor
-            b = np.angle(stat_force[key][2])
-            print('{}: {:1.2f} {:1.2f}'.format(key, a, b))
-
-        w = this_candidate.loads.w
-        fig, axs = plt.subplots(2)
-        dyn_force = this_candidate.f_sec1['Dynamic']
-
-        for key in dyn_force:
-            if not key == 'Sum':
-                axs[0].plot(w, np.abs(dyn_force[key][:, ibeta, idof]) * factor, label=key)
-                axs[1].plot(w, np.angle(dyn_force[key][:, ibeta, idof]), label=key)
-
-        axs[0].set_title('Magnitude')
-        axs[0].legend()
-        axs[1].set_title('Phase')
-        axs[1].legend()
-        plt.show()
         #
-        stat_force = this_candidate.f_sec1['Dynamic']
-
-        for key in dyn_force:
-            axs[0].plot(w, np.abs(dyn_force[key][:, ibeta, idof]) / 9810, label=key)
-            axs[1].plot(w, np.angle(dyn_force[key][:, ibeta, idof]), label=key)

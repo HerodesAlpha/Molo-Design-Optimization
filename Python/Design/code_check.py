@@ -89,7 +89,7 @@ class Panel():
         self._w_p = w_p
         self._w_z = w_z
 
-    def hold3_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
 
 #        try:
             for self._t_lf in np.linspace(0.035, 0.060, 3):
@@ -106,7 +106,7 @@ class Panel():
 
             return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
-    def hold2_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+    def hold1_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         def objective_function(x):
             # x = np.zeros(3)
 
@@ -159,7 +159,7 @@ class Panel():
         return self.dynamic_panel_utilization(sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir)
 
 
-    def minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
+    def hold4_minimize_panel_setion(self, sigma_y, bc, sigma_x, p_lat, contourline, freq, nwdir):
         def objective_function(x):
             # x = np.zeros(3)
 

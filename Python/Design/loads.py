@@ -20,6 +20,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         super().__init__()
         h5_bs = BaseStructure()
         self._settings = settings
+
         with h5py.File(settings.fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
 
             # hdf5_db['results']['fk_pressure_raw'][0]
@@ -57,14 +58,12 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 del b
 
                 # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                if True: # Move lower faces to correct position
+                if settings.lower_face_corrected_z_pos: # Move lower faces to correct position
                     ind = self._nemoh_mesh_vertices[:, 2] <= np.min(self._nemoh_mesh_vertices[:, 2]) * 0.99
                     self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
                     # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
                     del ind
-                    lower_face_corrected_z_pos = True
-                else:
-                    lower_face_corrected_z_pos = False
+
 
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)  # TODO: Get vertices and points
             self._an = self.pd.ppanel_areas[:, np.newaxis] * self.pd.ppanel_normals
@@ -80,7 +79,10 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
             # step += 1
             # sys.stdout.write("\t({})Get added mass and damping\n".format(step))
             self._ma = hdf5_db[h5_bs.H5_RESULTS_ADDED_MASS][:] #TODO: Calc added mass inf
-            self._c_hyd = hdf5_db[h5_bs.H5_RESULTS_RADIATION_DAMPING][:]
+            self._c_critical = 2*np.sqrt(self._k[np.newaxis,:,:] *(self._m[np.newaxis,:,:] + self._ma))
+            self._c_radiation = hdf5_db[h5_bs.H5_RESULTS_RADIATION_DAMPING][:]
+            self._c_viscous = self._c_critical*settings.critical_damping_ratio
+
             # -------------------------------------------------------
 
             # step += 1
@@ -108,7 +110,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
                 # sys.stdout.write("\t\tStatic buoyancy pressure\n")
                 # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
-                assert lower_face_corrected_z_pos
+                assert settings.lower_face_corrected_z_pos
                 self._pressure['Buoyancy'] = (self._rho_sw * self._gravity) * self._pd.ppanel_centers[:, 2]
 
                 # sys.stdout.write("\t\tStatic buoyancy force\n")
@@ -162,8 +164,9 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         nemoh_mesh = Mesh(self._pd.ppoints, self._pd.ppanels)
         p = self._pressure[pressure_type][ifreq, pressure_index, :]
         n = self._pd.ppanel_normals
-        vec = (n * np.imag(p)[:, np.newaxis]) * xyz
-        h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, vec)
+        a = np.abs(p)*np.cos(np.angle(p))
+        vec = (n * a[:, np.newaxis]) * xyz
+        h = force.show_force(nemoh_mesh, self._pd.ppanel_centers, -vec)
         h.show()
 
     def p2f(self, p, ifreq=None, idir=None):
@@ -236,7 +239,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
     @property
     def c_hyd(self):
-        return self._c_hyd
+        return self._c_radiation
 
     @property
     def pd(self):

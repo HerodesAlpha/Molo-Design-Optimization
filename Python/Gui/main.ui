@@ -3,10 +3,10 @@
   <object class="tk.Toplevel" id="mainwindow">
     <property name="height">200</property>
     <property name="resizable">both</property>
-    <property name="title" translatable="yes">Myapp</property>
+    <property name="title" translatable="yes">MOLO</property>
     <property name="width">200</property>
     <child>
-      <object class="tk.Frame" id="mw_fcontainer">
+      <object class="ttk.Frame" id="mw_fcontainer">
         <property name="height">200</property>
         <property name="width">200</property>
         <layout>
@@ -26,7 +26,7 @@
           </columns>
         </layout>
         <child>
-          <object class="tk.Frame" id="mw_ftoolbar">
+          <object class="ttk.Frame" id="mw_ftoolbar">
             <property name="borderwidth">2</property>
             <property name="height">200</property>
             <property name="width">200</property>
@@ -37,7 +37,7 @@
               <property name="sticky">ew</property>
             </layout>
             <child>
-              <object class="tk.Menubutton" id="mm_file">
+              <object class="ttk.Menubutton" id="mm_file">
                 <property name="text" translatable="yes">File</property>
                 <layout>
                   <property name="column">0</property>
@@ -48,8 +48,9 @@
                   <object class="tk.Menu" id="mm_file_menu">
                     <child>
                       <object class="tk.Menuitem.Command" id="mm_analyses_root">
+                        <property name="command">open_workspace</property>
                         <property name="command_id_arg">false</property>
-                        <property name="label" translatable="yes">Set analysis root</property>
+                        <property name="label" translatable="yes">Open Workspace</property>
                       </object>
                     </child>
                     <child>
@@ -57,6 +58,7 @@
                     </child>
                     <child>
                       <object class="tk.Menuitem.Command" id="mm_quit">
+                        <property name="command">quit</property>
                         <property name="command_id_arg">false</property>
                         <property name="label" translatable="yes">Quit</property>
                       </object>
@@ -68,7 +70,7 @@
           </object>
         </child>
         <child>
-          <object class="tk.Frame" id="mw_fmain">
+          <object class="ttk.Frame" id="mw_fmain">
             <property name="height">200</property>
             <property name="width">200</property>
             <layout>
@@ -88,7 +90,7 @@
               </columns>
             </layout>
             <child>
-              <object class="tk.PanedWindow" id="PanedWindow_1">
+              <object class="ttk.Panedwindow" id="mpw_nw">
                 <property name="height">200</property>
                 <property name="orient">horizontal</property>
                 <property name="width">200</property>
@@ -99,10 +101,46 @@
                 </layout>
               </object>
             </child>
+            <child>
+              <object class="ttk.Panedwindow" id="mpw_sw">
+                <property name="height">200</property>
+                <property name="orient">horizontal</property>
+                <property name="width">200</property>
+                <layout>
+                  <property name="column">0</property>
+                  <property name="propagate">True</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Panedwindow" id="mpw_ne">
+                <property name="height">200</property>
+                <property name="orient">horizontal</property>
+                <property name="width">200</property>
+                <layout>
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Panedwindow" id="mpw_se">
+                <property name="height">200</property>
+                <property name="orient">horizontal</property>
+                <property name="width">200</property>
+                <layout>
+                  <property name="column">1</property>
+                  <property name="propagate">True</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
           </object>
         </child>
         <child>
-          <object class="tk.Frame" id="mw_fbottom">
+          <object class="ttk.Frame" id="mw_fbottom">
             <property name="borderwidth">1</property>
             <property name="height">200</property>
             <property name="relief">ridge</property>
@@ -115,39 +153,6 @@
             </layout>
           </object>
         </child>
-      </object>
-    </child>
-    <child>
-      <object class="ttk.Panedwindow" id="Panedwindow_1">
-        <property name="height">200</property>
-        <property name="orient">horizontal</property>
-        <property name="width">200</property>
-        <layout>
-          <property name="column">0</property>
-          <property name="propagate">True</property>
-          <property name="row">1</property>
-        </layout>
-      </object>
-    </child>
-    <child>
-      <object class="pygubu.builder.widgets.scrollbarhelper" id="scrollbarhelper_1">
-        <property name="scrolltype">both</property>
-        <property name="usemousewheel">false</property>
-        <layout>
-          <property name="column">0</property>
-          <property name="propagate">True</property>
-          <property name="row">2</property>
-        </layout>
-      </object>
-    </child>
-    <child>
-      <object class="ttk.Progressbar" id="Progressbar_1">
-        <property name="orient">horizontal</property>
-        <layout>
-          <property name="column">0</property>
-          <property name="propagate">True</property>
-          <property name="row">3</property>
-        </layout>
       </object>
     </child>
   </object>
@@ -180,7 +185,7 @@
           </columns>
         </layout>
         <child>
-          <object class="tk.Frame" id="about_fmain">
+          <object class="ttk.Frame" id="about_fmain">
             <property name="height">200</property>
             <property name="width">200</property>
             <layout>
@@ -206,7 +211,7 @@
               </columns>
             </layout>
             <child>
-              <object class="tk.Label" id="Label_1">
+              <object class="ttk.Label" id="Label_1">
                 <property name="font">{Helvetica} 16 {}</property>
                 <property name="text" translatable="yes">MOLO Design Optimizer</property>
                 <layout>
@@ -217,7 +222,7 @@
               </object>
             </child>
             <child>
-              <object class="tk.Label" id="Label_2">
+              <object class="ttk.Label" id="Label_2">
                 <property name="justify">right</property>
                 <property name="text" translatable="yes">This application perform conceptual dimensioning og the MOLO floater</property>
                 <property name="wraplength">0</property>
@@ -231,7 +236,7 @@
           </object>
         </child>
         <child>
-          <object class="tk.Frame" id="about_fbottom">
+          <object class="ttk.Frame" id="about_fbottom">
             <property name="height">200</property>
             <property name="width">200</property>
             <layout>
@@ -246,7 +251,7 @@
               </columns>
             </layout>
             <child>
-              <object class="tk.Button" id="about_btnclose">
+              <object class="ttk.Button" id="about_btnclose">
                 <property name="text" translatable="yes">Close</property>
                 <layout>
                   <property name="column">0</property>

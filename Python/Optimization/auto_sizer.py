@@ -117,6 +117,7 @@ if __name__ == '__main__':
                                 print(
                                         'This candidate is stable and has hydro database. Perform structural optimization')
 
+                                this_candidate.settings.critical_damping_ratio = 0.05
                                 this_candidate.init_load_response()
 
                                 irow += 1

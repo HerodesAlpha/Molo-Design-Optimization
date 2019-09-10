@@ -61,6 +61,7 @@ if __name__ == '__main__':
             state = 'New'
         else:
             state = "Old"
+
         with redirect_stdout(fout):
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
@@ -109,6 +110,7 @@ if __name__ == '__main__':
                 print(
                         'This candidate is stable and has hydro database. Perform structural optimization')
 
+                this_candidate.settings.critical_damping_ratio = 0.02
                 this_candidate.init_load_response()
 
                 irow += 1

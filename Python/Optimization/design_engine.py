@@ -227,8 +227,8 @@ class Candidate():
         # Check lower, inner panel
         bc = 'pinned'
 
-        f_sec = self.f_sec1['Dynamic']['Total']
-        f_part = self.f_part1['Dynamic']['Total']
+        f_sec = self.f_sec1['Dynamic']['Sum']
+        f_part = self.f_part1['Dynamic']['Sum']
         sigma_x_p = self.panel_cc.axial_stress(f_sec, pos_y_side=True)
         sigma_x_n = self.panel_cc.axial_stress(f_sec, pos_y_side=False)
         p_lat = self.panel_cc.lateral_pressure(f_part)

@@ -40,7 +40,7 @@ class DesignReport(Document):
         with header.create(Head("L")) as header_left:
             with header_left.create(MiniPage(width=NoEscape(r"0.49\textwidth"),
                                              pos='c')) as logo_wrapper:
-                logo_file = str(settings.templates_dir.joinpath('logo.png'))
+                logo_file = str(settings.templates_dir.joinpath('MOLO_LOGO.png'))
                 # logo_file= '{' + logo_file + '}'
                 logo_file = logo_file.replace('\\', '/')
                 # print(str(logo_file))

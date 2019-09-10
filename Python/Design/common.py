@@ -160,6 +160,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._thin_panels = self._job_data['analysis']['simulations']['default']['calculation']['thin_panels']
         self._use_dipols = self._job_data['analysis']['simulations']['default']['calculation'][
             'use_dipoles_implementation']
+        self._critical_damping_ratio = 0
 
         self._thin_panel_offset = self._job_data['floater']['Thin panel offset']
         self._flange_thickness = self._job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']
@@ -393,3 +394,19 @@ class SettingsClass(PhysicalQuantities, object):
         self._flange_thickness = val
         self._job_data['floater']['Lower flange thickness'] = self._flange_thickness
         self.save_job_settings()
+
+    @property
+    def lower_face_corrected_z_pos(self):
+        return self._job_data['floater']['Correct z pos of lower faces']
+
+    @property
+    def critical_damping_ratio(self):
+        return self._critical_damping_ratio
+
+    @critical_damping_ratio.setter
+    def critical_damping_ratio(self,val):
+        self._critical_damping_ratio = val
+
+
+
+
