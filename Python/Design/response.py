@@ -39,6 +39,9 @@ class ResponseModel(object):
         for ibeta in range(self._loads._nbeta):
             self._rao[:, ibeta, :] = self.calc_rao(ibeta)
 
+            #self._rao[:, ibeta, 4]=0
+            #self._rao[:, ibeta, 5]=0
+
         # Prepare discrete mass and hydro forces
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
             self._unit_model = pickle.load(f)
@@ -241,10 +244,8 @@ class ResponseModel(object):
         # ---------------------------------------------------------------------------
         f_fk = self.sum_forces(ipanel, self._panel_pressure_froude_krylof_force, self._panel_pressure_centers,
                                moment_ref_point)
-        # f_fk *= -1 # Move from right hand side to left handside of dynamic equation
         f_diff = self.sum_forces(ipanel, self._panel_pressure_diffraction_force, self._panel_pressure_centers,
                                  moment_ref_point)
-        # f_diff *= -1 # Move from right hand side to left handside of dynamic equation
         #
         # ---------------------------------------------------------------------------
         # DYNAMIC REACTION FORCES
@@ -303,3 +304,7 @@ class ResponseModel(object):
         h_lfst = fdi['Lower flange stiffener height']
         t_ufst = fdi['Upper flange stiffener thickness']
         h_ufst = fdi['Upper flange stiffener height']
+
+    @property
+    def rao(self):
+        return self._rao

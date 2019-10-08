@@ -1,0 +1,38 @@
+{
+    "Haliade X": {
+        "Hub height": 140,
+        "Ixx": 450000,
+        "Ixy": 0,
+        "Ixz": 0,
+        "Iyy": 2000000,
+        "Iyz": 0,
+        "Izz": 2000000,
+        "Mass": 825000,
+        "Rotor diameter": 220,
+        "Tower": {
+            "Diameter": 6,
+            "Height": 137,
+            "Thickness": 0.05,
+            "Type": "Default"
+        },
+        "Type": "Default"
+    },
+    "Vestas 9.5": {
+        "Hub height": 116.5,
+        "Ixx": 450000,
+        "Ixy": 0,
+        "Ixz": 0,
+        "Iyy": 2000000,
+        "Iyz": 0,
+        "Izz": 2000000,
+        "Mass": 500000,
+        "Rotor diameter": 167,
+        "Tower": {
+            "Diameter": 6,
+            "Height": 113.5,
+            "Thickness": 0.05,
+            "Type": "Default"
+        },
+        "Type": "Default"
+    }
+}

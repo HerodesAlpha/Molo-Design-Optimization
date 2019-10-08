@@ -30,7 +30,7 @@ from loads import Sea_and_Inertia_Loads
 
 class Parameter_Space():
     def __init__(self, templates_dir=None):
-        self._json_list = ['park', 'rna', 'tower', 'floater', 'analysis', 'design_basis']
+        self._json_list = ['park', 'wtg', 'floater', 'analysis', 'design_basis']
         self._job_data = dict()
 
         if templates_dir==None:

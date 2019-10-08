@@ -155,6 +155,7 @@ class SettingsClass(PhysicalQuantities, object):
 
         self._fio = None
         self._report = None
+        self._wtg_model = None
 
 
         self._thin_panels = self._job_data['analysis']['simulations']['default']['calculation']['thin_panels']
@@ -399,6 +400,13 @@ class SettingsClass(PhysicalQuantities, object):
     def lower_face_corrected_z_pos(self):
         return self._job_data['floater']['Correct z pos of lower faces']
 
+
+
+    @lower_face_corrected_z_pos.setter
+    def lower_face_corrected_z_pos(self,val):
+        self._lower_face_corrected_z_pos = val
+
+
     @property
     def critical_damping_ratio(self):
         return self._critical_damping_ratio
@@ -407,6 +415,13 @@ class SettingsClass(PhysicalQuantities, object):
     def critical_damping_ratio(self,val):
         self._critical_damping_ratio = val
 
+    @property
+    def wtg_model(self):
+        return self._wtg_model
+
+    @wtg_model.setter
+    def wtg_model(self,val):
+        self._wtg_model = val
 
 
 

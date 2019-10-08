@@ -134,9 +134,9 @@ def model01():
 
 def create_mass_models(settings):
 
-    twr_data = model.TowerDataClass(settings.job_data['tower'])
+    twr_data = model.TowerDataClass(settings.job_data['wtg'][settings.wtg_model]["Tower"])
     floater_data = model.FloaterDataClass(settings.job_data['floater'])
-    rna_data = model.RNADataClass(settings.job_data['rna'])
+    rna_data = model.RNADataClass(settings.job_data['wtg'][settings.wtg_model])
 
     # Set global z
     interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf

@@ -51,10 +51,15 @@ if __name__ == '__main__':
     irow = -1
 
     p.gap = 0.8
-    p.height = 20
-    p.column_diameter = 8.1
+    p.height = 21
+    p.column_diameter = 7.5
     p.filling_ratio = [0] * 3
     this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
+
+    this_candidate.settings.wtg_model = "Vestas 9.5"
+    #this_candidate.settings.wtg_model = "Haliade X"
+
+
     with open(this_candidate.settings.fio.case_dir.joinpath('stdout_redirect.txt'), 'w') as fout:
 
         if not this_candidate.has_model():
@@ -62,8 +67,8 @@ if __name__ == '__main__':
         else:
             state = "Old"
 
-        with redirect_stdout(fout):
-            this_candidate.init_model(state=state)
+        state = 'New'
+        this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
         # this_candidate.init_model(state='New')
         this_candidate.settings.load_cases = {  # 121, np.pi / 15, np.pi
@@ -77,18 +82,17 @@ if __name__ == '__main__':
 
         if not this_candidate.has_stability_db():
             # if True:
-            try:
-                with redirect_stdout(fout):
-                    r = this_candidate.intact_stability_ratio()
-                if r >= 1.4:
-                    is_stable = True
-                    print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
-                else:
-                    is_stable = False
-                    print('This candidate is not stable')
-            except:
-                print('Stability check failed ...')
+            #try:
+            r = this_candidate.intact_stability_ratio()
+            if r >= 1.4:
+                is_stable = True
+                print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
+            else:
                 is_stable = False
+                print('This candidate is NOT stable with r = {:1.0f}%'.format(r * 100))
+            # except:
+            #     print('Stability check failed ...')
+            #     is_stable = False
         else:
             print('This candidate has old stability database')
 
@@ -100,9 +104,7 @@ if __name__ == '__main__':
             if this_candidate.is_stable():
                 print(
                         'This candidate is stable, but has no hydro_database. Perform hydrodynamic analysis')
-                with redirect_stdout(fout):
-                    # pass
-                    this_candidate.hydrodynamic_analysis()
+                this_candidate.hydrodynamic_analysis()
 
         if this_candidate.is_stable():
             if this_candidate.has_complete_hydrodynamic_db():
@@ -114,31 +116,30 @@ if __name__ == '__main__':
                 this_candidate.init_load_response()
 
                 irow += 1
-                with redirect_stdout(fout):
-                    res = this_candidate.structural_analysis()
+                res = this_candidate.structural_analysis()
 
-                    if print_to_screen:
-                        print('Max UR is : {:1.2f}'.format(res['Max UR']))
-                        print('Height of lower flange stiffener : {:1.2f}'.format(
-                                res['panel_cc']._h_lfst))
-                        print('Thickness of lower flange : {:1.2f}'.format(res['panel_cc']._t_lfst))
-                        print('Thickness of lower flange stiffener : {:1.2f}'.format(
-                                res['panel_cc']._t_lf))
+                if print_to_screen:
+                    print('Max UR is : {:1.2f}'.format(res['Max UR']))
+                    print('Height of lower flange stiffener : {:1.2f}'.format(
+                            res['panel_cc']._h_lfst))
+                    print('Thickness of lower flange : {:1.2f}'.format(res['panel_cc']._t_lfst))
+                    print('Thickness of lower flange stiffener : {:1.2f}'.format(
+                            res['panel_cc']._t_lf))
 
-                        print('Setion force: {}'.format(
-                                np.array2string(res['section force'], precision=2)))
+                    print('Setion force: {}'.format(
+                            np.array2string(res['section force'], precision=2)))
 
-                        print(
-                                'Panel force: {}'.format(
-                                        np.array2string(res['panel force'], precision=2)))
-                        # this_candidate.loads.show_pressure(ifreq=20, pressure_index=1, pressure_type='Radiation', axis=2)
+                    print(
+                            'Panel force: {}'.format(
+                                    np.array2string(res['panel force'], precision=2)))
+                    # this_candidate.loads.show_pressure(ifreq=20, pressure_index=1, pressure_type='Radiation', axis=2)
 
-                        print('\nEigenvalue sollution WITH added mass')
-                        tb.eigenvalprint(this_candidate.loads.m + this_candidate.loads.ma[0, :, :],
-                                         this_candidate.loads.k)
+                    print('\nEigenvalue sollution WITH added mass')
+                    tb.eigenvalprint(this_candidate.loads.m + this_candidate.loads.ma[0, :, :],
+                                     this_candidate.loads.k)
 
-                        tb.matprint(this_candidate.loads.m + this_candidate.loads.ma[0, :, :])
-                        tb.matprint(this_candidate.loads.k)
+                    tb.matprint(this_candidate.loads.m + this_candidate.loads.ma[0, :, :])
+                    tb.matprint(this_candidate.loads.k)
 
                 df.loc[irow] = [this_candidate.settings.case_label,
                                 res['panel_cc']._h_lfst,
@@ -158,7 +159,7 @@ if __name__ == '__main__':
                                 res['panel force'][5],
                                 ]
 
-                this_candidate.print_report()
+
                 print('Optimization finished, results saved and report printed')
 
             else:
@@ -166,5 +167,6 @@ if __name__ == '__main__':
         else:
             print('This candidate is not stable')
 
+    this_candidate.print_report()
     df.to_csv(candidate_parent_dir.joinpath('output.csv'))
     df.to_excel(candidate_parent_dir.joinpath('output.xlsx'))
