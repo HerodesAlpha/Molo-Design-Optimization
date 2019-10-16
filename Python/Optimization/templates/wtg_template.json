@@ -25,12 +25,12 @@
         "Iyy": 2000000,
         "Iyz": 0,
         "Izz": 2000000,
-        "Mass": 500000,
+        "Mass": 45000,
         "Rotor diameter": 167,
         "Tower": {
             "Diameter": 6,
             "Height": 113.5,
-            "Thickness": 0.05,
+            "Thickness": 0.04,
             "Type": "Default"
         },
         "Type": "Default"

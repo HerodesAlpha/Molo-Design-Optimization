@@ -39,8 +39,8 @@ class ResponseModel(object):
         for ibeta in range(self._loads._nbeta):
             self._rao[:, ibeta, :] = self.calc_rao(ibeta)
 
-            #self._rao[:, ibeta, 4]=0
-            #self._rao[:, ibeta, 5]=0
+            # self._rao[:, ibeta, 4]=0
+            # self._rao[:, ibeta, 5]=0
 
         # Prepare discrete mass and hydro forces
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
@@ -54,6 +54,10 @@ class ResponseModel(object):
 
         self._projected_panel_area = self._loads._an[np.newaxis, np.newaxis, :, :]
 
+        # *****************************************************************************
+        #                               S T A T I C
+        # *****************************************************************************
+
         # Gravity
         self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, np.newaxis] * np.asarray(
                 [0, 0, self._settings.gravity])[np.newaxis, :]  # Use m33
@@ -61,15 +65,27 @@ class ResponseModel(object):
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
 
+        # *****************************************************************************
+        #                   D Y N A M I C  E Q U I L I B R I U M
+        # *****************************************************************************
+
+        # -----------------------------------------------------------------------------
+        # Right hand side
+        # -----------------------------------------------------------------------------
+
         # Froude-Krylof
         self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
 
         # Diffraction
         self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
 
+        # -----------------------------------------------------------------------------
+        # Left hand side
+        # -----------------------------------------------------------------------------
+
         # Radiation
         self._panel_pressure_radiation_unit_force = self._loads._force['Radiation'].copy()  # Dont mess with original
-        # Here the RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
+        # The RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
         self._panel_pressure_radiation_force_all_dof = self._panel_pressure_radiation_unit_force[:, np.newaxis, :, :,
                                                        :] * self._rao[:, :, :, np.newaxis, np.newaxis]
         self._panel_pressure_radiation_force = np.sum(self._panel_pressure_radiation_force_all_dof, axis=2)
@@ -84,6 +100,7 @@ class ResponseModel(object):
                 self._rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)
         self._rao_transf_mat = self._rao_tra_mat[:, :, np.newaxis, :, :]
 
+        # Stiffness
         # Gen dynamic position of panels and calc hydro static pressure
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._ppc = np.append(self._panel_pressure_centers, np.ones((self._loads.pd.npanels, 1)), 1)
@@ -91,12 +108,13 @@ class ResponseModel(object):
         self._ppc = self._ppc[np.newaxis, np.newaxis, :, :, np.newaxis]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...
         self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_transf_mat, self._ppc), axis=4)[:, :, :, 0:3]
-        self._panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
-        self._pressures_diff_static = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
-                                                                                        2]  # Change in pressure
-        self._panel_pressure_diff_static_force = -self._pressures_diff_static[:, :, :,
-                                                  np.newaxis] * self._projected_panel_area
+        self._panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :, :]  # Subtract mean position
+        self._panel_diff_buoyancy_pressure = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
+                                                                                               2]  # Change in pressure
+        self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
+                                            np.newaxis] * self._projected_panel_area)
 
+        # Inertia
         # Get dynamic acceleration of part masses and calc inertia force
         # TODO: Include rotation/inertia moment from parts
         self._pmc = np.append(self._point_mass_centers, np.ones((self._point_mass_centers.shape[0], 1)), 1)
@@ -104,9 +122,9 @@ class ResponseModel(object):
         self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rao_transf_mat, self._pmc), axis=4)[:, :, :, 0:3]
         self._dynamic_point_mass_pos -= self._point_mass_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
         self._w2 = self._loads.w ** 2
-        self._part_dynacc = self._dynamic_point_mass_pos * self._w2[:, np.newaxis, np.newaxis, np.newaxis]
-        self._point_mass_dynamic_inertia_force = -self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :,
-                                                                      np.newaxis, 0, 0]
+        self._part_dynacc = self._dynamic_point_mass_pos * -self._w2[:, np.newaxis, np.newaxis, np.newaxis]
+        self._point_mass_dynamic_inertia_force = self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :,
+                                                                     np.newaxis, 0, 0]
 
     def calc_rao(self, idir):
         fe = self._loads._fe[:, idir, :]
@@ -119,24 +137,13 @@ class ResponseModel(object):
         container = np.zeros([len(vw), 6], dtype=complex)
         for i, w in enumerate(vw):
             this_ma = ma[i, :, :]
-            denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * c_rad[i, :, :] + 1j * w * c_visc[i, :, :] + k,
+            this_c = c_rad[i, :, :] + c_visc[i, :, :]
+            denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * this_c + k,
                                dtype=complex)
             daf = scipy.linalg.inv(denom)
             x = daf @ fe[i, :]
             container[i, :] = x
         return container
-
-    # def rao(self, f, m, ma, c, k, vw):
-    #     container = np.zeros([len(vw), 6], dtype=complex)
-    #     for i, w in enumerate(vw):
-    #         this_ma = ma[i, :, :]
-    #         denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * c[i, :, :] + k, dtype=complex)
-    #         daf = scipy.linalg.inv(denom)
-    #         # daf =np.asarray([[1/x for x in col]for col in denom])
-    #         x = daf @ f[i, :]
-    #         container[i, :] = x
-    #
-    #     return container
 
     def get_section_index(self, section_point, section_normal):
 
@@ -252,7 +259,7 @@ class ResponseModel(object):
         # ---------------------------------------------------------------------------
         f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers,
                                     moment_ref_point)
-        f_dz_s = self.sum_forces(ipanel, self._panel_pressure_diff_static_force, self._panel_pressure_centers,
+        f_dz_s = self.sum_forces(ipanel, self._panel_diff_buoyancy_force, self._panel_pressure_centers,
                                  moment_ref_point)
         f_rad = self.sum_forces(ipanel, self._panel_pressure_radiation_force, self._panel_pressure_centers,
                                 moment_ref_point)
@@ -265,7 +272,7 @@ class ResponseModel(object):
         force_out['Static']['Sum'] = f_gravity + f_bouyancy
         force_out['Static']['Gravity'] = f_gravity
         force_out['Static']['Buoyancy'] = f_bouyancy
-        force_out['Dynamic']['Sum'] = f_rad + f_fk + f_diff + f_dz_s + f_inertia
+        force_out['Dynamic']['Sum'] = f_fk + f_diff - (f_rad + f_dz_s + f_inertia)
         force_out['Dynamic']['Radiation'] = f_rad
         force_out['Dynamic']['Froude-Krylof'] = f_fk
         force_out['Dynamic']['Diffraction'] = f_diff
