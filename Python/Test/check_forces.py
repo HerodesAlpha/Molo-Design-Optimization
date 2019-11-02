@@ -93,10 +93,18 @@ if __name__ == '__main__':
         # x_label = 'Period [s]'
         x_label = 'Frequency [Hz]'
 
+        ifreq_print=15
+        print('\n\n{:16} {:5.3f}'.format(x_label, x_tics[ifreq_print]))
+
         for key in dyn_force:
             if not key == 'whatever':
-                axs[0, 0].plot(x_tics, np.abs(dyn_force[key][:, ibeta, idof]) * factor, label=key)
-                axs[0, 1].plot(x_tics, np.angle(dyn_force[key][:, ibeta, idof]), label=key)
+                abs_val=np.abs(dyn_force[key][:, ibeta, idof]) * factor
+
+                phase_val = np.angle(dyn_force[key][:, ibeta, idof])
+                axs[0, 0].plot(abs_val, label=key)
+                axs[0, 1].plot(x_tics,phase_val , label=key)
+                #print(abs_val[:])
+                print('{:15} {:5.2f} {: 5.2f}'.format(key, abs_val[ifreq_print], phase_val[ifreq_print]))
 
         axs[0, 0].set_title('Amplitude')
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
@@ -119,12 +127,18 @@ if __name__ == '__main__':
         for key in d:
 
             if key == 'Heave':
-                lns1 = ax1.plot(x_tics, np.abs(this_candidate.response.rao[:, ibeta, d[key]]), label=key)
+                abs_val_rao = np.abs(this_candidate.response.rao[:, ibeta, d[key]])
+                lns1 = ax1.plot(x_tics, abs_val_rao, label=key)
+
 
             else:
+                abs_val_rao = np.abs(this_candidate.response.rao[:, ibeta, d[key]])
                 lns2 = ax2.plot(x_tics, np.abs(this_candidate.response.rao[:, ibeta, d[key]]), '-r', label=key)
 
+            phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
             axs[1, 1].plot(x_tics, np.angle(this_candidate.response.rao[:, ibeta, d[key]]), label=key)
+
+            print('{:15} {:6.3f} {: 5.2f}'.format(key, abs_val_rao[ifreq_print], phase_val_rao[ifreq_print]))
 
         lns = lns1 + lns2
         labs = [l.get_label() for l in lns]

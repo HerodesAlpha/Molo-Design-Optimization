@@ -34,8 +34,8 @@ if __name__ == '__main__':
     irow = -1
 
     p.gap = 0.8
-    p.height = 20
-    p.column_diameter = 8.1
+    p.height = 21
+    p.column_diameter = 7.5
     p.filling_ratio = [0] * 3
     this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
     with open(this_candidate.settings.fio.case_dir.joinpath('stdout_redirect.txt'), 'w') as fout:
@@ -55,6 +55,6 @@ if __name__ == '__main__':
 
         # this_candidate.loads.show_pressure(ifreq=20, pressure_index=2, pressure_type='Radiation', axis=2)
 
-        this_candidate.loads.show_pressure(ifreq=20, pressure_index=0, pressure_type='Froude-Krylof', axis=2)
+        this_candidate.loads.show_pressure(ifreq=15, pressure_index=0, pressure_type='Froude-Krylof', axis=2)
 
         # this_candidate.loads.show_pressure(ifreq=20, pressure_index=0, pressure_type='Diffraction', axis=2)

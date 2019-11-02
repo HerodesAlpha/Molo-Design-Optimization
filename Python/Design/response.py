@@ -138,8 +138,7 @@ class ResponseModel(object):
         for i, w in enumerate(vw):
             this_ma = ma[i, :, :]
             this_c = c_rad[i, :, :] + c_visc[i, :, :]
-            denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * this_c + k,
-                               dtype=complex)
+            denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * this_c + k, dtype=complex)
             daf = scipy.linalg.inv(denom)
             x = daf @ fe[i, :]
             container[i, :] = x
