@@ -54,7 +54,7 @@ if __name__ == '__main__':
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
 
-        this_candidate.settings.critical_damping_ratio = 0
+        this_candidate.settings.critical_damping_ratio = 0.0
 
         this_candidate.init_load_response()
 

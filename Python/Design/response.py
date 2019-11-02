@@ -90,6 +90,9 @@ class ResponseModel(object):
                                                        :] * self._rao[:, :, :, np.newaxis, np.newaxis]
         self._panel_pressure_radiation_force = np.sum(self._panel_pressure_radiation_force_all_dof, axis=2)
 
+        # Is radiation normalized with omega?
+        #self._panel_pressure_radiation_force = self._panel_pressure_radiation_force * self._loads.w[:, np.newaxis,np.newaxis, np.newaxis]
+
         # RAO transformation matrix
         self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
         self._panel_pos = np.zeros([self._loads._nw, self._loads._nbeta, self._loads.pd.npanels, 3], dtype=complex)
