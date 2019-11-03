@@ -267,6 +267,12 @@ def write_result(hdf5_data, data):
     dset = hdf5_data.create_dataset(structure.H5_RESULTS_PRESSURE,data=data["out_pressure"], shape=data["out_pressure"].shape)
     utility.set_hdf5_attributes(dset, structure.H5_RESULTS_PRESSURE_ATTR)
 
+
+    if structure.H5_RESULTS_POTENTIAL in hdf5_data:
+        del hdf5_data[structure.H5_RESULTS_POTENTIAL]
+    dset = hdf5_data.create_dataset(structure.H5_RESULTS_POTENTIAL,data=data["out_potential"], shape=data["out_potential"].shape)
+    utility.set_hdf5_attributes(dset, structure.H5_RESULTS_POTENTIAL)
+
     utility.log_exit(logger, signature, [None])
 
 
