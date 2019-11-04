@@ -4,3 +4,10 @@ h5py
 capturer
 logutils
 scipy
+matplotlib
+pandas
+vtk
+pylatex
+imageio
+imageio-ffmpeg
+jmespath

@@ -57,10 +57,11 @@ class ResponseModel(object):
         # *****************************************************************************
         #                               S T A T I C
         # *****************************************************************************
-
+        w = self._loads.w
+        w2 = w ** 2
         # Gravity
         self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, np.newaxis] * np.asarray(
-                [0, 0, self._settings.gravity])[np.newaxis, :]  # Use m33
+            [0, 0, self._settings.gravity])[np.newaxis, :]  # Use m33
 
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
@@ -84,14 +85,23 @@ class ResponseModel(object):
         # -----------------------------------------------------------------------------
 
         # Radiation
-        self._panel_pressure_radiation_unit_force = self._loads._force['Radiation'].copy()  # Dont mess with original
+
+        am = self._loads._added_mass
+        rd = self._loads._radiation_damping
         # The RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        self._panel_pressure_radiation_force_all_dof = self._panel_pressure_radiation_unit_force[:, np.newaxis, :, :,
-                                                       :] * self._rao[:, :, :, np.newaxis, np.newaxis]
+        self._panel_pressure_radiation_force_all_dof = -am[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
+                                                                                    np.newaxis] * w2[:, np.newaxis,
+                                                                                                  np.newaxis,np.newaxis,
+                                                                                                  np.newaxis]
+        self._panel_pressure_radiation_force_all_dof -= rd[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
+                                                                                    np.newaxis] * w[:, np.newaxis,
+                                                                                                  np.newaxis,np.newaxis,
+                                                                                                  np.newaxis]
+
         self._panel_pressure_radiation_force = np.sum(self._panel_pressure_radiation_force_all_dof, axis=2)
 
         # Is radiation normalized with omega?
-        #self._panel_pressure_radiation_force = self._panel_pressure_radiation_force * self._loads.w[:, np.newaxis,np.newaxis, np.newaxis]
+        # self._panel_pressure_radiation_force = self._panel_pressure_radiation_force * self._loads.w[:, np.newaxis,np.newaxis, np.newaxis]
 
         # RAO transformation matrix
         self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
@@ -124,8 +134,8 @@ class ResponseModel(object):
         self._pmc = self._pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
         self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rao_transf_mat, self._pmc), axis=4)[:, :, :, 0:3]
         self._dynamic_point_mass_pos -= self._point_mass_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
-        self._w2 = self._loads.w ** 2
-        self._part_dynacc = self._dynamic_point_mass_pos * -self._w2[:, np.newaxis, np.newaxis, np.newaxis]
+
+        self._part_dynacc = self._dynamic_point_mass_pos * -w2[:, np.newaxis, np.newaxis, np.newaxis]
         self._point_mass_dynamic_inertia_force = self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :,
                                                                      np.newaxis, 0, 0]
 

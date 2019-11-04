@@ -34,7 +34,7 @@ if __name__ == '__main__':
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
-    analyses_root = Path(r'C:\MOLO_Optimization')
+    analyses_root = Path(r'C:\mdo_working_dir')
     park_label = 'site_01'
     wtg_label = 'wtg_01'
     candidate_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         else:
             state = "Old"
 
-        #state = 'New'
+        state = 'New'
         this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
         # this_candidate.init_model(state='New')

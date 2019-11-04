@@ -122,10 +122,10 @@
         "sim01": {
             "floating_bodies": {
                 "sim01.dat": {
-                    "mesh_file": "Not set"
+                    "mesh_file": "dummy"
                 }
             },
-            "simulation_dir": "Not set"
+            "simulation_dir": "dummy"
         }
     },
     "simulations_to_run": [
