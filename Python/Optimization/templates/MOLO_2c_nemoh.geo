@@ -12,27 +12,26 @@ Geometry.CopyMeshingMethod = 1;
 // ----------------------------------------------------------------------------
 
 lc = 1e-2;	        //
-drc = #dia_rc#;     // Diameter of radial columns
-dcc = #dia_hc#;     // Diameter of central column
-gaf = #gap#; 	    // Gap factor (ratio of drc)
-hgt = #hgt#;	    // Height of columns
-nel_rrc = #nel#;    // Number of elements around cylinder circ.
+drc = 7.5;     // Diameter of radial columns
+dcc = 7;     // Diameter of central column
+gaf = 0.8; 	    // Gap factor (ratio of drc)
+hgt = 6.356260514543988;	    // Height of columns
+xO = 0;		// Model origin x-axis
+yO = 0;		// Model origin y-axis
+zO = -6.356260514543988;	// Model origin z-axis
+nel_rrc = 16;    // Number of elements around cylinder circ.
+vdist = 0.5;
 
 // ----------------------------------------------------------------------------
 // 	DERIVED UNITS
 // ----------------------------------------------------------------------------
 
-xO = 0;		        // Model origin x-axis
-yO = 0;		        // Model origin y-axis
-zO = -hgt;	        // Model origin z-axis
-
-
 rrc = drc/2;
 rcc = dcc/2;
 dx  = (1 + gaf)*rrc;
 dz = hgt;
-nop_flat1 = nel_rrc/8 + 1;
-nop_flat2 = nel_rrc/4 + 1;
+nop_flat1 = nel_rrc/4 + 1;
+nop_flat2 = nel_rrc/2 + 1;
 nop_height1 = Floor(dz/(Pi*drc/nel_rrc))+1;
 nop_height2 = Floor(dz/(Pi*drc/(2*nel_rrc)))+1;
 
@@ -46,88 +45,30 @@ p03x = xO + rcc/2;
 p03y = yO + Sqrt(3)/2 * rcc;
 // Need p05 to solve for p04
 alpha=1.0;
-p05x = xO + (1 + Sqrt(5))/2 * rrc*alpha; 
-p05y = yO + rrc*alpha; 
+p05x = xO + (1 + Sqrt(5))/2 * rrc*alpha;
+p05y = yO + rrc*alpha;
 // Set up line equations
 m4 = Sqrt(3);
 m5 = -1/2;
 b4 = 0;
 b5 = p05y -m5*p05x;
 // Find intersection between line 4 and line 5
-p04x = xO + (-b5/(m5-m4)); 
+p04x = xO + (-b5/(m5-m4));
 p04y = yO + p04x*m4;
 p09x = xO + Sqrt(3)/2 * rcc;
 p09y = yO + rcc/2;
 p10x = (p01x/2 + p03x/2 + p09x)/3;
 p10y = (yO + p03y/2 + p09y)/3;
-p25y = yO + rrc/2; 
+p25y = yO + rrc/2;
 
 Point(0) = {  xO,    yO,  zO, lc};
 Point(1) = {p01x,    yO,  zO, lc};
 Point(2) = {p02x,    yO,  zO, lc};
 Point(3) = {p03x,  p03y,  zO, lc};
-Point(4) = {p04x,  p04y,  zO, lc};
-Point(5) = {p05x,  p05y,  zO, lc};
-Point(6) = {p02x,  p05y,  zO, lc};
-Point(7) = {p01x/2,    yO,  zO, lc};
-Point(8) = {p03x/2,  p03y/2,  zO, lc};
-Point(9) = {p09x,  p09y,  zO, lc};
-Point(10) = {p10x,  p10y,  zO, lc};
-Point(11) = {p02x,  p25y,  zO, lc};
-
-Printf("p1 = (%f, %f)",p01x,yO);
-Printf("p2 = (%f, %f)",p02x,yO);
-Printf("p3 = (%f, %f)",p03x,p03y);
-Printf("p4 = (%f, %f)",p04x,p04y);
-Printf("p5 = (%f, %f)",p05x,p05y);
-Printf("p6 = (%f, %f)",p02x,p05y);
-
-Line(1) = {0, 7};
-Line(2) = {7, 1};
-Line(3) = {1, 2};
-Line(4) = {2, 11};
-Line(5) = {11, 6};
-Line(6) = {6, 5};
-Line(7) = {5, 4};
-Line(8) = {4, 3};
-Line(9) = {3, 8};
-Line(10) = {8, 0};
-Line(11) = {7, 10};
-Line(12) = {8, 8};
-Line(13) = {10, 8};
-
-Circle(14) = {1, 0, 9};
-Circle(15) = {9, 0, 3};
-
-Line(16) = {10, 9};
-Line(17) = {9, 11};
-Line(18) = {9, 5};
-
-Curve Loop(1) = {10, 1, 11, 13};
-Plane Surface(1) = {1};
-Curve Loop(2) = {2, 14, -16, -11};
-Plane Surface(2) = {2};
-Curve Loop(3) = {16, 15, 9, -13};
-Plane Surface(3) = {3};
-Curve Loop(4) = {3, 4, -17, -14};
-Plane Surface(4) = {4};
-Curve Loop(5) = {17, 5, 6, -18};
-Plane Surface(5) = {5};
-Curve Loop(6) = {18, 7, 8, -15};
-Plane Surface(6) = {6};
-
-Transfinite Curve {16, 8, 9, 10, 11, 12, 13, 14, 15, 7, 17, 18, 1, 2, 3, 4, 5, 6} = nop_flat1 Using Progression 1;
-Transfinite Surface {6};
-Transfinite Surface {5};
-Transfinite Surface {4};
-Transfinite Surface {2};
-Transfinite Surface {3};
-Transfinite Surface {1};
-
-Recombine Surface {1, 2, 3, 4, 5, 6};
+Point(4) = {p02x,  p05y,  zO, lc};
 
 // ----------------------------------------------------------------------------
-// 	FIRST RADIAL COLUMN LOWER FLANGE
+// 	FIRST RADIAL COLUMN LOWER FLANGE (Z-POSITIVE FACE)
 // ----------------------------------------------------------------------------
 
 p11x = xO + 2*dx - rrc;
@@ -140,59 +81,126 @@ p15x = p12x - Sqrt(2)/2*rrc;
 p15y = yO + Sqrt(2)/2*rrc;
 p18x = xO + 2*dx - rrc;
 
-Point(12) = {  p12x,    yO,  zO, lc};
+Point(5) = {  p12x,    yO,  zO, lc};
 Point(13) = {  p13x,    p13y,  zO, lc};
-Point(14) = {  p14x,    p14y,  zO, lc};
-Point(15) = {  p15x,    p15y,  zO, lc};
-Point(16) = {  p14x,    yO,  zO, lc};
-Point(17) = {  p12x,    p14y,  zO, lc};
 Point(18) = {  p18x,    yO,  zO, lc};
 
-Line(19) = {2, 18};
-Line(20) = {18, 16};
-Line(21) = {16, 12};
-Line(22) = {12, 17};
-Line(23) = {17, 13};
-Line(24) = {13, 6};
-Line(25) = {16, 14};
-Line(26) = {14, 17};
-Line(27) = {14, 15};
-Line(28) = {15, 11};
-Circle(29) = {18, 12, 15};
-Circle(30) = {15, 12, 13};
+// ----------------------------------------------------------------------------
+// 	Z-NEGATIVE FACE LOWER FLANGE
+// ----------------------------------------------------------------------------
 
-Curve Loop(7) = {28, 5, -24, -30};
-Plane Surface(7) = {7};
-Curve Loop(8) = {4, -28, -29, -19};
-Plane Surface(8) = {8};
-Curve Loop(9) = {20, 25, 27, -29};
-Plane Surface(9) = {9};
-Curve Loop(10) = {21, 22, -26, -25};
-Plane Surface(10) = {10};
-Curve Loop(11) = {26, 23, -30, -27};
-Plane Surface(11) = {11};
+Point(20) = {  xO,    yO,  zO - vdist, lc};
+Point(21) = {p03x,  p03y,  zO - vdist, lc};
+Point(22) = {  p12x,    yO,  zO - vdist, lc};
+Point(23) = {  p13x,    p13y,  zO - vdist, lc};
+Point(24) = {p02x,    yO,  zO - vdist, lc};
+Point(45) = {p02x,  p05y,  zO - vdist, lc};
 
-Transfinite Curve {21, 30, 29, 27, 26, 25, 23, 22, 20} = nop_flat1 Using Progression 1;
-Transfinite Curve {28, 24, 19} = nop_flat2 Using Progression 1;
 
-Transfinite Surface {7};
-Transfinite Surface {11};
-Transfinite Surface {10};
-Transfinite Surface {9};
-Transfinite Surface {8};
+// ----------------------------------------------------------------------------
+// 	FLANGES; LINES >> SURFACE
+// ----------------------------------------------------------------------------
 
-Recombine Surface {7, 11, 10, 9, 8};
+Line(1) = {20, 21};
+Line(2) = {21, 45};
+Line(3) = {45, 24};
+Line(4) = {24, 20};
+Line(5) = {45, 23};
+Line(6) = {23, 22};
+Line(7) = {22, 24};
+Line(8) = {24, 45};
+Circle(9) = {3, 0, 1};
+Line(10) = {1, 2};
+Line(11) = {2, 4};
+Line(12) = {4, 3};
+Line(13) = {2, 18};
+Circle(14) = {18, 5, 13};
+Line(15) = {13, 4};
+Curve Loop(1) = {9, 10, 11, 12};
+Plane Surface(1) = {1};
+Curve Loop(2) = {11, -15, -14, -13};
+Plane Surface(2) = {2};
+Curve Loop(3) = {1, 2, 3, 4};
+Plane Surface(3) = {3};
+Curve Loop(4) = {7, -3, 5, 6};
+Plane Surface(4) = {4};
+
+// ----------------------------------------------------------------------------
+// 	FLANGES; MESH PROPERTIES
+// ----------------------------------------------------------------------------
+
+//+
+Transfinite Curve {13, 10, 14, 15, 11, 12, 9, 7, 4, 6, 5, 8, 3, 2, 1} = nop_flat1 Using Progression 1;
+//Transfinite Curve {15} = nop_flat1 Using Progression .7;
+//Transfinite Curve {14} = nop_flat1 Using Progression 1.3;
+
+Transfinite Surface {1};
+Transfinite Surface {2};
+Transfinite Surface {3};
+Transfinite Surface {4};
+
+Recombine Surface {1, 2, 3, 4};
+
+
+// ----------------------------------------------------------------------------
+// 	CYLINDERS; EXTRUDE AND APPLY MESH PROPERTIES
+// ----------------------------------------------------------------------------
+
 
 Extrude {0, 0, dz} {
-  Curve{30}; Curve{29};
+  Curve{9}; Curve{14};
 }
-Extrude {0, 0, dz} {
-  Curve{14}; Curve{15};
+Transfinite Curve {21,22} = nop_height1 Using Progression 1;
+Transfinite Curve {17,18} = nop_height2 Using Progression 1;
+Transfinite Surface {19};
+Transfinite Surface {23};
+Recombine Surface {19, 23};
+
+// ----------------------------------------------------------------------------
+// 	COPY COLUMNS ALONG RADIAL
+// ----------------------------------------------------------------------------
+
+//+
+Symmetry {1, 0, 0, -p12x} {
+  Duplicata { Surface{23}; Surface{2}; Surface{4}; }
 }
-Transfinite Curve {33, 32, 36} = nop_height1 Using Progression 1;
-Transfinite Curve {45, 41, 40} = nop_height2 Using Progression 1;
-Transfinite Surface {46};
-Transfinite Surface {42};
-Transfinite Surface {38};
-Transfinite Surface {34};
-Recombine Surface {46, 42, 38, 34};
+//+
+Symmetry {1, 0, 0, -1.5*p12x} {
+  Duplicata { Surface{24}; Surface{2}; Surface{23}; Surface{29}; Surface{34}; Surface{4}; }
+}
+
+//+
+Recursive Delete {
+  Surface{43}; Surface{63}; 
+}
+
+Translate {Sqrt(2)/2*rrc, Sqrt(2)/2*rrc, 0} {
+  Duplicata { Point{163}; }
+}
+
+Translate {0, 0, -vdist} {
+  Duplicata { Point{121}; }
+}
+
+Line(92) = {163, 185};//+
+Circle(93) = {185, 163, 184};
+//+
+Circle(94) = {184, 163, 172};
+//+
+Curve Loop(5) = {92, 93, 94, 62};
+//+
+Plane Surface(59) = {5};
+//+
+Transfinite Curve {92, 93, 94} = 5 Using Progression 1;
+//+
+Transfinite Surface {59};
+//+
+Recombine Surface {59};
+//+
+Symmetry {-Sqrt(3)/2, 1/2, 0, 0} {
+  Duplicata { Surface{19}; Surface{1}; Surface{3}; Surface{23}; Surface{2}; Surface{24}; Surface{4}; Surface{29}; Surface{38}; Surface{34}; Surface{53}; Surface{48}; Surface{58}; Surface{59}; }
+}
+//+
+Symmetry {-Sqrt(3)/2, -1/2, 0, 0} {
+  Duplicata { Surface{95}; Surface{100}; Surface{110}; Surface{115}; Surface{120}; Surface{130}; Surface{135}; Surface{145}; Surface{150}; Surface{160}; Surface{105}; Surface{125}; Surface{140}; Surface{155}; }
+}

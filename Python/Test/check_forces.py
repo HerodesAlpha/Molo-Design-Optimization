@@ -18,23 +18,23 @@ if __name__ == '__main__':
 
     analyses_root = Path(r'C:\mdo_working_dir')
     park_label = 'site_01'
-    wtg_label = 'wtg_01'
+    wtg_label = 'test'
     candidate_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
 
     template_dir = Path(os.getcwd()).parents[0].joinpath('Optimization').joinpath('templates')
 
     p = Parameter_Space(templates_dir=template_dir)
 
-    p.ncol = 3
+    p.ncol = 2
 
     is_stable = False
     #    for d in np.linspace(8.8, 8.8, 1, dtype=float):
     irow = -1
 
-    p.gap = 0.8
+    p.gap = 1.1
     p.height = 21
     p.column_diameter = 7.5
-    p.filling_ratio = [0] * 3
+    p.filling_ratio = [0.1 , 0.1]
     this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
     this_candidate.settings.wtg_model = "Vestas 9.5"
     with open(this_candidate.settings.fio.case_dir.joinpath('stdout_redirect.txt'), 'w') as fout:
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[
             'draught']
-        sp_x = -1
+        #sp_x = -100
         #sp_z = 0
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         print('\n--------------------------\n D Y N A M I C   F O R C E\n--------------------------')
         print('{:16} {:5.3f}\n'.format(x_label, x_tics[ifreq_print]))
         all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiaton damping','Buoyancy','SUM']
-        plot_keys = list( all_keys[i] for i in [0,1,2,3,4,5,6] )
+        plot_keys = list( all_keys[i] for i in [6])# [0,1,2,3,4,5,6] )
         for key in dyn_force:
             if key in plot_keys:
                 abs_val=np.abs(dyn_force[key][:, ibeta, idof]) * factor

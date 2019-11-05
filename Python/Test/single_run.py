@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     analyses_root = Path(r'C:\mdo_working_dir')
     park_label = 'site_01'
-    wtg_label = 'wtg_01'
+    wtg_label = 'test'
     candidate_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
 
 
@@ -44,16 +44,16 @@ if __name__ == '__main__':
 
     p = Parameter_Space(templates_dir=template_dir)
 
-    p.ncol = 3
+    p.ncol = 2
 
     is_stable = False
     #    for d in np.linspace(8.8, 8.8, 1, dtype=float):
     irow = -1
 
-    p.gap = 0.8
+    p.gap = 1.1
     p.height = 21
     p.column_diameter = 7.5
-    p.filling_ratio = [0] * 3
+    p.filling_ratio = [0.1 , 0.1]
     this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
 
     this_candidate.settings.wtg_model = "Vestas 9.5"
@@ -72,10 +72,10 @@ if __name__ == '__main__':
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
         # this_candidate.init_model(state='New')
         this_candidate.settings.load_cases = {  # 121, np.pi / 15, np.pi
-                "num_wave_frequencies": 40,  # TODO: Implement adaptive frequency
-                "min_wave_frequencies": 2 * np.pi / 30,  # (rad/s)
+                "num_wave_frequencies": 80,  # TODO: Implement adaptive frequency
+                "min_wave_frequencies": 2 * np.pi / 35,  # (rad/s)
                 "max_wave_frequencies": 2 * np.pi / 4,
-                "num_wave_directions" : 3,
+                "num_wave_directions" : 1,
                 "min_wave_directions" : 0,  # deg
                 "max_wave_directions" : 90,
         }
@@ -96,17 +96,17 @@ if __name__ == '__main__':
         else:
             print('This candidate has old stability database')
 
-        if this_candidate.has_complete_hydrodynamic_db():
+        if this_candidate.has_complete_hydrodynamic_db() and 0:
             print('This candidate has old hydro database. Do not perform hydrodynamic analysis')
 
 
         else:
-            if this_candidate.is_stable():
+            if this_candidate.is_stable() or 1:
                 print(
                         'This candidate is stable, but has no hydro_database. Perform hydrodynamic analysis')
                 this_candidate.hydrodynamic_analysis()
 
-        if this_candidate.is_stable():
+        if this_candidate.is_stable() or 1:
             if this_candidate.has_complete_hydrodynamic_db():
                 # if False:
                 print(
