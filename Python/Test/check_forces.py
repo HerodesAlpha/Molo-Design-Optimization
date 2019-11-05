@@ -49,12 +49,13 @@ if __name__ == '__main__':
             print('Has old model')
 
         #state = "Old"
+        #this_candidate.init_model(state="New")
 
         with redirect_stdout(fout):
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
 
-        this_candidate.settings.radiaton_damping_factor = 10
+        this_candidate.settings.radiaton_damping_factor = 0
 
 
         this_candidate.init_load_response()
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[
             'draught']
-        sp_x = -100
+        sp_x = -1
         #sp_z = 0
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
@@ -75,7 +76,7 @@ if __name__ == '__main__':
         del imass, ipanel
 
         ibeta = 0
-        idof = 4
+        idof = 2
 
         stat_force = this_candidate.f_sec1['Static']
 
@@ -96,7 +97,13 @@ if __name__ == '__main__':
         # x_label = 'Period [s]'
         x_label = 'Frequency [Hz]'
 
-        ifreq_print=15
+        # --------------
+        # FREQUENCY
+        # --------------
+        ifreq_print = 15
+
+
+
         print('\n--------------------------\n D Y N A M I C   F O R C E\n--------------------------')
         print('{:16} {:5.3f}\n'.format(x_label, x_tics[ifreq_print]))
         all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiaton damping','Buoyancy','SUM']
@@ -150,7 +157,7 @@ if __name__ == '__main__':
         axs[1, 0].legend(lns, labs, loc=0)
         axs[1, 1].legend()
         plt.suptitle('{}\nSection point: [{sp[0]:1.2f}, {sp[1]:1.2f}, {sp[2]:1.2f}]\nSection normal: [{sn[0]:1.2f}, {sn[1]:1.2f}, {sn[2]:1.2f}]'.format(this_candidate.settings.case_label,sp=section_point,sn=section_normal))
-        #plt.show()
+        plt.show()
 
         # f_rad=np.sum(this_candidate.loads._force['Radiation'][ifreq_print,idof,:,2])
         # A=np.imag(f_rad)/w[ifreq_print]
@@ -159,13 +166,19 @@ if __name__ == '__main__':
         # z = A*np.exp(complex(0, 1)*B)
         # print('\n{:15} {:5.0f}'.format('Z', z))
 
-    a=this_candidate.response._point_mass[:, 2, 2]
-    b=this_candidate.response._point_mass_centers
-
+    # a=this_candidate.response._point_mass[:, 2, 2]
+    # b=this_candidate.response._point_mass_centers
+    #
+    # print()
+    # print(sum(a))
+    # print(this_candidate.loads._m[2,2])
+    #
+    # I=np.sum(a[:,np.newaxis]*b**2,axis=0)
+    # print(I)
+    # print(np.diag(this_candidate.loads._m[3:,3:]))
+    np.set_printoptions(precision=3)
+    #
     print()
-    print(sum(a))
-    print(this_candidate.loads._m[2,2])
-
-    I=np.sum(a[:,np.newaxis]*b**2,axis=0)
-    print(I)
-    print(np.diag(this_candidate.loads._m[3:,3:]))
+    print(this_candidate.loads._m)
+    print()
+    print(np.sum(this_candidate.response._point_mass, axis=0))

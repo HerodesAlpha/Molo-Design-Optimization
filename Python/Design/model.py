@@ -109,7 +109,7 @@ class AssemblyClass(ModelClass, object):
 
         self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * sum_mass_matrix_global[0,0]
         self._inertias.cog = np.zeros(3)  # Just to be sure
-        self.print_vector_matrix_global()
+        #self.print_vector_matrix_global()
 
 
 class UnitClass(AssemblyClass, object):
@@ -125,13 +125,13 @@ class UnitClass(AssemblyClass, object):
 
 
 class WtgClass(AssemblyClass, object):
-    def __init__(self, twr_data, rna_data, rho_st=7850):
+    def __init__(self, twr_data, rna_data, settings):
         ModelClass.__init__(self)
         #
         self._twr_data = twr_data
         self._rna_data = rna_data
         #
-        self._rho_st = rho_st
+        self._rho_st = settings.rho_st
 
         self.parts_list.append(RNAClass(self._rna_data))
         self.parts_list.append(TowerClass(self._twr_data, self._rho_st))
@@ -140,7 +140,7 @@ class WtgClass(AssemblyClass, object):
 
 class FloaterClass(AssemblyClass, object):
     # CoGz will be set for BOS at z=0
-    def __init__(self, floater_data, rho_st):
+    def __init__(self, floater_data, settings):
         ModelClass.__init__(self)
         self._nr = 3
         self._nc = floater_data.nc
@@ -153,7 +153,7 @@ class FloaterClass(AssemblyClass, object):
         self._t_lf = floater_data.t_lf
         self._t_uf = floater_data.t_uf
         self._ballast_filling = floater_data._ballast_filling
-        self._rho_st = rho_st
+        self._rho_st = settings.rho_st
         self._rho_bal = floater_data.rho_bal
         self._t_lfst = floater_data.t_lfst
         self._h_lfst = floater_data.h_lfst
@@ -164,10 +164,17 @@ class FloaterClass(AssemblyClass, object):
 
         self._w_lf = self._dia_rc
         self._w_uf = self._dia_rc
+
+        self._draught = settings.draught
+
         self._generate_parts()
+
+
 
         self.aggregate_inertias_from_parts(self.parts_list)
 
+
+        pass
         #self.print_vector_matrix_global()
 
 
@@ -207,7 +214,7 @@ class FloaterClass(AssemblyClass, object):
                                               thi_hc=self._thi_hc,
                                               hgt=self._hgt,
                                               rho_st=self._rho_st,
-                                              red_point=[0, 0, zr]))
+                                              red_point=[0, 0, zr + self._draught]))
         self.parts_list.append(BallastClass(type='Hub column ballast',
                                             irow=-1,
                                             icol=-1,
@@ -215,7 +222,7 @@ class FloaterClass(AssemblyClass, object):
                                             rc_internal_hgt=self._hgt,
                                             filling=hf_hc,
                                             rho_bal=self._rho_bal,
-                                            red_point=[0, 0, zhc_bal]))
+                                            red_point=[0, 0, zhc_bal + self._draught]))
 
         for ir in range(self._nr):
             # dxc = cos(theta[ir]) * da
@@ -235,7 +242,7 @@ class FloaterClass(AssemblyClass, object):
                                 h=self._t_uf,
                                 density=self._rho_st,
                                 theta=theta[ir],
-                                red_point=rot_mat @ [rpx(istrip), rpy, rpz_uf]))
+                                red_point=rot_mat @ [rpx(istrip), rpy, rpz_uf + self._draught]))
 
                 for ist in range(2):
                     self.parts_list.append(FlangeClass(
@@ -250,7 +257,7 @@ class FloaterClass(AssemblyClass, object):
                             density=self._rho_st,
                             theta=theta[ir],
                             red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_ufst,
-                                                 rpz_uf + dz_ufst]))
+                                                 rpz_uf + dz_ufst + self._draught]))
 
                 self.parts_list.append(
                     FlangeClass(type='Radial {r:1.0f}, lower flange, strip {s:1.0f}'.format(r=ir + 1, s=istrip + 1),
@@ -261,7 +268,7 @@ class FloaterClass(AssemblyClass, object):
                                 h=self._t_lf,
                                 density=self._rho_st,
                                 theta=theta[ir],
-                                red_point=rot_mat @ [rpx(istrip), rpy, rpz_lf]))
+                                red_point=rot_mat @ [rpx(istrip), rpy, rpz_lf + self._draught]))
 
                 for ist in range(2):
                     self.parts_list.append(FlangeClass(
@@ -276,7 +283,7 @@ class FloaterClass(AssemblyClass, object):
                             density=self._rho_st,
                             theta=theta[ir],
                             red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_lfst,
-                                                 rpz_lf + dz_lfst]))
+                                                 rpz_lf + dz_lfst + self._draught]))
 
             # Radial columns
             for ic in range(self._nc):
@@ -293,7 +300,7 @@ class FloaterClass(AssemblyClass, object):
                                                          thi_rc=self._thi_rc,
                                                          hgt=self._hgt,
                                                          rho_st=self._rho_st,
-                                                         red_point=rot_mat @ [xr, yr, zr]))
+                                                         red_point=rot_mat @ [xr, yr, zr + self._draught]))
 
                 self.parts_list.append(BallastClass(type='Radial column ballast',
                                                     irow=ir,
@@ -302,7 +309,7 @@ class FloaterClass(AssemblyClass, object):
                                                     rc_internal_hgt=self._hgt,
                                                     filling=hf_rc,
                                                     rho_bal=self._rho_bal,
-                                                    red_point=rot_mat @ [xr, yr, zrc_bal]))
+                                                    red_point=rot_mat @ [xr, yr, zrc_bal + self._draught]))
 
 
 

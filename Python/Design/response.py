@@ -8,6 +8,8 @@ import nemoh
 import pickle
 import tool_box as tb
 
+nax = np.newaxis
+
 
 class ResponseModel(object):
     def __init__(self, candidate):
@@ -52,16 +54,16 @@ class ResponseModel(object):
         self._point_mass_centers = np.asarray([-part._inertias.reduction_point for part in self._part_list])
         self._panel_pressure_centers = self._loads._pd.ppanel_centers
 
-        self._projected_panel_area = self._loads._an[np.newaxis, np.newaxis, :, :]
+        self._projected_panel_area = self._loads._an[nax, nax, :, :]
 
         # *****************************************************************************
         #                               S T A T I C
         # *****************************************************************************
-        w = self._loads.w
-        w2 = w ** 2
+        # w = self._loads.w
+        self.w2 = self._loads.w ** 2
         # Gravity
-        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, np.newaxis] * np.asarray(
-            [0, 0, self._settings.gravity])[np.newaxis, :]  # Use m33
+        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, nax] * np.asarray(
+                [0, 0, self._settings.gravity])[nax, :]  # Use m33
 
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
@@ -89,20 +91,18 @@ class ResponseModel(object):
         am = self._loads._added_mass
         rd = self._loads._radiation_damping
         # The RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        self._panel_added_mass_force_all_dof = -am[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
-                                                                                    np.newaxis] * w2[:, np.newaxis,
-                                                                                                  np.newaxis,np.newaxis,
-                                                                                                  np.newaxis]
-        self._panel_radiation_damping_force_all_dof = rd[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
-                                                                                    np.newaxis] * w[:, np.newaxis,
-                                                                                                  np.newaxis,np.newaxis,
-                                                                                                  np.newaxis]*np.complex(0,1)
+        self._panel_added_mass_force_all_dof = -am[:, nax, :, :, :] * self._rao[:, :, :, nax,
+                                                                      nax] * self.w2[:, nax,
+                                                                             nax, nax,
+                                                                             nax]
+        self._panel_radiation_damping_force_all_dof = rd[:, nax, :, :, :] * self._rao[:, :, :, nax,
+                                                                            nax] * self._loads.w[:,
+                                                                                   nax,
+                                                                                   nax, nax,
+                                                                                   nax] * np.complex(0, 1)
 
         self._panel_added_mass_force = np.sum(self._panel_added_mass_force_all_dof, axis=2)
         self._panel_radiation_damping_force = np.sum(self._panel_radiation_damping_force_all_dof, axis=2)
-
-        # Is radiation normalized with omega?
-        # self._panel_pressure_radiation_force = self._panel_pressure_radiation_force * self._loads.w[:, np.newaxis,np.newaxis, np.newaxis]
 
         # RAO transformation matrix
         self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
@@ -112,39 +112,44 @@ class ResponseModel(object):
                 rot = self._rao[ifreq, ibeta, 3:6]
                 tra = self._rao[ifreq, ibeta, 0:3]
                 self._rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)
-        self._rao_transf_mat = self._rao_tra_mat[:, :, np.newaxis, :, :]
+        self._rao_transf_mat = self._rao_tra_mat[:, :, nax, :, :]
 
         # Stiffness
         # Gen dynamic position of panels and calc hydro static pressure
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._ppc = np.append(self._panel_pressure_centers, np.ones((self._loads.pd.npanels, 1)), 1)
         # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
-        self._ppc = self._ppc[np.newaxis, np.newaxis, :, :, np.newaxis]
+        self._ppc = self._ppc[nax, nax, :, :, nax]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...
         self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_transf_mat, self._ppc), axis=4)[:, :, :, 0:3]
-        self._panel_pos -= self._loads.pd.ppanel_centers[np.newaxis, np.newaxis, :, :]  # Subtract mean position
+        self._panel_pos -= self._loads.pd.ppanel_centers[nax, nax, :, :]  # Subtract mean position
         self._panel_diff_buoyancy_pressure = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
                                                                                                2]  # Change in pressure
         self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
-                                            np.newaxis] * self._projected_panel_area)
+                                            nax] * self._projected_panel_area)
 
         # Inertia
         # Get dynamic acceleration of part masses and calc inertia force
-        # TODO: Include rotation/inertia moment from parts
-        self._pmc = np.append(self._point_mass_centers, np.ones((self._point_mass_centers.shape[0], 1)), 1)
-        self._pmc = self._pmc[np.newaxis, np.newaxis, :, :, np.newaxis]
-        self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rao_transf_mat, self._pmc), axis=4)[:, :, :, 0:3]
-        self._dynamic_point_mass_pos -= self._point_mass_centers[np.newaxis, np.newaxis, :]  # Subtract mean position
+        #
+        # self._pmc = np.append(self._point_mass_centers, np.ones((self._point_mass_centers.shape[0], 1)), 1)
+        # self._pmc = self._pmc[nax, nax, :, :, nax]
+        # self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rao_transf_mat, self._pmc), axis=4)[:, :, :, 0:3]
+        # self._dynamic_point_mass_pos -= self._point_mass_centers[nax, nax, :]  # Subtract mean position
+        #
+        # self._part_dynacc = self._dynamic_point_mass_pos * -w2[:, nax, nax, nax]
+        # self._point_mass_dynamic_inertia_force = self._part_dynacc * self._point_mass[nax, nax, :,
+        #                                                              nax, 0, 0]
 
-        self._part_dynacc = self._dynamic_point_mass_pos * -w2[:, np.newaxis, np.newaxis, np.newaxis]
-        self._point_mass_dynamic_inertia_force = self._part_dynacc * self._point_mass[np.newaxis, np.newaxis, :,
-                                                                     np.newaxis, 0, 0]
+        self._point_mass_dynamic_inertia_force = np.squeeze(
+                self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
+                axis=4)
+        # self._point_mass_dynamic_inertia_force *= -w2[:, nax, nax, nax]
 
     def calc_rao(self, idir):
         fe = self._loads._fe[:, idir, :]
         m = self._loads._m
         ma = self._loads._ma
-        c_rad = self._loads._c_radiation*self._settings.radiaton_damping_factor
+        c_rad = self._loads._c_radiation * self._settings.radiaton_damping_factor
         k = self._loads._k
         vw = self._loads._w
         container = np.zeros([len(vw), 6], dtype=complex)
@@ -235,7 +240,7 @@ class ResponseModel(object):
         if 1 in index:  # At least one item is on the considered side of the section surface
             if forces.ndim == 4:  # Dynamic [freq, dir, panel, f]
                 section_forces = forces[:, :, index, :]
-                section_moments = np.cross(vec[np.newaxis, np.newaxis, index, :],
+                section_moments = np.cross(vec[nax, nax, index, :],
                                            section_forces)  # Calculate moment about section
                 # Concatenate along 4th dimension contaning [fx, fy, fz] and [mx, mz, mz]
                 # Then sum along 3rd dimension holding the panels or point mass indices
@@ -269,15 +274,18 @@ class ResponseModel(object):
         # ---------------------------------------------------------------------------
         # DYNAMIC REACTION FORCES
         # ---------------------------------------------------------------------------
-        f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers,
-                                    moment_ref_point)
+        # f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers,
+        #                             moment_ref_point)
+        f_inertia = np.sum(self._point_mass_dynamic_inertia_force[:, :, imass, :], axis=2)
+        f_inertia *= -self.w2[:, nax, nax, ]
+
         f_dz_s = self.sum_forces(ipanel, self._panel_diff_buoyancy_force, self._panel_pressure_centers,
                                  moment_ref_point)
         f_added_mass = self.sum_forces(ipanel, self._panel_added_mass_force, self._panel_pressure_centers,
                                        moment_ref_point)
 
         f_radiation_damping = self.sum_forces(ipanel, self._panel_radiation_damping_force, self._panel_pressure_centers,
-                                   moment_ref_point)
+                                              moment_ref_point)
         #
         force_out = dict()
         force_out['Static'] = dict()

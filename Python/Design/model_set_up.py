@@ -139,15 +139,15 @@ def create_mass_models(settings):
     rna_data = model.RNADataClass(settings.job_data['wtg'][settings.wtg_model])
 
     # Set global z
-    interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf
+    interface_point = floater_data.t_lf + floater_data.hgt + floater_data.t_uf - settings.draught
     twr_data.p = [0, 0, -(interface_point + twr_data.h / 2)]
     rna_data.p = [0, 0, -(interface_point + twr_data.h)]
 
     # Build floater
-    floater_model = model.FloaterClass(floater_data, settings.rho_st)  # CoGz will be set for BOS at z=0
+    floater_model = model.FloaterClass(floater_data, settings)  # CoGz will be set for BOS at z=0
 
     # Build tower and RNA
-    wtg_model = model.WtgClass(twr_data, rna_data, settings.rho_st)  # CoGz will be controlled by p
+    wtg_model = model.WtgClass(twr_data, rna_data, settings)  # CoGz will be controlled by p
 
     # Assemble parts into complete unit
     unit_model = model.UnitClass([wtg_model, floater_model])
@@ -156,6 +156,9 @@ def create_mass_models(settings):
 
 def init_models(settings):  #
     unit_model, floater_model, wtg_model = create_mass_models(settings)
+
+    for part in unit_model.parts_list:
+        part.print_vector_matrix_global()
 
     msh_file = tb.msh_file(settings, mesh_type='stability')
     stability_vertices, stability_panels = mmio.load_MSH(msh_file)
@@ -183,20 +186,26 @@ def init_models(settings):  #
     # hs_floater.show()
     print(hs_floater.get_hydrostatic_report())
     settings._report.write_hydrostatic_report_latex_table(hs_floater)
-    tb.save_M_and_K(settings, M=unit_model.inertias.mass_matrix_global,
-                    MMK=hs_floater.hs_data['stiffness_matrix'])
     # Update model with calculated draft
     # print('\nMass matrix just before adjusting to draught')
     # for part in unit_model.get_all_parts():
     #     part.print_vector_matrix_global()
-    unit_model.move_reduction_point([0, 0, hs_floater.hs_data['draught']])
+    #unit_model.move_reduction_point([0, 0, hs_floater.hs_data['draught']])
+
+
+    settings.draught = hs_floater.hs_data['draught']
+    print('Recreate mass model for new draught = {:5.2f}m'.format(settings.draught))
+    unit_model, floater_model, wtg_model = create_mass_models(settings)
+
+    tb.save_M_and_K(settings, M=unit_model.inertias.mass_matrix_global,
+                    MMK=hs_floater.hs_data['stiffness_matrix'])
+
 
     for part in unit_model.parts_list:
         part.print_vector_matrix_global()
-    settings.draught = hs_floater.hs_data['draught']
 
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
-    print('\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
+    # print('\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))
     # hs_floater.show()
     # print('\nUpdated global mass matrix after adjusting to draught')
     # for part in unit_model.get_all_parts():
