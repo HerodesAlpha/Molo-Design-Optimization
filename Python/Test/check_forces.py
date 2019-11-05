@@ -54,7 +54,7 @@ if __name__ == '__main__':
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
 
-        this_candidate.settings.critical_damping_ratio = 0.10
+        this_candidate.settings.radiaton_damping_factor = 10
 
 
         this_candidate.init_load_response()
@@ -66,25 +66,27 @@ if __name__ == '__main__':
         sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[
             'draught']
         sp_x = -100
-        sp_z = 0
+        #sp_z = 0
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
 
         imass, ipanel = this_candidate.response.get_section_index(section_point, section_normal)
-        this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, moment_ref_point=[0, 0, 0])
+        this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, moment_ref_point=[0,0,0])
         del imass, ipanel
 
         ibeta = 0
-        idof = 2
+        idof = 4
 
         stat_force = this_candidate.f_sec1['Static']
 
         factor = 1 / 1000000
 
+        print('\n--------------------------\n S T A T I C   F O R C E\n--------------------------')
         for key in stat_force:
             a = np.abs(stat_force[key][2]) * factor
             b = np.angle(stat_force[key][2])
-            print('{}: {:1.2f} {:1.2f}'.format(key, a, b))
+            print('{:20} {:5.2f} {: 5.2f}'.format(key, a, b))
+
 
         w = this_candidate.loads.w
         fig, axs = plt.subplots(2, 2)
@@ -95,17 +97,19 @@ if __name__ == '__main__':
         x_label = 'Frequency [Hz]'
 
         ifreq_print=15
-        print('\n\n{:16} {:5.3f}'.format(x_label, x_tics[ifreq_print]))
-
+        print('\n--------------------------\n D Y N A M I C   F O R C E\n--------------------------')
+        print('{:16} {:5.3f}\n'.format(x_label, x_tics[ifreq_print]))
+        all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiaton damping','Buoyancy','SUM']
+        plot_keys = list( all_keys[i] for i in [0,1,2,3,4,5,6] )
         for key in dyn_force:
-            if not key == 'whatever':
+            if key in plot_keys:
                 abs_val=np.abs(dyn_force[key][:, ibeta, idof]) * factor
 
                 phase_val = np.angle(dyn_force[key][:, ibeta, idof])
                 axs[0, 0].plot(abs_val, label=key)
                 axs[0, 1].plot(x_tics,phase_val , label=key)
                 #print(abs_val[:])
-                print('{:15} {:5.2f} {: 5.2f}'.format(key, abs_val[ifreq_print], phase_val[ifreq_print]))
+                print('{:20} {:6.2f} {: 5.2f}'.format(key, abs_val[ifreq_print], phase_val[ifreq_print]))
 
         axs[0, 0].set_title('Amplitude')
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
@@ -121,7 +125,7 @@ if __name__ == '__main__':
         axs[1, 0].grid()
         axs[1, 1].set_xlabel(x_label)
         axs[1, 1].grid()
-
+        print('\n--------------------------\n R A O\n--------------------------')
         d = {'Heave': 2, 'Pitch': 4}
         ax1 = axs[1, 0]
         ax2 = ax1.twinx()
@@ -139,11 +143,29 @@ if __name__ == '__main__':
             phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
             axs[1, 1].plot(x_tics, np.angle(this_candidate.response.rao[:, ibeta, d[key]]), label=key)
 
-            print('{:15} {:6.3f} {: 5.2f}'.format(key, abs_val_rao[ifreq_print], phase_val_rao[ifreq_print]))
+            print('{:20} {:6.3f} {: 5.2f}'.format(key, abs_val_rao[ifreq_print], phase_val_rao[ifreq_print]))
 
         lns = lns1 + lns2
         labs = [l.get_label() for l in lns]
         axs[1, 0].legend(lns, labs, loc=0)
         axs[1, 1].legend()
         plt.suptitle('{}\nSection point: [{sp[0]:1.2f}, {sp[1]:1.2f}, {sp[2]:1.2f}]\nSection normal: [{sn[0]:1.2f}, {sn[1]:1.2f}, {sn[2]:1.2f}]'.format(this_candidate.settings.case_label,sp=section_point,sn=section_normal))
-        plt.show()
+        #plt.show()
+
+        # f_rad=np.sum(this_candidate.loads._force['Radiation'][ifreq_print,idof,:,2])
+        # A=np.imag(f_rad)/w[ifreq_print]
+        # B=-np.real(f_rad)
+        # print('\n{:15} {:5.0f} {:5.0f}'.format('A and B', A, B))
+        # z = A*np.exp(complex(0, 1)*B)
+        # print('\n{:15} {:5.0f}'.format('Z', z))
+
+    a=this_candidate.response._point_mass[:, 2, 2]
+    b=this_candidate.response._point_mass_centers
+
+    print()
+    print(sum(a))
+    print(this_candidate.loads._m[2,2])
+
+    I=np.sum(a[:,np.newaxis]*b**2,axis=0)
+    print(I)
+    print(np.diag(this_candidate.loads._m[3:,3:]))

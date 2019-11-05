@@ -152,7 +152,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 self._force['Radiation'] = -self._pressure['Radiation'][:, :, :, np.newaxis] * self._an[np.newaxis,
                                                                                                np.newaxis, :, :]
                 self._added_mass = np.imag(self._force['Radiation'])/self._w[:,np.newaxis,np.newaxis,np.newaxis]
-                self._radiation_damping = -np.real(self._force['Radiation'])
+                self._radiation_damping = -np.real(self._force['Radiation'])*settings.radiaton_damping_factor
 
 
             if save_files:

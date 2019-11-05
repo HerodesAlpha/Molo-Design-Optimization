@@ -170,6 +170,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._run_nemoh = False
         self._postprocessing = False
         self.set_molo_label()
+        self._radiaton_damping_factor=1
 
         if case_label_type == None:
             self._case_label = None  # Auto numbering in FileIOClass
@@ -425,3 +426,10 @@ class SettingsClass(PhysicalQuantities, object):
 
 
 
+    @property
+    def radiaton_damping_factor(self):
+        return self._radiaton_damping_factor
+
+    @radiaton_damping_factor.setter
+    def radiaton_damping_factor(self,val):
+        self._radiaton_damping_factor = val

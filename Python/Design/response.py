@@ -89,16 +89,17 @@ class ResponseModel(object):
         am = self._loads._added_mass
         rd = self._loads._radiation_damping
         # The RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        self._panel_pressure_radiation_force_all_dof = -am[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
+        self._panel_added_mass_force_all_dof = -am[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
                                                                                     np.newaxis] * w2[:, np.newaxis,
                                                                                                   np.newaxis,np.newaxis,
                                                                                                   np.newaxis]
-        self._panel_pressure_radiation_force_all_dof -= rd[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
+        self._panel_radiation_damping_force_all_dof = rd[:, np.newaxis, :, :, :] * self._rao[:, :, :, np.newaxis,
                                                                                     np.newaxis] * w[:, np.newaxis,
                                                                                                   np.newaxis,np.newaxis,
-                                                                                                  np.newaxis]
+                                                                                                  np.newaxis]*np.complex(0,1)
 
-        self._panel_pressure_radiation_force = np.sum(self._panel_pressure_radiation_force_all_dof, axis=2)
+        self._panel_added_mass_force = np.sum(self._panel_added_mass_force_all_dof, axis=2)
+        self._panel_radiation_damping_force = np.sum(self._panel_radiation_damping_force_all_dof, axis=2)
 
         # Is radiation normalized with omega?
         # self._panel_pressure_radiation_force = self._panel_pressure_radiation_force * self._loads.w[:, np.newaxis,np.newaxis, np.newaxis]
@@ -143,14 +144,13 @@ class ResponseModel(object):
         fe = self._loads._fe[:, idir, :]
         m = self._loads._m
         ma = self._loads._ma
-        c_rad = self._loads._c_radiation
-        c_visc = np.nan_to_num(self._loads._c_viscous)
+        c_rad = self._loads._c_radiation*self._settings.radiaton_damping_factor
         k = self._loads._k
         vw = self._loads._w
         container = np.zeros([len(vw), 6], dtype=complex)
         for i, w in enumerate(vw):
             this_ma = ma[i, :, :]
-            this_c = c_rad[i, :, :] + c_visc[i, :, :]
+            this_c = c_rad[i, :, :]
             denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * this_c + k, dtype=complex)
             daf = scipy.linalg.inv(denom)
             x = daf @ fe[i, :]
@@ -273,23 +273,26 @@ class ResponseModel(object):
                                     moment_ref_point)
         f_dz_s = self.sum_forces(ipanel, self._panel_diff_buoyancy_force, self._panel_pressure_centers,
                                  moment_ref_point)
-        f_rad = self.sum_forces(ipanel, self._panel_pressure_radiation_force, self._panel_pressure_centers,
-                                moment_ref_point)
+        f_added_mass = self.sum_forces(ipanel, self._panel_added_mass_force, self._panel_pressure_centers,
+                                       moment_ref_point)
 
+        f_radiation_damping = self.sum_forces(ipanel, self._panel_radiation_damping_force, self._panel_pressure_centers,
+                                   moment_ref_point)
         #
         force_out = dict()
         force_out['Static'] = dict()
         force_out['Dynamic'] = dict()
 
-        force_out['Static']['Sum'] = f_gravity + f_bouyancy
         force_out['Static']['Gravity'] = f_gravity
         force_out['Static']['Buoyancy'] = f_bouyancy
-        force_out['Dynamic']['Sum'] = f_fk + f_diff - (f_rad + f_dz_s + f_inertia)
-        force_out['Dynamic']['Radiation'] = f_rad
+        force_out['Static']['SUM'] = f_gravity + f_bouyancy
         force_out['Dynamic']['Froude-Krylof'] = f_fk
         force_out['Dynamic']['Diffraction'] = f_diff
+        force_out['Dynamic']['Mass'] = f_inertia
+        force_out['Dynamic']['Added mass'] = f_added_mass
+        force_out['Dynamic']['Radiaton damping'] = f_radiation_damping
         force_out['Dynamic']['Buoyancy'] = f_dz_s
-        force_out['Dynamic']['Inertia'] = f_inertia
+        force_out['Dynamic']['SUM'] = f_fk + f_diff - (f_added_mass + f_radiation_damping + f_dz_s + f_inertia)
 
         return force_out
 

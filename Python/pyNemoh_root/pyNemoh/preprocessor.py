@@ -992,7 +992,7 @@ def run(hdf5_data, custom_config):
                 + str(structure.H5_RESULTS_FK_FORCES_RAW) + ' with characteristics: ' + str(dset))
 
     dset = utility.require_dataset(hdf5_data, structure.H5_RESULTS_FK_PRESSURE_RAW, fk_pressure.shape, dtype='F')
-    utility.set_hdf5_attributes(dset, structure.H5_RESULTS_FK_PRESSURE_ATTR)
+    utility.set_hdf5_attributes(dset, structure.H5_RESULTS_FK_PRESSURE_RAW_ATTR)
     dset[:, :, :] = fk_pressure
     logger.info('Saved the raw imaginary fk pressure numbers at'
                 + str(structure.H5_RESULTS_FK_FORCES_RAW) + ' with characteristics: ' + str(dset))

@@ -1275,7 +1275,7 @@ class BaseStructure(object):
         """
         The raw froude krylov forces in complex number
         """
-        self.H5_RESULTS_FK_PRESSURE_ATTR = {
+        self.H5_RESULTS_FK_PRESSURE_RAW_ATTR = {
             "description": np.string_("The raw froude krylov pressure in complex number")
         }
         """
