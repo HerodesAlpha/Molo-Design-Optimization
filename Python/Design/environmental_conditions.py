@@ -23,9 +23,9 @@ class Short_Term_Wave_Conditions(object):
             self._tp = self.tz2tp(self._tz, self._hs)
 
         if self._gamma == None:
-            self._gamma = self.gamma(self._tp, self._hs)
+            self._gamma = self.gamma_func(self._tp, self._hs)
 
-    def gamma(self, tp, hs):
+    def gamma_func(self, tp, hs):
         if self._gamma != None:
             return self._gamma
         else:
@@ -63,9 +63,9 @@ class Short_Term_Wave_Conditions(object):
 
     def tp2tz(self, tp, hs):
         return (0.6673
-                + 0.05037 * self.gamma(tp, hs)
-                - 0.006230 * self.gamma(tp, hs) ** 2
-                + 0.0003341 * self.gamma(tp, hs) ** 3) * tp
+                + 0.05037 * self.gamma_func(tp, hs)
+                - 0.006230 * self.gamma_func(tp, hs) ** 2
+                + 0.0003341 * self.gamma_func(tp, hs) ** 3) * tp
 
     def tz2tp(self, tz, hs):
         reltol = 0.001
@@ -94,6 +94,9 @@ class Short_Term_Wave_Conditions(object):
     def tz(self):
         return self._tz
 
+    @property
+    def gamma(self):
+        return self._gamma
 
 class Long_Term_Wave_Conditions():
     def __init__(self, area):
@@ -110,7 +113,7 @@ class Long_Term_Wave_Conditions():
     def contour_line(self, return_period):  # Return period in years, statistics conditioned for 3hr storms
         pf = 1 / (return_period * 365 * 8)
         beta = norm.ppf((1 - pf), 0, 1)
-        phi = np.linspace(-np.pi / 8, np.pi / 8, 40, endpoint=True)
+        phi = np.linspace(-np.pi / 2, np.pi / 2, 10, endpoint=True)
         u1 = np.cos(phi) * beta
         u2 = np.sin(phi) * beta
 
