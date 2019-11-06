@@ -80,7 +80,7 @@ if __name__ == '__main__':
                 "max_wave_directions" : 90,
         }
 
-        if not this_candidate.has_stability_db():
+        if not this_candidate.has_stability_db() or 1:
             # if True:
             #try:
             r = this_candidate.intact_stability_ratio()
@@ -96,6 +96,7 @@ if __name__ == '__main__':
         else:
             print('This candidate has old stability database')
 
+        #exit()
         if this_candidate.has_complete_hydrodynamic_db() and 0:
             print('This candidate has old hydro database. Do not perform hydrodynamic analysis')
 

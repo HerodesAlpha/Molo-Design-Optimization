@@ -298,7 +298,7 @@ class ResponseModel(object):
         force_out['Dynamic']['Diffraction'] = f_diff
         force_out['Dynamic']['Mass'] = f_inertia
         force_out['Dynamic']['Added mass'] = f_added_mass
-        force_out['Dynamic']['Radiaton damping'] = f_radiation_damping
+        force_out['Dynamic']['Radiation damping'] = f_radiation_damping
         force_out['Dynamic']['Buoyancy'] = f_dz_s
         force_out['Dynamic']['SUM'] = f_fk + f_diff - (f_added_mass + f_radiation_damping + f_dz_s + f_inertia)
 

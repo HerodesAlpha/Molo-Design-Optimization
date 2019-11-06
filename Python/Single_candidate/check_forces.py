@@ -55,7 +55,7 @@ if __name__ == '__main__':
             this_candidate.init_model(state=state)
         print('\nCase:\t{}'.format(this_candidate.settings.case_label))
 
-        this_candidate.settings.radiaton_damping_factor = 0
+        this_candidate.settings.radiaton_damping_factor = 1
 
 
         this_candidate.init_load_response()
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[
             'draught']
         #sp_x = -100
-        #sp_z = 0
+        sp_z = 0
         section_point = [sp_x, 0, sp_z]  # Used for moment reference
         section_normal = [1, 0, 0]
 
@@ -94,8 +94,9 @@ if __name__ == '__main__':
         dyn_force = this_candidate.f_sec1['Dynamic']
 
         x_tics = 1/(2 * np.pi / w)
-        # x_label = 'Period [s]'
-        x_label = 'Frequency [Hz]'
+        x_tics = (2 * np.pi / w)
+        x_label = 'Period [s]'
+        #x_label = 'Frequency [Hz]'
 
         # --------------
         # FREQUENCY
@@ -106,14 +107,18 @@ if __name__ == '__main__':
 
         print('\n--------------------------\n D Y N A M I C   F O R C E\n--------------------------')
         print('{:16} {:5.3f}\n'.format(x_label, x_tics[ifreq_print]))
-        all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiaton damping','Buoyancy','SUM']
-        plot_keys = list( all_keys[i] for i in [6])# [0,1,2,3,4,5,6] )
+        all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiation damping','Buoyancy','SUM']
+        plot_keys = list( all_keys[i] for i in [0,1,2,3,4,5,6] )
         for key in dyn_force:
             if key in plot_keys:
+                if key == 'SUM':
+                    linewidth=2
+                else:
+                    linewidth = 1
                 abs_val=np.abs(dyn_force[key][:, ibeta, idof]) * factor
 
                 phase_val = np.angle(dyn_force[key][:, ibeta, idof])
-                axs[0, 0].plot(abs_val, label=key)
+                axs[0, 0].plot(x_tics,abs_val, label=key, linewidth=linewidth)
                 axs[0, 1].plot(x_tics,phase_val , label=key)
                 #print(abs_val[:])
                 print('{:20} {:6.2f} {: 5.2f}'.format(key, abs_val[ifreq_print], phase_val[ifreq_print]))
@@ -121,6 +126,8 @@ if __name__ == '__main__':
         axs[0, 0].set_title('Amplitude')
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
         axs[0, 0].set_ylabel(force_label[idof])
+        #axs[0, 0].set_yscale('log')
+        axs[0, 0].set_ylim([0, 1])
 
         axs[0, 0].legend()
         axs[0, 0].grid()
@@ -141,16 +148,24 @@ if __name__ == '__main__':
             if key == 'Heave':
                 abs_val_rao = np.abs(this_candidate.response.rao[:, ibeta, d[key]])
                 lns1 = ax1.plot(x_tics, abs_val_rao, label=key)
+                phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
+                print('{:20} {:6.3f} {: 7.4f}'.format(key, abs_val_rao[ifreq_print],
+                                                                     phase_val_rao[ifreq_print]))
 
 
             else:
                 abs_val_rao = np.abs(this_candidate.response.rao[:, ibeta, d[key]])
                 lns2 = ax2.plot(x_tics, np.abs(this_candidate.response.rao[:, ibeta, d[key]]), '-r', label=key)
 
-            phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
+                phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
+                print('{:20} {:6.3f} {: 7.4f} ({: 5.1f} deg)'.format(key, abs_val_rao[ifreq_print],
+                                                                     phase_val_rao[ifreq_print],
+                                                                     abs_val_rao[ifreq_print] * 180 / np.pi))
+
+
             axs[1, 1].plot(x_tics, np.angle(this_candidate.response.rao[:, ibeta, d[key]]), label=key)
 
-            print('{:20} {:6.3f} {: 5.2f}'.format(key, abs_val_rao[ifreq_print], phase_val_rao[ifreq_print]))
+
 
         lns = lns1 + lns2
         labs = [l.get_label() for l in lns]
@@ -181,4 +196,6 @@ if __name__ == '__main__':
     print()
     print(this_candidate.loads._m)
     print()
-    print(np.sum(this_candidate.response._point_mass, axis=0))
+    print(this_candidate.loads._ma[-1,:,:])
+    print()
+    print(this_candidate.loads._k)
