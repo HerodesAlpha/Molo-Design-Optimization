@@ -12,8 +12,11 @@ nax = np.newaxis
 
 
 class ResponseModel(object):
-    def __init__(self, candidate):
+    def __init__(self, candidate, seastate = None):
         # super().__init__(settings)
+        if not seastate is None:
+            pass
+
         self._settings = candidate.settings
         self._loads = candidate.loads
 
@@ -35,14 +38,6 @@ class ResponseModel(object):
         self._gaf = self._settings.job_data['floater']['Gap factor']
         self._nr = self._settings.job_data['floater']['Number of radials']
         self._nc = self._settings.job_data['floater']['Radial']['Number of columns']
-
-        # Set up RAOs
-        self._rao = np.zeros([self._loads.nw, self._loads._nbeta, 6], dtype=complex)
-        for ibeta in range(self._loads._nbeta):
-            self._rao[:, ibeta, :] = self.calc_rao(ibeta)
-
-            # self._rao[:, ibeta, 4]=0
-            # self._rao[:, ibeta, 5]=0
 
         # Prepare discrete mass and hydro forces
         with open(self._settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
@@ -72,6 +67,13 @@ class ResponseModel(object):
         #                   D Y N A M I C  E Q U I L I B R I U M
         # *****************************************************************************
 
+        # Set up RAOs
+        self._rao = np.zeros([self._loads.nw, self._loads._nbeta, 6], dtype=complex)
+        for ibeta in range(self._loads._nbeta):
+            self._rao[:, ibeta, :] = self.calc_rao(ibeta)
+        self.calc_dynamic_equilibrium()
+
+    def calc_dynamic_equilibrium(self):
         # -----------------------------------------------------------------------------
         # Right hand side
         # -----------------------------------------------------------------------------

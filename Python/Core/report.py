@@ -84,7 +84,7 @@ class DesignReport(Document):
         self._doc.change_document_style("header")
         self._doc.add_color(name="lightgray", model="gray", description="0.80")
         self._doc.append(Command('author', 'Model: {}'.format(settings._molo_model)))
-        self._doc.append(Command('title', 'MOLO Conceptual Design Report'))
+        self._doc.append(Command('title', 'MOLO Conceptual Core Report'))
         self._doc.append(Command('maketitle'))
         self._doc.append(NewPage())
         self._doc.append(Command('tableofcontents'))
@@ -96,7 +96,7 @@ class DesignReport(Document):
 
 
         # with self._doc.create(MiniPage(align='c')):
-        #     self._doc.append(LargeText(bold("MOLO Conceptual Design Report")))
+        #     self._doc.append(LargeText(bold("MOLO Conceptual Core Report")))
         #     self._doc.append(LineBreak())
         #     self._doc.append(MediumText(bold('{}'.format(settings._molo_label))))
 
