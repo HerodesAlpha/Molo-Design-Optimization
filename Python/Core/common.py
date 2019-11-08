@@ -169,8 +169,11 @@ class SettingsClass(PhysicalQuantities, object):
         self._calc_gz = False
         self._run_nemoh = False
         self._postprocessing = False
+
         self.set_molo_label()
         self._radiaton_damping_factor=1
+        self._do_linearize=False
+
 
         if case_label_type == None:
             self._case_label = None  # Auto numbering in FileIOClass
@@ -433,3 +436,13 @@ class SettingsClass(PhysicalQuantities, object):
     @radiaton_damping_factor.setter
     def radiaton_damping_factor(self,val):
         self._radiaton_damping_factor = val
+
+
+
+    @property
+    def do_linearize(self):
+        return self._do_linearize
+
+    @do_linearize.setter
+    def do_linearize(self,val):
+        self._do_linearize = val

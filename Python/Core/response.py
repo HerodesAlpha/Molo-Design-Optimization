@@ -10,12 +10,61 @@ import tool_box as tb
 
 nax = np.newaxis
 
+class Viscous_Damper(object):
+    def __init__(self, pos,rho,cd,d,l,w,sea_spectrum,rao):
+        self.alpha = np.asarray([0,0,0.5*rho*cd*d*l,0,0,0])
+        self.m = tb.rigid_body_motion(pos)
+        self.x = (self.m @ rao) * sea_spectrum
+        self.eq = 8 / 3 * self.alpha[nax, :] * w[:, nax] * x[nax, :] / np.pi
+
+
+
+class Linearization(object):
+
+    def __init__(self, loads, settings, idir,sea_spectrum):
+        self.fe = loads._fe[:, idir, :]
+        self.m = loads._m
+        self.ma = loads._ma
+        self.c_rad = loads._c_radiation * settings.radiaton_damping_factor
+        self.k = loads._k
+        self.w = loads._w
+        self.idir = idir
+        self.c_visc = np.zeros([len(self.w), 6, 6], dtype=complex)
+        self.rao_init = self.calc_rao() # Init RAO
+        self.rao = self.rao_init
+        if settings.do_linearize == True:
+
+            self.ss=sea_spectrum
+
+            vd_list =[]
+            pos = np.asarray([25,0,0])
+            rho=1025; cd =1; d = 7; l=2
+            vd_list.append(Viscous_Damper(pos,rho,cd,d,l, self.w, self.ss, self.rao))
+
+            for vd in vd_list:
+                print(vd.eq)
+
+
+
+    def calc_rao(self):
+        out_rao = np.zeros([len(self.w), 6], dtype=complex)
+        for i, w in enumerate(self.w):
+            this_ma = self.ma[i, :, :]
+            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
+            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
+            daf = scipy.linalg.inv(denom)
+            x = daf @ self.fe[i, :]
+            out_rao[i, :] = x
+        return out_rao
 
 class ResponseModel(object):
-    def __init__(self, candidate, seastate = None):
+    def __init__(self, candidate, beta=None,sea_spectrum=None):
         # super().__init__(settings)
-        if not seastate is None:
-            pass
+
+        self._beta=beta
+        self._ss=sea_spectrum
+
+
 
         self._settings = candidate.settings
         self._loads = candidate.loads
@@ -67,26 +116,11 @@ class ResponseModel(object):
         #                   D Y N A M I C  E Q U I L I B R I U M
         # *****************************************************************************
 
-        # Set up RAOs
-        self._rao = np.zeros([self._loads.nw, self._loads._nbeta, 6], dtype=complex)
-        for ibeta in range(self._loads._nbeta):
-            self._rao[:, ibeta, :] = self.calc_rao(ibeta)
-        self.calc_dynamic_equilibrium()
+        self.calc_dynamic_forces()
 
-    def calc_dynamic_equilibrium(self):
-        # -----------------------------------------------------------------------------
-        # Right hand side
-        # -----------------------------------------------------------------------------
-
-        # Froude-Krylof
-        self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
-
-        # Diffraction
-        self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
-
-        # -----------------------------------------------------------------------------
-        # Left hand side
-        # -----------------------------------------------------------------------------
+    def calc_rao_dependent_forces(self):
+        lin_model = Linearization(self._loads, self._settings, self._beta,self._ss)
+        self._rao = lin_model.rao
 
         # Radiation
 
@@ -147,22 +181,25 @@ class ResponseModel(object):
                 axis=4)
         # self._point_mass_dynamic_inertia_force *= -w2[:, nax, nax, nax]
 
-    def calc_rao(self, idir):
-        fe = self._loads._fe[:, idir, :]
-        m = self._loads._m
-        ma = self._loads._ma
-        c_rad = self._loads._c_radiation * self._settings.radiaton_damping_factor
-        k = self._loads._k
-        vw = self._loads._w
-        container = np.zeros([len(vw), 6], dtype=complex)
-        for i, w in enumerate(vw):
-            this_ma = ma[i, :, :]
-            this_c = c_rad[i, :, :]
-            denom = np.asarray(-w ** 2 * (m + this_ma) + 1j * w * this_c + k, dtype=complex)
-            daf = scipy.linalg.inv(denom)
-            x = daf @ fe[i, :]
-            container[i, :] = x
-        return container
+    def calc_dynamic_forces(self):
+        # -----------------------------------------------------------------------------
+        # Right hand side
+        # -----------------------------------------------------------------------------
+
+        # Froude-Krylof
+        self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
+
+        # Diffraction
+        self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
+
+        # -----------------------------------------------------------------------------
+        # Left hand side
+        # -----------------------------------------------------------------------------
+
+        self.calc_rao_dependent_forces()
+
+
+
 
     def get_section_index(self, section_point, section_normal):
 

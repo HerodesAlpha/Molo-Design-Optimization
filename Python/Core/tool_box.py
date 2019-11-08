@@ -142,21 +142,7 @@ class TotalMassMatrixClass(object):
 
 
     def _huygens_transport(self):
-        p_g = self._cog - self._point
-        x = p_g[0]
-        y = p_g[1]
-        z = p_g[2]
-        # print('x={} y={} z={}'.format(x,y,z))
-        A = np.asarray([[0, -z, y],
-                        [z, 0, -x],
-                        [-y, x, 0]], dtype=np.float)
-        AT = np.transpose(A)
-        m = np.zeros((6, 6), dtype=np.float)
-        m[3:, :3] = A
-        m[:3, 3:] = AT
-        m[3:, 3:] = np.matmul(A, AT)
-        # print(m[3:,3:])
-        return m
+        return huygens_transport(self._cog - self._point)
 
 
 def hollow_right_circular_cylinder(tmm, int_radius, ext_radius, length, density=1.):
@@ -608,3 +594,31 @@ def eigenvalprint(m, k):
             T = np.real(T)
         print('Eigenval {}:\t{:5.1f} s'.format(x + 1, T))
     warnings.filterwarnings("default")
+
+def huygens_transport(vec):
+    x = vec[0]
+    y = vec[1]
+    z = vec[2]
+    # print('x={} y={} z={}'.format(x,y,z))
+    A = np.asarray([[0, -z, y],
+                    [z, 0, -x],
+                    [-y, x, 0]], dtype=np.float)
+    AT = np.transpose(A)
+    m = np.zeros((6, 6), dtype=np.float)
+    m[3:, :3] = A
+    m[:3, 3:] = AT
+    m[3:, 3:] = np.matmul(A, AT)
+    # print(m[3:,3:])
+    return m
+
+def rigid_body_motion(vec):
+    x = vec[0]
+    y = vec[1]
+    z = vec[2]
+    A = np.asarray([[0, z, -y],
+                    [-z, 0, x],
+                    [y, -x, 0]], dtype=np.float)
+    AT = np.transpose(A)
+    m = np.diag([1] * 6, dtype=np.float)
+    m[3:, :3] = A
+    m[:3, 3:] = AT
