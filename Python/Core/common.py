@@ -13,6 +13,7 @@ import sys
 from report import DesignReport
 import numpy as np
 
+
 class PhysicalQuantities():
     # This is the only place allowed to put physical quantities
     def __init__(self):
@@ -67,7 +68,7 @@ class FileIOClass(object):
         self._templates_dir = settings.templates_dir
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
-            getpass.getuser())
+                getpass.getuser())
         assert (Path(self._gmsh_exe).exists())
 
         self._freecad_path = r'C:\Program Files\FreeCAD 0.18\bin'
@@ -145,8 +146,10 @@ class SettingsClass(PhysicalQuantities, object):
 
         self._mesh_name = None
         self._do_equilibrate = True
+        self._do_linearize = False
 
-        self._parameter_space=parameter_space
+
+        self._parameter_space = parameter_space
         self._job_data = parameter_space.job_data
 
         self._analyses_root = analyses_root
@@ -156,7 +159,6 @@ class SettingsClass(PhysicalQuantities, object):
         self._fio = None
         self._report = None
         self._wtg_model = None
-
 
         self._thin_panels = self._job_data['analysis']['simulations']['default']['calculation']['thin_panels']
         self._use_dipols = self._job_data['analysis']['simulations']['default']['calculation'][
@@ -171,22 +173,22 @@ class SettingsClass(PhysicalQuantities, object):
         self._postprocessing = False
 
         self.set_molo_label()
-        self._radiaton_damping_factor=1
-        self._do_linearize=False
+        self._radiaton_damping_factor = 1
 
 
         if case_label_type == None:
             self._case_label = None  # Auto numbering in FileIOClass
         elif case_label_type == 'molo_model':
             nrc = self._job_data['floater']['Radial']['Number of columns']
-            bfr_c=np.array(self._job_data['floater']['Ballast filling ratio'][0])*10
-            bfr_r=np.array(self._job_data['floater']['Ballast filling ratio'][1][:nrc])*10
-            radial_ballast_string = np.array2string(bfr_r.astype(int), precision=0, separator='',suppress_small=True)[1:-1]
-            self._case_label = '{:s}-b{:d}{:s}'.format(self._molo_model,bfr_c.astype(int),radial_ballast_string)
+            bfr_c = np.array(self._job_data['floater']['Ballast filling ratio'][0]) * 10
+            bfr_r = np.array(self._job_data['floater']['Ballast filling ratio'][1][:nrc]) * 10
+            radial_ballast_string = np.array2string(bfr_r.astype(int), precision=0, separator='', suppress_small=True)[
+                                    1:-1]
+            self._case_label = '{:s}-b{:d}{:s}'.format(self._molo_model, bfr_c.astype(int), radial_ballast_string)
         else:
             self._case_label = case_label_type
-        #print('\nMODEL: {}'.format(self._molo_model))
-        #print('CASE: {}'.format(self._case_label))
+        # print('\nMODEL: {}'.format(self._molo_model))
+        # print('CASE: {}'.format(self._case_label))
 
     def set_molo_label(self):
         nrc = self._job_data['floater']['Radial']['Number of columns']
@@ -204,7 +206,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()
 
-        #print(str(self._fio.case_dir))
+        # print(str(self._fio.case_dir))
         self._report = DesignReport(self)
 
     def save_job_settings(self):
@@ -219,11 +221,9 @@ class SettingsClass(PhysicalQuantities, object):
             with open(self._fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
                 self._job_data[item] = json.loads(f.read())
 
-
     @property
     def templates_dir(self):
         return self._parameter_space.templates_dir
-
 
     @property
     def analyses_root(self):
@@ -232,10 +232,10 @@ class SettingsClass(PhysicalQuantities, object):
     @property
     def park_label(self):
         return self._park_label
+
     @property
     def wtg_label(self):
         return self._wtg_label
-
 
     @property
     def mesh_file(self):
@@ -264,7 +264,6 @@ class SettingsClass(PhysicalQuantities, object):
     @property
     def case_label(self):
         return self._case_label
-
 
     @property
     def park_data(self):
@@ -404,19 +403,16 @@ class SettingsClass(PhysicalQuantities, object):
     def lower_face_corrected_z_pos(self):
         return self._job_data['floater']['Correct z pos of lower faces']
 
-
-
     @lower_face_corrected_z_pos.setter
-    def lower_face_corrected_z_pos(self,val):
+    def lower_face_corrected_z_pos(self, val):
         self._lower_face_corrected_z_pos = val
-
 
     @property
     def critical_damping_ratio(self):
         return self._critical_damping_ratio
 
     @critical_damping_ratio.setter
-    def critical_damping_ratio(self,val):
+    def critical_damping_ratio(self, val):
         self._critical_damping_ratio = val
 
     @property
@@ -424,25 +420,21 @@ class SettingsClass(PhysicalQuantities, object):
         return self._wtg_model
 
     @wtg_model.setter
-    def wtg_model(self,val):
+    def wtg_model(self, val):
         self._wtg_model = val
-
-
 
     @property
     def radiaton_damping_factor(self):
         return self._radiaton_damping_factor
 
     @radiaton_damping_factor.setter
-    def radiaton_damping_factor(self,val):
+    def radiaton_damping_factor(self, val):
         self._radiaton_damping_factor = val
-
-
 
     @property
     def do_linearize(self):
         return self._do_linearize
 
     @do_linearize.setter
-    def do_linearize(self,val):
+    def do_linearize(self, val):
         self._do_linearize = val

@@ -10,61 +10,67 @@ import tool_box as tb
 
 nax = np.newaxis
 
-class Viscous_Damper(object):
-    def __init__(self, pos,rho,cd,d,l,w,sea_spectrum,rao):
-        self.alpha = np.asarray([0,0,0.5*rho*cd*d*l,0,0,0])
-        self.m = tb.rigid_body_motion(pos)
-        self.x = (self.m @ rao) * sea_spectrum
-        self.eq = 8 / 3 * self.alpha[nax, :] * w[:, nax] * x[nax, :] / np.pi
 
+class Viscous_Damper(object):
+    def __init__(self, pos, rho, cd, d, l, w, sea_spectrum, rao):
+        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0])
+        self.m = tb.rigid_body_motion(pos)
+        self.x = np.squeeze((self.m[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
+        self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
 
 
 class Linearization(object):
 
-    def __init__(self, loads, settings, idir,sea_spectrum):
-        self.fe = loads._fe[:, idir, :]
+    def __init__(self, loads, settings, sea_spectrum):
+
+        self.fe = loads._fe
         self.m = loads._m
         self.ma = loads._ma
         self.c_rad = loads._c_radiation * settings.radiaton_damping_factor
         self.k = loads._k
         self.w = loads._w
-        self.idir = idir
-        self.c_visc = np.zeros([len(self.w), 6, 6], dtype=complex)
-        self.rao_init = self.calc_rao() # Init RAO
+        self.nbeta = loads._nbeta
+        self.nw = loads._nw
+
+        self.c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
+        self.rao_init = np.zeros([self.nw, self.nbeta, 6], dtype=complex)
+
+        for ib in range(self.nbeta):
+            self.rao_init[:, ib, :] = self.calc_rao(ib)  # Init RAO
+
         self.rao = self.rao_init
+
         if settings.do_linearize == True:
 
-            self.ss=sea_spectrum
+            self.ss = sea_spectrum
 
-            vd_list =[]
-            pos = np.asarray([25,0,0])
-            rho=1025; cd =1; d = 7; l=2
-            vd_list.append(Viscous_Damper(pos,rho,cd,d,l, self.w, self.ss, self.rao))
+            vd_list = []
+            pos = np.asarray([25, 0, 0])
+            rho = 1025
+            cd = 1
+            d = 7
+            l = 2
+            vd_list.append(Viscous_Damper(pos, rho, cd, d, l, self.w, self.ss, self.rao))
 
             for vd in vd_list:
                 print(vd.eq)
 
-
-
-    def calc_rao(self):
+    def calc_rao(self, ibeta):
         out_rao = np.zeros([len(self.w), 6], dtype=complex)
         for i, w in enumerate(self.w):
             this_ma = self.ma[i, :, :]
             this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
             denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
             daf = scipy.linalg.inv(denom)
-            x = daf @ self.fe[i, :]
+            x = daf @ self.fe[i, ibeta, :]
             out_rao[i, :] = x
         return out_rao
 
+
 class ResponseModel(object):
-    def __init__(self, candidate, beta=None,sea_spectrum=None):
-        # super().__init__(settings)
+    def __init__(self, candidate, sea_spectrum):
 
-        self._beta=beta
-        self._ss=sea_spectrum
-
-
+        self._ss = sea_spectrum
 
         self._settings = candidate.settings
         self._loads = candidate.loads
@@ -118,8 +124,25 @@ class ResponseModel(object):
 
         self.calc_dynamic_forces()
 
+    def calc_dynamic_forces(self):
+        # -----------------------------------------------------------------------------
+        # Right hand side
+        # -----------------------------------------------------------------------------
+
+        # Froude-Krylof
+        self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
+
+        # Diffraction
+        self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
+
+        # -----------------------------------------------------------------------------
+        # Left hand side
+        # -----------------------------------------------------------------------------
+
+        self.calc_rao_dependent_forces()
+
     def calc_rao_dependent_forces(self):
-        lin_model = Linearization(self._loads, self._settings, self._beta,self._ss)
+        lin_model = Linearization(self._loads, self._settings, self._ss)
         self._rao = lin_model.rao
 
         # Radiation
@@ -135,7 +158,7 @@ class ResponseModel(object):
                                                                             nax] * self._loads.w[:,
                                                                                    nax,
                                                                                    nax, nax,
-                                                                                   nax] * np.complex(0, 1)
+                                                                                   nax] * 1j
 
         self._panel_added_mass_force = np.sum(self._panel_added_mass_force_all_dof, axis=2)
         self._panel_radiation_damping_force = np.sum(self._panel_radiation_damping_force_all_dof, axis=2)
@@ -164,42 +187,9 @@ class ResponseModel(object):
         self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
                                             nax] * self._projected_panel_area)
 
-        # Inertia
-        # Get dynamic acceleration of part masses and calc inertia force
-        #
-        # self._pmc = np.append(self._point_mass_centers, np.ones((self._point_mass_centers.shape[0], 1)), 1)
-        # self._pmc = self._pmc[nax, nax, :, :, nax]
-        # self._dynamic_point_mass_pos = np.squeeze(np.matmul(self._rao_transf_mat, self._pmc), axis=4)[:, :, :, 0:3]
-        # self._dynamic_point_mass_pos -= self._point_mass_centers[nax, nax, :]  # Subtract mean position
-        #
-        # self._part_dynacc = self._dynamic_point_mass_pos * -w2[:, nax, nax, nax]
-        # self._point_mass_dynamic_inertia_force = self._part_dynacc * self._point_mass[nax, nax, :,
-        #                                                              nax, 0, 0]
-
         self._point_mass_dynamic_inertia_force = np.squeeze(
                 self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
                 axis=4)
-        # self._point_mass_dynamic_inertia_force *= -w2[:, nax, nax, nax]
-
-    def calc_dynamic_forces(self):
-        # -----------------------------------------------------------------------------
-        # Right hand side
-        # -----------------------------------------------------------------------------
-
-        # Froude-Krylof
-        self._panel_pressure_froude_krylof_force = self._loads._force['Froude-Krylof']
-
-        # Diffraction
-        self._panel_pressure_diffraction_force = self._loads._force['Diffraction']
-
-        # -----------------------------------------------------------------------------
-        # Left hand side
-        # -----------------------------------------------------------------------------
-
-        self.calc_rao_dependent_forces()
-
-
-
 
     def get_section_index(self, section_point, section_normal):
 

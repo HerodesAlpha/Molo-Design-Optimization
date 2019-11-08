@@ -30,9 +30,10 @@ this_candidate.settings.radiaton_damping_factor = 1
 
 
 
-
-
-this_candidate.init_load_response()
+this_candidate.settings.do_linearize=True
+this_candidate.init_load()
+sea_spectrum=ec.Short_Term_Wave_Conditions(hs=6, tz=7).s_jonswap(this_candidate.loads.w)
+this_candidate.init_response(sea_spectrum=sea_spectrum)
 
 # Get section forces
 sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)

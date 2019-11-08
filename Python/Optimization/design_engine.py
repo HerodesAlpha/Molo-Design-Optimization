@@ -168,9 +168,13 @@ class Candidate():
             print('init_model state is either New or Old')
             exit()
 
-    def init_load_response(self):
+    def init_load(self):
         self.loads = Sea_and_Inertia_Loads(self.settings)
-        self.response = ResponseModel(self)
+
+
+    def init_response(self, sea_spectrum):
+
+        self.response = ResponseModel(self, sea_spectrum)
 
     def intact_stability_ratio(self):
         print('\n--------------------------------------------------------------------------------------------')

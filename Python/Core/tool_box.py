@@ -619,6 +619,7 @@ def rigid_body_motion(vec):
                     [-z, 0, x],
                     [y, -x, 0]], dtype=np.float)
     AT = np.transpose(A)
-    m = np.diag([1] * 6, dtype=np.float)
+    m = np.diag([1] * 6)
     m[3:, :3] = A
     m[:3, 3:] = AT
+    return m
