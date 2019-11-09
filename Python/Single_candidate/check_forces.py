@@ -9,7 +9,8 @@ print('\nCase:\t{}'.format(this_candidate.settings.case_label))
 this_candidate.settings.radiaton_damping_factor = 1
 
 
-this_candidate.init_load_response()
+this_candidate.init_load()
+this_candidate.init_response(sea_spectrum=None)
 
 # Consider first radial
 

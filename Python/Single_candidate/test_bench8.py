@@ -223,7 +223,7 @@ if __name__ == '__main__':
         # PLOT RESULTS
         # --------------------------------------------------------------------------------------------------------------
         if False:
-            h = tran_fun.calc_rao(idir)
+            h = tran_fun.calc_rao_linear(idir)
             fig, axs = plt.subplots(3, 2)
             w = 2 * np.pi / loads.w
             axs[0, 0].plot(w, abs(h[:, 2]), 'tab:orange')

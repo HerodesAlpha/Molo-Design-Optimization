@@ -315,7 +315,7 @@ def write_report(root, hdp, case_label):
     for sel_dof in hdp.available_dofs:
         with doc.create(Figure(position='htbp')) as plot:
             for sel_dir in hdp.available_dirs:
-                plt.plot((2 * np.pi) / hdp.w, hdp.calc_rao(sel_dof, sel_dir))
+                plt.plot((2 * np.pi) / hdp.w, hdp.calc_rao_linear(sel_dof, sel_dir))
             plt.ylabel(dof_label[sel_dof - 1])
 
             plot.add_plot(width=NoEscape(width))

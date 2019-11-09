@@ -20,12 +20,6 @@ this_candidate.contourline = []
 for hs, tz in this_candidate.cl:
     this_candidate.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
-
-
-
-
-
-
 this_candidate.settings.radiaton_damping_factor = 1
 
 

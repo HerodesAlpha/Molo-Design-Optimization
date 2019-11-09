@@ -12,11 +12,15 @@ nax = np.newaxis
 
 
 class Viscous_Damper(object):
-    def __init__(self, pos, rho, cd, d, l, w, sea_spectrum, rao):
-        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0])
-        self.m = tb.rigid_body_motion(pos)
-        self.x = np.squeeze((self.m[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
-        self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
+    def __init__(self, pos, rho, cd, d, l):
+    #def __init__(self, pos, rho, cd, d, l, w, sea_spectrum, rao):
+
+        self.a = tb.rigid_body_motion(pos)
+        self.b = np.diag([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0])
+        self.alpha = self.a @ self.b
+
+        #self.x = np.squeeze((self.a[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
+        #self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
 
 
 class Linearization(object):
@@ -35,27 +39,55 @@ class Linearization(object):
         self.c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
         self.rao_init = np.zeros([self.nw, self.nbeta, 6], dtype=complex)
 
-        for ib in range(self.nbeta):
-            self.rao_init[:, ib, :] = self.calc_rao(ib)  # Init RAO
+        for ib in range(1): #self.nbeta
+            if settings.do_linearize:
+                self.ss = sea_spectrum
+                self.vd_list = []
+                self.visc_damp_pos = np.asarray([[25, 0, 0], [30, 0, 0]])
+                rho = 1025
+                cd = 1
+                d = 7
+                l = 10
+                for pos in self.visc_damp_pos:
+                    self.vd_list.append(Viscous_Damper(pos, rho, cd, d, l))
 
-        self.rao = self.rao_init
+                self.alphas=np.asarray([vd.alpha for vd in self.vd_list])
+                self.alpha_tot = np.sum(self.alphas, axis=0)
 
-        if settings.do_linearize == True:
 
-            self.ss = sea_spectrum
+                self.rao_init[:, ib, :] = self.calc_rao_linear(ib)  # Init RAO
 
-            vd_list = []
-            pos = np.asarray([25, 0, 0])
-            rho = 1025
-            cd = 1
-            d = 7
-            l = 2
-            vd_list.append(Viscous_Damper(pos, rho, cd, d, l, self.w, self.ss, self.rao))
+                self.rao = self.rao_init
 
-            for vd in vd_list:
-                print(vd.eq)
+                for k in range(10): # Iterate three times on ROA
+                    for i,w in enumerate(self.w):
+                        u = np.squeeze(8/(3*np.pi)*self.rao[i,ib,:]*self.ss[i]*w) # Linearized velocity
+                        self.c_visc[i,:,:] = np.diag(self.alpha_tot @ u)
+                        self.rao[:, ib, :]=self.calc_rao_linear(ib)
 
-    def calc_rao(self, ibeta):
+
+
+
+
+            else:
+                self.rao_init[:, ib, :] = self.calc_rao_linear(ib)  # Init RAO
+
+
+                self.rao = self.rao_init
+
+    def calc_rao_linear(self, ibeta):
+        out_rao = np.zeros([len(self.w), 6], dtype=complex)
+        for i, w in enumerate(self.w):
+            this_ma = self.ma[i, :, :]
+            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
+            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
+            daf = scipy.linalg.inv(denom)
+            x = daf @ self.fe[i, ibeta, :]
+            out_rao[i, :] = x
+        return out_rao
+
+
+    def calc_rao_non_linear(self, ibeta):
         out_rao = np.zeros([len(self.w), 6], dtype=complex)
         for i, w in enumerate(self.w):
             this_ma = self.ma[i, :, :]
