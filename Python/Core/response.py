@@ -12,91 +12,17 @@ nax = np.newaxis
 
 
 class Viscous_Damper(object):
-    def __init__(self, pos, rho, cd, d, l):
-    #def __init__(self, pos, rho, cd, d, l, w, sea_spectrum, rao):
+    def __init__(self, coordinate, rho, cd, d, l):
+        # def __init__(self, pos, rho, cd, d, l, w, sea_spectrum, rao):
 
-        self.a = tb.rigid_body_motion(pos)
-        self.b = np.diag([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0])
-        self.alpha = self.a @ self.b
+        self.coordinate = coordinate
+        self.cd = cd
+        self.d = d
+        self.l = l
+        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0])
 
-        #self.x = np.squeeze((self.a[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
-        #self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
-
-
-class Linearization(object):
-
-    def __init__(self, loads, settings, sea_spectrum):
-
-        self.fe = loads._fe
-        self.m = loads._m
-        self.ma = loads._ma
-        self.c_rad = loads._c_radiation * settings.radiaton_damping_factor
-        self.k = loads._k
-        self.w = loads._w
-        self.nbeta = loads._nbeta
-        self.nw = loads._nw
-
-        self.c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
-        self.rao_init = np.zeros([self.nw, self.nbeta, 6], dtype=complex)
-
-        for ib in range(1): #self.nbeta
-            if settings.do_linearize:
-                self.ss = sea_spectrum
-                self.vd_list = []
-                self.visc_damp_pos = np.asarray([[25, 0, 0], [30, 0, 0]])
-                rho = 1025
-                cd = 1
-                d = 7
-                l = 10
-                for pos in self.visc_damp_pos:
-                    self.vd_list.append(Viscous_Damper(pos, rho, cd, d, l))
-
-                self.alphas=np.asarray([vd.alpha for vd in self.vd_list])
-                self.alpha_tot = np.sum(self.alphas, axis=0)
-
-
-                self.rao_init[:, ib, :] = self.calc_rao_linear(ib)  # Init RAO
-
-                self.rao = self.rao_init
-
-                for k in range(10): # Iterate three times on ROA
-                    for i,w in enumerate(self.w):
-                        u = np.squeeze(8/(3*np.pi)*self.rao[i,ib,:]*self.ss[i]*w) # Linearized velocity
-                        self.c_visc[i,:,:] = np.diag(self.alpha_tot @ u)
-                        self.rao[:, ib, :]=self.calc_rao_linear(ib)
-
-
-
-
-
-            else:
-                self.rao_init[:, ib, :] = self.calc_rao_linear(ib)  # Init RAO
-
-
-                self.rao = self.rao_init
-
-    def calc_rao_linear(self, ibeta):
-        out_rao = np.zeros([len(self.w), 6], dtype=complex)
-        for i, w in enumerate(self.w):
-            this_ma = self.ma[i, :, :]
-            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
-            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
-            daf = scipy.linalg.inv(denom)
-            x = daf @ self.fe[i, ibeta, :]
-            out_rao[i, :] = x
-        return out_rao
-
-
-    def calc_rao_non_linear(self, ibeta):
-        out_rao = np.zeros([len(self.w), 6], dtype=complex)
-        for i, w in enumerate(self.w):
-            this_ma = self.ma[i, :, :]
-            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
-            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
-            daf = scipy.linalg.inv(denom)
-            x = daf @ self.fe[i, ibeta, :]
-            out_rao[i, :] = x
-        return out_rao
+    # self.x = np.squeeze((self.a[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
+    # self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
 
 
 class ResponseModel(object):
@@ -106,6 +32,18 @@ class ResponseModel(object):
 
         self._settings = candidate.settings
         self._loads = candidate.loads
+
+        self.fe = self._loads._fe
+        self.m = self._loads._m
+        self.ma = self._loads._ma
+        self.c_rad = self._loads._c_radiation * self._settings.radiaton_damping_factor
+
+        self.k = self._loads._k
+        self.w = self._loads._w
+        self.nbeta = self._loads._nbeta
+        self.nw = self._loads._nw
+
+        self.c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
 
         self._h = self._settings.job_data['floater']['Radial']['Heigth']
         self._d_rc = self._settings.job_data['floater']['Radial']['Column']['Diameter']
@@ -174,11 +112,17 @@ class ResponseModel(object):
         self.calc_rao_dependent_forces()
 
     def calc_rao_dependent_forces(self):
-        lin_model = Linearization(self._loads, self._settings, self._ss)
-        self._rao = lin_model.rao
+        self._rao_init = np.zeros([self.nw, self.nbeta, 6], dtype=complex)
+        for ib in range(1):  # self.nbeta
+            self._rao_init[:, ib, :] = self.calc_rao_linear(ib)
 
-        # Radiation
+        self._rao = self._rao_init
+        if self._settings.do_linearize:
+            self.create_viscous_damping()
 
+        # --------------------------------------------------------------------------------------------------------------
+        # RADIATION
+        # --------------------------------------------------------------------------------------------------------------
         am = self._loads._added_mass
         rd = self._loads._radiation_damping
         # The RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
@@ -195,33 +139,45 @@ class ResponseModel(object):
         self._panel_added_mass_force = np.sum(self._panel_added_mass_force_all_dof, axis=2)
         self._panel_radiation_damping_force = np.sum(self._panel_radiation_damping_force_all_dof, axis=2)
 
-        # RAO transformation matrix
-        self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
-        self._panel_pos = np.zeros([self._loads._nw, self._loads._nbeta, self._loads.pd.npanels, 3], dtype=complex)
-        for ifreq in range(self._loads._nw):  # TODO: Vectorize
-            for ibeta in range(self._loads._nbeta):
-                rot = self._rao[ifreq, ibeta, 3:6]
-                tra = self._rao[ifreq, ibeta, 0:3]
-                self._rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)
-        self._rao_transf_mat = self._rao_tra_mat[:, :, nax, :, :]
+        # --------------------------------------------------------------------------------------------------------------
+        # RAO TRANSFORMATION MATRIX
+        # --------------------------------------------------------------------------------------------------------------
+        self.update_rao_tra_mat()
 
-        # Stiffness
+        # --------------------------------------------------------------------------------------------------------------
+        # STIFFNESS
+        # --------------------------------------------------------------------------------------------------------------
+
+        self._panel_pos = np.zeros([self._loads._nw, self._loads._nbeta, self._loads.pd.npanels, 3], dtype=complex)
         # Gen dynamic position of panels and calc hydro static pressure
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._ppc = np.append(self._panel_pressure_centers, np.ones((self._loads.pd.npanels, 1)), 1)
         # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
         self._ppc = self._ppc[nax, nax, :, :, nax]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...
-        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_transf_mat, self._ppc), axis=4)[:, :, :, 0:3]
+        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._ppc), axis=4)[:, :, :, 0:3]
         self._panel_pos -= self._loads.pd.ppanel_centers[nax, nax, :, :]  # Subtract mean position
         self._panel_diff_buoyancy_pressure = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
                                                                                                2]  # Change in pressure
         self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
                                             nax] * self._projected_panel_area)
 
+        # --------------------------------------------------------------------------------------------------------------
+        # Mass
+        # --------------------------------------------------------------------------------------------------------------
         self._point_mass_dynamic_inertia_force = np.squeeze(
                 self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
                 axis=4)
+
+    def update_rao_tra_mat(self):
+        self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
+
+        for ifreq in range(self._loads._nw):  # TODO: Vectorize
+            for ibeta in range(self._loads._nbeta):
+                rot = self._rao[ifreq, ibeta, 3:6]
+                tra = self._rao[ifreq, ibeta, 0:3]
+                self._rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)
+
 
     def get_section_index(self, section_point, section_normal):
 
@@ -395,6 +351,61 @@ class ResponseModel(object):
         h_lfst = fdi['Lower flange stiffener height']
         t_ufst = fdi['Upper flange stiffener thickness']
         h_ufst = fdi['Upper flange stiffener height']
+
+    def create_viscous_damping(self):
+
+
+        #for ib in range(1):  # self.nbeta
+
+        self.vd_list = []
+        self.visc_damp_coordinate = np.asarray([[25, 0, 0], [30, 0, 0]])
+        rho = self._settings._rho_sw
+        cd = 1
+        d = 7
+        l = 10
+        for coord in self.visc_damp_coordinate:
+            self.vd_list.append(Viscous_Damper(coord, rho, cd, d, l))
+
+        self._alphas = np.asarray([vd.alpha for vd in self.vd_list])
+        self.update_rao_tra_mat()
+
+        # Gen dynamic position of dampers and calc damping coefficient
+        # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
+        self._vdp = np.append(self.visc_damp_coordinate, np.ones((self.visc_damp_coordinate.shape[0], 1)), 1)
+        self._viscous_damper_pos = np.matmul(self._rao_tra_mat[:,:,nax,:,:], self._vdp[nax,nax,:,:,nax])
+        self._viscous_damper_amplitude = self._viscous_damper_pos[:, :, :, 0:3] - self.visc_damp_coordinate[nax, nax, :, :]  # Subtract mean position
+        self.c_visc = 8/3*(self._alphas[nax,:,:,nax]*self.w[:,nax,nax,nax] * self._viscous_damper_amplitude[:, :,:,:])/np.pi  # Linearized damping coefficient
+        self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
+                                            nax] * self._projected_panel_area)
+
+            for k in range(3):  # Iterate three times on ROA
+                rao_this_dir = np.squeeze(self.rao[:, ib, :])
+                u = 8 / (3 * np.pi) * rao_this_dir[:, nax, :] * self._ss[:, nax, nax] * self.w[:, nax,
+                                                                                        nax]  # Linearized velocity
+                self.c_visc = self.alpha_tot[nax, nax, :, :] @ u[:, :, :, nax]
+                self.rao[:, ib, :] = self.calc_rao_linear(ib)
+
+    def calc_rao_linear(self, ibeta):
+        out_rao = np.zeros([len(self.w), 6], dtype=complex)
+        for i, w in enumerate(self.w):
+            this_ma = self.ma[i, :, :]
+            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
+            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
+            daf = scipy.linalg.inv(denom)
+            x = daf @ self.fe[i, ibeta, :]
+            out_rao[i, :] = x
+        return out_rao
+
+    def calc_rao_non_linear(self, ibeta):
+        out_rao = np.zeros([len(self.w), 6], dtype=complex)
+        for i, w in enumerate(self.w):
+            this_ma = self.ma[i, :, :]
+            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
+            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
+            daf = scipy.linalg.inv(denom)
+            x = daf @ self.fe[i, ibeta, :]
+            out_rao[i, :] = x
+        return out_rao
 
     @property
     def rao(self):
