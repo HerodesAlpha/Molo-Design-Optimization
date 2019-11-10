@@ -19,7 +19,7 @@ class Viscous_Damper(object):
         self.cd = cd
         self.d = d
         self.l = l
-        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0])
+        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l]) # x,y,z
 
     # self.x = np.squeeze((self.a[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
     # self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
@@ -177,7 +177,6 @@ class ResponseModel(object):
                 rot = self._rao[ifreq, ibeta, 3:6]
                 tra = self._rao[ifreq, ibeta, 0:3]
                 self._rao_tra_mat[ifreq, ibeta, :, :] = tb.transformation_matrix(rot, tra)
-
 
     def get_section_index(self, section_point, section_normal):
 
@@ -372,18 +371,10 @@ class ResponseModel(object):
         # Gen dynamic position of dampers and calc damping coefficient
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._vdp = np.append(self.visc_damp_coordinate, np.ones((self.visc_damp_coordinate.shape[0], 1)), 1)
-        self._viscous_damper_pos = np.matmul(self._rao_tra_mat[:,:,nax,:,:], self._vdp[nax,nax,:,:,nax])
+        self._viscous_damper_pos = np.squeeze(np.matmul(self._rao_tra_mat[:,:,nax,:,:], self._vdp[nax,nax,:,:,nax]),axis=4)
         self._viscous_damper_amplitude = self._viscous_damper_pos[:, :, :, 0:3] - self.visc_damp_coordinate[nax, nax, :, :]  # Subtract mean position
-        self.c_visc = 8/3*(self._alphas[nax,:,:,nax]*self.w[:,nax,nax,nax] * self._viscous_damper_amplitude[:, :,:,:])/np.pi  # Linearized damping coefficient
-        self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
-                                            nax] * self._projected_panel_area)
+        self.c_visc = 8/3*(self._alphas[nax,nax,:,:]*self.w[:,nax,nax,nax] * self._viscous_damper_amplitude[:, :,:,:])/np.pi  # Linearized damping coefficient
 
-            for k in range(3):  # Iterate three times on ROA
-                rao_this_dir = np.squeeze(self.rao[:, ib, :])
-                u = 8 / (3 * np.pi) * rao_this_dir[:, nax, :] * self._ss[:, nax, nax] * self.w[:, nax,
-                                                                                        nax]  # Linearized velocity
-                self.c_visc = self.alpha_tot[nax, nax, :, :] @ u[:, :, :, nax]
-                self.rao[:, ib, :] = self.calc_rao_linear(ib)
 
     def calc_rao_linear(self, ibeta):
         out_rao = np.zeros([len(self.w), 6], dtype=complex)
@@ -396,16 +387,7 @@ class ResponseModel(object):
             out_rao[i, :] = x
         return out_rao
 
-    def calc_rao_non_linear(self, ibeta):
-        out_rao = np.zeros([len(self.w), 6], dtype=complex)
-        for i, w in enumerate(self.w):
-            this_ma = self.ma[i, :, :]
-            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
-            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
-            daf = scipy.linalg.inv(denom)
-            x = daf @ self.fe[i, ibeta, :]
-            out_rao[i, :] = x
-        return out_rao
+
 
     @property
     def rao(self):
