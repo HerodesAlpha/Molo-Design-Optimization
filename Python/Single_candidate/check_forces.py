@@ -1,16 +1,34 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import environmental_conditions as ec
 
-with open( "this_candidate.pkl", "rb" ) as f:
-    this_candidate=pickle.load(f)
+with open("this_candidate.pkl", "rb") as f:
+    this_candidate = pickle.load(f)
 print('\nCase:\t{}'.format(this_candidate.settings.case_label))
+
+
+yr = this_candidate.settings.park_data['Design Basis']['ULS']['Return period']
+
+# Create list of short terms from contour line
+area = this_candidate.settings.park_data['Design Basis']['Area']
+this_candidate.ltwc1 = ec.Long_Term_Wave_Conditions(area=area)
+this_candidate.cl = this_candidate.ltwc1.contour_line(yr)
+this_candidate.contourline = []
+#this_candidate.cl = np.asarray([[3.5, 13.5, 1],[9, 9.5, 5],[8, 11, 3.6],[7, 11, 2.6],[7, 11.5, 2.12]])
+
+for hs, tz in this_candidate.cl:
+    this_candidate.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
 this_candidate.settings.radiaton_damping_factor = 1
 
 
+
+this_candidate.settings.do_linearize=True
 this_candidate.init_load()
-this_candidate.init_response(sea_spectrum=None)
+sea_spectrum=ec.Short_Term_Wave_Conditions(hs=6, tz=7).s_jonswap(this_candidate.loads.w)
+this_candidate.init_response(sea_spectrum=sea_spectrum)
+
 
 # Consider first radial
 
@@ -148,6 +166,8 @@ np.set_printoptions(precision=3)
 print()
 print(this_candidate.loads._m)
 print()
-print(this_candidate.loads._ma[-1,:,:])
+print(this_candidate.loads._ma[ifreq_print,:,:])
 print()
 print(this_candidate.loads._k)
+print()
+print(this_candidate.response._c_visc[ifreq_print,:,:])

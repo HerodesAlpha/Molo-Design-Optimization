@@ -19,7 +19,7 @@ class Viscous_Damper(object):
         self.cd = cd
         self.d = d
         self.l = l
-        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l]) # x,y,z
+        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l])  # x,y,z
 
     # self.x = np.squeeze((self.a[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
     # self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
@@ -43,7 +43,7 @@ class ResponseModel(object):
         self.nbeta = self._loads._nbeta
         self.nw = self._loads._nw
 
-        self.c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
+        self._c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
 
         self._h = self._settings.job_data['floater']['Radial']['Heigth']
         self._d_rc = self._settings.job_data['floater']['Radial']['Column']['Diameter']
@@ -83,7 +83,7 @@ class ResponseModel(object):
         self.w2 = self._loads.w ** 2
         # Gravity
         self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, nax] * np.asarray(
-                [0, 0, self._settings.gravity])[nax, :]  # Use m33
+            [0, 0, self._settings.gravity])[nax, :]  # Use m33
 
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
@@ -155,7 +155,8 @@ class ResponseModel(object):
         # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
         self._ppc = self._ppc[nax, nax, :, :, nax]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...
-        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._ppc), axis=4)[:, :, :, 0:3]
+        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._ppc), axis=4)[:, :,
+                                      :, 0:3]
         self._panel_pos -= self._loads.pd.ppanel_centers[nax, nax, :, :]  # Subtract mean position
         self._panel_diff_buoyancy_pressure = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
                                                                                                2]  # Change in pressure
@@ -166,8 +167,8 @@ class ResponseModel(object):
         # Mass
         # --------------------------------------------------------------------------------------------------------------
         self._point_mass_dynamic_inertia_force = np.squeeze(
-                self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
-                axis=4)
+            self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
+            axis=4)
 
     def update_rao_tra_mat(self):
         self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
@@ -353,8 +354,7 @@ class ResponseModel(object):
 
     def create_viscous_damping(self):
 
-
-        #for ib in range(1):  # self.nbeta
+        # for ib in range(1):  # self.nbeta
 
         self.vd_list = []
         self.visc_damp_coordinate = np.asarray([[25, 0, 0], [30, 0, 0]])
@@ -371,23 +371,33 @@ class ResponseModel(object):
         # Gen dynamic position of dampers and calc damping coefficient
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._vdp = np.append(self.visc_damp_coordinate, np.ones((self.visc_damp_coordinate.shape[0], 1)), 1)
-        self._viscous_damper_pos = np.squeeze(np.matmul(self._rao_tra_mat[:,:,nax,:,:], self._vdp[nax,nax,:,:,nax]),axis=4)
-        self._viscous_damper_amplitude = self._viscous_damper_pos[:, :, :, 0:3] - self.visc_damp_coordinate[nax, nax, :, :]  # Subtract mean position
-        self.c_visc = 8/3*(self._alphas[nax,nax,:,:]*self.w[:,nax,nax,nax] * self._viscous_damper_amplitude[:, :,:,:])/np.pi  # Linearized damping coefficient
+        self._viscous_damper_pos = np.squeeze(
+            np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._vdp[nax, nax, :, :, nax]), axis=4)
+        self._viscous_damper_amplitude = self._viscous_damper_pos[:, :, :, 0:3] - self.visc_damp_coordinate[nax, nax, :,
+                                                                                  :]  # Subtract mean position
+        self._viscous_damper_force = 8 / (3 * np.pi) * (self._alphas[nax, nax, :, :] * (
+                self.w[:, nax, nax, nax] * self._viscous_damper_amplitude[:, :, :,
+                                           :]) ** 2)  # Linearized damping
 
+        self._viscous_damper_moment = np.cross(self.visc_damp_coordinate[nax, nax, :, :], self._viscous_damper_force)
+        self._viscous_damper_forces = np.concatenate((self._viscous_damper_force, self._viscous_damper_moment), axis=3)
+
+        self._viscous_damper_total_forces = np.sum(self._viscous_damper_forces, axis=2)
+        tmp=self._viscous_damper_total_forces / self._rao
+        I=np.identity(6)
+        self._c_visc = I[nax,nax,:,:] @ tmp[:,:,:,nax] # TODO: Make diagonal work!
+        print('self._c_visc')
 
     def calc_rao_linear(self, ibeta):
         out_rao = np.zeros([len(self.w), 6], dtype=complex)
         for i, w in enumerate(self.w):
             this_ma = self.ma[i, :, :]
-            this_c = self.c_rad[i, :, :] + self.c_visc[i, :, :]
+            this_c = self.c_rad[i, :, :] + self._c_visc[i, :, :]
             denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
             daf = scipy.linalg.inv(denom)
             x = daf @ self.fe[i, ibeta, :]
             out_rao[i, :] = x
         return out_rao
-
-
 
     @property
     def rao(self):

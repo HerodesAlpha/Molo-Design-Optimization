@@ -160,7 +160,6 @@ def hollow_right_circular_cylinder(tmm, int_radius, ext_radius, length, density=
     tmm.ixx = tmm.iyy = ((3 * R2r2 + length ** 2) / 12.) * tmm.mass
     tmm.izz = (R2r2 / 2.) * tmm.mass
 
-
 def rectangular_prism(tmm, a, b, h, density=1.):
     """Get the inertia of a rectangular prism
 
@@ -181,12 +180,10 @@ def rectangular_prism(tmm, a, b, h, density=1.):
     tmm.iyy = tmm.mass * (a ** 2 + h ** 2) / 12.
     tmm.izz = tmm.mass * (a ** 2 + b ** 2) / 12.
 
-
 def trig(angle):
     # r = radians(angle)
     r = angle
     return cos(r), sin(r)
-
 
 def transformation_matrix(rotation, translation=None, scale=None):
     if translation is None:
@@ -224,7 +221,6 @@ def transformation_matrix(rotation, translation=None, scale=None):
                                 [0, 0, 0, 1]])
     return np.dot(Rotate_Z_matrix,
                   np.dot(Rotate_Y_matrix, np.dot(Rotate_X_matrix, np.dot(Translate_matrix, Scale_matrix))))
-
 
 def rotation_matrix(rotation):
     xC, xS = trig(rotation[0])
