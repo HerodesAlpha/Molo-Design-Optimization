@@ -147,6 +147,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._mesh_name = None
         self._do_equilibrate = True
         self._do_linearize = False
+        self._create_stability_movie = False
 
 
         self._parameter_space = parameter_space
@@ -438,3 +439,12 @@ class SettingsClass(PhysicalQuantities, object):
     @do_linearize.setter
     def do_linearize(self, val):
         self._do_linearize = val
+
+    @property
+    def create_stability_movie(self):
+        return self._create_stability_movie
+
+    @create_stability_movie.setter
+    def create_stability_movie(self, val):
+        self._create_stability_movie = val
+

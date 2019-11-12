@@ -30,7 +30,7 @@ def righting_moment_curve(settings, hs_floater):
     heel_angles = []
     righting_moments = []
 
-    create_movie = False
+
 
     with imageio.get_writer(settings.fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
         with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
@@ -51,7 +51,7 @@ def righting_moment_curve(settings, hs_floater):
                 heel_angles.append(thetay)
                 righting_moments.append(-hs_floater.residual[2])
 
-                if create_movie:
+                if settings.create_stability_movie:
                     vtk_polydata = hs_floater.mesh._vtk_polydata()
                     hs_floater.viewer = MMViewer(use_interactor=False)
                     hs_floater.viewer.add_polydata(vtk_polydata)

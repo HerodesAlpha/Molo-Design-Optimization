@@ -26,7 +26,7 @@ this_candidate.settings.radiaton_damping_factor = 1
 
 this_candidate.settings.do_linearize=True
 this_candidate.init_load()
-sea_spectrum=ec.Short_Term_Wave_Conditions(hs=6, tz=7).s_jonswap(this_candidate.loads.w)
+sea_spectrum=ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3).s_jonswap(this_candidate.loads.w)
 this_candidate.init_response(sea_spectrum=sea_spectrum)
 
 
@@ -36,13 +36,13 @@ this_candidate.init_response(sea_spectrum=sea_spectrum)
 sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
 sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[
     'draught']
-#sp_x = -100
+sp_x = -100
 sp_z = 0
 section_point = [sp_x, 0, sp_z]  # Used for moment reference
 section_normal = [1, 0, 0]
 
-imass, ipanel = this_candidate.response.get_section_index(section_point, section_normal)
-this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, moment_ref_point=[0,0,0])
+imass, ipanel, idamp = this_candidate.response.get_section_index(section_point, section_normal)
+this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, idamp, moment_ref_point=[0,0,0])
 del imass, ipanel
 
 ibeta = 0
@@ -58,27 +58,22 @@ for key in stat_force:
     b = np.angle(stat_force[key][2])
     print('{:20} {:5.2f} {: 5.2f}'.format(key, a, b))
 
-
 w = this_candidate.loads.w
 fig, axs = plt.subplots(2, 2)
 dyn_force = this_candidate.f_sec1['Dynamic']
 
 x_tics = 1/(2 * np.pi / w)
-x_tics = (2 * np.pi / w)
-x_label = 'Period [s]'
-#x_label = 'Frequency [Hz]'
+x_label = 'Frequency [Hz]'
 
 # --------------
 # FREQUENCY
 # --------------
-ifreq_print = 15
-
-
+ifreq_print = 30
 
 print('\n--------------------------\n D Y N A M I C   F O R C E\n--------------------------')
 print('{:16} {:5.3f}\n'.format(x_label, x_tics[ifreq_print]))
-all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiation damping','Buoyancy','SUM']
-plot_keys = list( all_keys[i] for i in [0,1,2,3,4,5,6] )
+all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiation damping','Viscous damping','Buoyancy','SUM']
+plot_keys = list( all_keys[i] for i in [0,1,2,3,4,5,6,7] )
 for key in dyn_force:
     if key in plot_keys:
         if key == 'SUM':
@@ -97,7 +92,7 @@ axs[0, 0].set_title('Amplitude')
 force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
 axs[0, 0].set_ylabel(force_label[idof])
 #axs[0, 0].set_yscale('log')
-axs[0, 0].set_ylim([0, 1])
+#axs[0, 0].set_ylim([0, 1])
 
 axs[0, 0].legend()
 axs[0, 0].grid()
@@ -155,7 +150,7 @@ plt.show()
 # b=this_candidate.response._point_mass_centers
 #
 # print()
-# print(sum(a))
+# print(sum(a)
 # print(this_candidate.loads._m[2,2])
 #
 # I=np.sum(a[:,np.newaxis]*b**2,axis=0)
@@ -163,11 +158,11 @@ plt.show()
 # print(np.diag(this_candidate.loads._m[3:,3:]))
 np.set_printoptions(precision=3)
 #
-print()
-print(this_candidate.loads._m)
-print()
-print(this_candidate.loads._ma[ifreq_print,:,:])
-print()
-print(this_candidate.loads._k)
-print()
-print(this_candidate.response._c_visc[ifreq_print,:,:])
+# print()
+# print(this_candidate.loads._m)
+# print()
+# print(this_candidate.loads._ma[ifreq_print,:,:])
+# print()
+# print(this_candidate.loads._k)
+# print()
+# print(np.diag(this_candidate.response._c_visc[ifreq_print,:]))
