@@ -30,7 +30,6 @@ class ResponseModel(object):
 
         self._ss = sea_spectrum
 
-
         self._settings = candidate.settings
         self._loads = candidate.loads
 
@@ -44,7 +43,7 @@ class ResponseModel(object):
         self.nbeta = self._loads._nbeta
         self.nw = self._loads._nw
 
-        self._a = np.sqrt(2 * self._ss *(self.w[1]-self.w[0]))
+
         self._c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
         self._viscous_damper_centers = None
 
@@ -86,7 +85,7 @@ class ResponseModel(object):
         self.w2 = self._loads.w ** 2
         # Gravity
         self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, nax] * np.asarray(
-            [0, 0, self._settings.gravity])[nax, :]  # Use m33
+                [0, 0, self._settings.gravity])[nax, :]  # Use m33
 
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
@@ -121,8 +120,7 @@ class ResponseModel(object):
 
         self._rao = self._rao_init
         if self._settings.do_linearize:
-            for i in range(32):
-                self.create_viscous_damping()
+            self.create_viscous_damping()
 
         # --------------------------------------------------------------------------------------------------------------
         # RADIATION
@@ -171,8 +169,8 @@ class ResponseModel(object):
         # Mass
         # --------------------------------------------------------------------------------------------------------------
         self._point_mass_dynamic_inertia_force = np.squeeze(
-            self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
-            axis=4)
+                self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
+                axis=4)
 
     def update_rao_tra_mat(self):
         self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
@@ -309,7 +307,7 @@ class ResponseModel(object):
                                               moment_ref_point)
 
         f_viscous_damping = self.sum_forces(idamp, self._viscous_damper_force, self._viscous_damper_centers,
-                                              moment_ref_point)
+                                            moment_ref_point)
 
         #
         force_out = dict()
@@ -326,7 +324,8 @@ class ResponseModel(object):
         force_out['Dynamic']['Radiation damping'] = f_radiation_damping
         force_out['Dynamic']['Viscous damping'] = f_viscous_damping
         force_out['Dynamic']['Buoyancy'] = f_dz_s
-        force_out['Dynamic']['SUM'] = f_fk + f_diff - (f_added_mass + f_radiation_damping + f_viscous_damping + f_dz_s + f_inertia)
+        force_out['Dynamic']['SUM'] = f_fk + f_diff - (
+                    f_added_mass + f_radiation_damping + f_viscous_damping + f_dz_s + f_inertia)
 
         return force_out
 
@@ -365,61 +364,71 @@ class ResponseModel(object):
 
         # for ib in range(1):  # self.nbeta
 
-        self._n_strips=10
+        self._n_strips = 10
         self.vd_list = []
-        da = self._gaf* self._d_rc
-        dx = da/self._n_strips
+        da = self._gaf * self._d_rc
+        dx = da / self._n_strips
         dtheta = 2 * np.pi / self._nr
         theta = [i * dtheta for i in range(self._nr)]
-        coord=[]
+        coord = []
         for ir in range(self._nr):
             rot_mat = tb.rotation_matrix([0, 0, theta[ir]])
             for ibay in range(self._nc):
                 for istrip in range(self._n_strips):
-                    coord.append(rot_mat @ [self._d_cc/2 + self._d_rc*ibay + dx * (istrip + 1 / 2), 0, 0])
+                    coord.append(rot_mat @ [self._d_cc / 2 + self._d_rc * ibay + dx * (istrip + 1 / 2), 0, 0])
 
         self._viscous_damper_centers = np.asarray(coord)
         rho = self._settings._rho_sw
         cd = 2
-        d = self._d_rc+0.2
+        d = self._d_rc + 0.2
         l = dx
         for coord in self._viscous_damper_centers:
             self.vd_list.append(Viscous_Damper(coord, rho, cd, d, l))
 
         self._alphas = np.asarray([vd.alpha for vd in self.vd_list])
-        self.update_rao_tra_mat()
+        self._viscous_damper_centers_4 = np.append(self._viscous_damper_centers,
+                                                   np.ones((self._viscous_damper_centers.shape[0], 1)), 1)
+        self._a = np.sqrt(self._ss * (self.w[1] - self.w[0]))
 
-        # Gen dynamic position of dampers and calc damping coefficient
-        # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
-        self._vdp = np.append(self._viscous_damper_centers, np.ones((self._viscous_damper_centers.shape[0], 1)), 1)
-        self._viscous_damper_pos = np.squeeze(
-            np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._vdp[nax, nax, :, :, nax]), axis=4)
-        self._viscous_damper_amplitude = (self._viscous_damper_pos[:, :, :, 0:3] - self._viscous_damper_centers[nax, nax, :,
-                                                                                  :])*self._a[:,nax,nax,nax]  # Subtract mean position and multiply with wave amp
-        self._viscous_damper_force = 8 / (3 * np.pi) * (self._alphas[nax, nax, :, :] * (
-                self.w[:, nax, nax, nax] * self._viscous_damper_amplitude[:, :, :,
-                                           :]) ** 2)  # Linearized damping force
+        for i in range(1):
+            self.update_rao_tra_mat()
 
-        self._viscous_damper_moment = np.cross(self._viscous_damper_centers[nax, nax, :, :], self._viscous_damper_force)
-        self._viscous_damper_forces = np.concatenate((self._viscous_damper_force, self._viscous_damper_moment), axis=3)
+            # Gen dynamic position of dampers and calc damping coefficient
+            # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
 
-        self._viscous_damper_total_forces = np.sum(self._viscous_damper_forces, axis=2)
+            self._viscous_damper_pos = np.squeeze(
+                    np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._viscous_damper_centers_4[nax, nax, :, :, nax]),
+                    axis=4)
+            self._viscous_damper_amplitude = (self._viscous_damper_pos[:, :, :, 0:3] - self._viscous_damper_centers[nax,
+                                                                                       nax, :,
+                                                                                       :]) * self._a[:, nax, nax,
+                                                                                             nax]  # Subtract mean position and multiply with wave amp
+            self._viscous_damper_force = 8 / (3 * np.pi) * (self._alphas[nax, nax, :, :] * (
+                                                                               self.w[:, nax, nax, nax] * self._viscous_damper_amplitude[:, :, :,
+                                               :]) ** 2)  # Linearized damping force
 
-        a_inv = np.ones(self.nw)
-        ia_nonzero = self._a != 0
-        a_inv[ia_nonzero] = 1/self._a[ia_nonzero]
-        self._c_visc = np.abs((self._viscous_damper_total_forces*a_inv[:,nax,nax] / (self._rao))) # Damping coefficient, phase and seastate removed
-        self._viscous_damper_force = np.abs(self._viscous_damper_force*a_inv[:,nax,nax,nax])*1j
-        for ib in range(self.nbeta):  # self.nbeta
-            self._rao[:, ib, :] = self.calc_rao_linear(ib)
+            self._viscous_damper_moment = np.cross(self._viscous_damper_centers[nax, nax, :, :],
+                                                   self._viscous_damper_force)
+            self._viscous_damper_forces = np.concatenate((self._viscous_damper_force, self._viscous_damper_moment),
+                                                         axis=3)
 
+            self._viscous_damper_total_forces = np.sum(self._viscous_damper_forces, axis=2)
+
+            a_inv = np.ones(self.nw)
+            ia_nonzero = self._a != 0
+            a_inv[ia_nonzero] = 1 / self._a[ia_nonzero]
+            self._c_visc = np.abs((self._viscous_damper_total_forces * a_inv[:, nax, nax] / (
+                self._rao)))  # Damping coefficient, phase and seastate removed
+            self._viscous_damper_force = np.abs(self._viscous_damper_force * a_inv[:, nax, nax, nax]) * 1j
+            for ib in range(self.nbeta):  # self.nbeta
+                self._rao[:, ib, :] = self.calc_rao_linear(ib)
 
     def calc_rao_linear(self, ibeta):
         out_rao = np.zeros([len(self.w), 6], dtype=complex)
         for i, w in enumerate(self.w):
             this_ma = self.ma[i, :, :]
             this_c_visc = np.diag(self._c_visc[i, ibeta, :])
-            #print(this_c_visc)
+            # print(this_c_visc)
             this_c = self.c_rad[i, :, :] + this_c_visc
             denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
             daf = scipy.linalg.inv(denom)
