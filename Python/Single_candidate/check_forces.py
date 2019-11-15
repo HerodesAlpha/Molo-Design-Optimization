@@ -26,8 +26,8 @@ this_candidate.settings.radiaton_damping_factor = 1
 
 this_candidate.settings.do_linearize=True
 this_candidate.init_load()
-sea_spectrum=ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3).s_jonswap(this_candidate.loads.w)
-this_candidate.init_response(sea_spectrum=sea_spectrum)
+stwc=ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3)
+this_candidate.init_response(short_term_wave_condition=stwc)
 
 
 # Consider first radial

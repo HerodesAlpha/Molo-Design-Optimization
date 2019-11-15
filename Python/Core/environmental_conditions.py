@@ -95,6 +95,12 @@ class Short_Term_Wave_Conditions(object):
         return self._tz
 
     @property
+    def wp(self):
+        return 2*np.pi/self._tp
+
+
+
+    @property
     def gamma(self):
         return self._gamma
 

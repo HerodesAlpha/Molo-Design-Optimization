@@ -15,12 +15,10 @@ area = this_candidate.settings.park_data['Design Basis']['Area']
 this_candidate.ltwc1 = ec.Long_Term_Wave_Conditions(area=area)
 this_candidate.cl = this_candidate.ltwc1.contour_line(yr)
 this_candidate.contourline = []
-this_candidate.cl = np.asarray([[3.5, 13.5, 1],[9, 9.5, 5],[8, 11, 3.6],[7, 11, 2.6],[7, 11.5, 2.12]])
-for hs, tz, gamma in this_candidate.cl:
-    this_candidate.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz, gamma=gamma))
+#this_candidate.cl = np.asarray([[3.5, 13.5, 1],[9, 9.5, 5],[8, 11, 3.6],[7, 11, 2.6],[7, 11.5, 2.12]])
 
-#for hs, tz in this_candidate.cl:
-#    this_candidate.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
+for hs, tz in this_candidate.cl:
+    this_candidate.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
 this_candidate.settings.radiaton_damping_factor = 1
 
@@ -28,8 +26,8 @@ this_candidate.settings.radiaton_damping_factor = 1
 
 this_candidate.settings.do_linearize=True
 this_candidate.init_load()
-sea_spectrum=ec.Short_Term_Wave_Conditions(hs=6, tz=7).s_jonswap(this_candidate.loads.w)
-this_candidate.init_response(sea_spectrum=sea_spectrum)
+stwc=ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3)
+this_candidate.init_response(short_term_wave_condition=stwc)
 
 # Get section forces
 sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)

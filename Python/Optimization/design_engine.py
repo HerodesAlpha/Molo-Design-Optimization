@@ -172,9 +172,9 @@ class Candidate():
         self.loads = Sea_and_Inertia_Loads(self.settings)
 
 
-    def init_response(self, sea_spectrum):
+    def init_response(self, short_term_wave_condition):
 
-        self.response = ResponseModel(self, sea_spectrum)
+        self.response = ResponseModel(self, short_term_wave_condition)
 
     def intact_stability_ratio(self):
         print('\n--------------------------------------------------------------------------------------------')
