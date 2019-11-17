@@ -30,8 +30,6 @@ stwc=ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3)
 this_candidate.init_response(short_term_wave_condition=stwc)
 
 
-# Consider first radial
-
 # Get section forces
 sp_x = this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
 sp_z = this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - this_candidate.hs_floater.hs_data[

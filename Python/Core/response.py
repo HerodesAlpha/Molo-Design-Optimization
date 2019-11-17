@@ -190,7 +190,10 @@ class ResponseModel(object):
                          section_normal)  # dot product i positive for coordinates on the positive side of the plane
             return dot >= 0
 
-        return mask1(self._point_mass_centers), mask1(self._panel_pressure_centers), mask1(self._viscous_damper_centers)
+        if self._settings.do_linearize:
+            return mask1(self._point_mass_centers), mask1(self._panel_pressure_centers), mask1(self._viscous_damper_centers)
+        else:
+            return mask1(self._point_mass_centers), mask1(self._panel_pressure_centers), None
 
     def get_flange_panel_index(self):
         def printv(string, do_print=None):
@@ -307,9 +310,12 @@ class ResponseModel(object):
         f_radiation_damping = self.sum_forces(ipanel, self._panel_radiation_damping_force, self._panel_pressure_centers,
                                               moment_ref_point)
 
-        f_viscous_damping = self.sum_forces(idamp, self._strip_viscous_damping_force, self._viscous_damper_centers,
-                                            moment_ref_point)
-        f_viscous_damping *= self.w[:, nax, nax, ]*1j
+        if self._settings.do_linearize:
+            f_viscous_damping = self.sum_forces(idamp, self._strip_viscous_damping_force, self._viscous_damper_centers,
+                                                moment_ref_point)
+            f_viscous_damping *= self.w[:, nax, nax, ]*1j
+        else:
+            f_viscous_damping=f_radiation_damping*0
 
         #
         force_out = dict()
