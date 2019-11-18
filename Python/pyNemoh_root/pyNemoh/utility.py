@@ -34,7 +34,7 @@ from logutils.queue import QueueHandler
 from . import structure
 from .structure import H5_STRUCTURE
 
-from . import settings
+from . import pynemoh_settings
 from .models import TEnvironment
 
 __author__ = "Eivind Sonju"
@@ -261,22 +261,22 @@ def convert_input(filename, hdf5_data):
         for line in inp:
             x1.append(line)
     idx = 1
-    dset = require_dataset(hdf5_data, structure.H5_SOLVER_TYPE, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_SOLVER_TYPE, (1,), dtype=pynemoh_settings.NEMOH_INT)
     dset[0] = int(float(x1[idx].split()[0]))
     set_hdf5_attributes(dset, structure.H5_SOLVER_TYPE_ATTR)
     idx += 1
 
-    dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_RESTART, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_RESTART, (1,), dtype=pynemoh_settings.NEMOH_INT)
     dset[0] = int(float(x1[idx].split()[0]))
     set_hdf5_attributes(dset, structure.H5_SOLVER_GMRES_RESTART_ATTR)
     idx += 1
 
-    dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_STOPPING, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_STOPPING, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     dset[0] = float(x1[idx].split()[0])
     set_hdf5_attributes(dset, structure.H5_SOLVER_GMRES_STOPPING_ATTR)
     idx += 1
 
-    dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_MAX_ITERATIONS, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_MAX_ITERATIONS, (1,), dtype=pynemoh_settings.NEMOH_INT)
     dset[0] = int(float(x1[idx].split()[0]))
     set_hdf5_attributes(dset, structure.H5_SOLVER_GMRES_MAX_ITERATIONS_ATTR)
 
@@ -290,22 +290,22 @@ def write_calculations(params, hdf5_data):
     """
 
     if params.rho is not None:
-        dset = require_dataset(hdf5_data, structure.H5_ENV_VOLUME, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_ENV_VOLUME, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         dset[0] = float(params.rho)
         set_hdf5_attributes(dset, structure.H5_ENV_VOLUME_ATTR)
 
     if params.g is not None:
-        dset = require_dataset(hdf5_data, structure.H5_ENV_GRAVITY, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_ENV_GRAVITY, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         dset[0] = float(params.g)
         set_hdf5_attributes(dset, structure.H5_ENV_GRAVITY_ATTR)
 
     if params.depth is not None:
-        dset = require_dataset(hdf5_data, structure.H5_ENV_DEPTH, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_ENV_DEPTH, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         dset[0] = float(params.depth)
         set_hdf5_attributes(dset, structure.H5_ENV_DEPTH_ATTR)
 
     if (params.xeff is not None) and (params.yeff is not None):
-        dset = require_dataset(hdf5_data, structure.H5_ENV_WAVE_POINT, (2,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_ENV_WAVE_POINT, (2,), dtype=pynemoh_settings.NEMOH_FLOAT)
         dset[0] = float(params.xeff)
         dset[1] = float(params.yeff)
         set_hdf5_attributes(dset, structure.H5_ENV_WAVE_POINT_ATTR)
@@ -323,17 +323,17 @@ def write_calculations(params, hdf5_data):
 
             num_points = int(float(fb.points))
             num_panels = int(float(fb.panels))
-            dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_POINTS, (1, ), dtype=settings.NEMOH_INT)
+            dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_POINTS, (1, ), dtype=pynemoh_settings.NEMOH_INT)
             dset[0] = num_points
             set_hdf5_attributes(dset, structure.H5_BODY_NUM_POINTS_ATTR)
 
-            dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_PANELS, (1, ), dtype=settings.NEMOH_INT)
+            dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_PANELS, (1, ), dtype=pynemoh_settings.NEMOH_INT)
             dset[0] = num_panels
             set_hdf5_attributes(dset, structure.H5_BODY_NUM_PANELS_ATTR)
 
             mesh_idx = 0
             dset = require_dataset(hdf5_data, body + structure.H5_BODY_MESH, (num_points+num_panels+1, 4),
-                                             dtype=settings.NEMOH_FLOAT)
+                                   dtype=pynemoh_settings.NEMOH_FLOAT)
             mesh_x2 = mesh_x[mesh_idx].split()
             set_hdf5_attributes(dset, structure.H5_BODY_MESH_ATTR)
 
@@ -349,7 +349,7 @@ def write_calculations(params, hdf5_data):
                     mesh_idx += 1
 
             num = int(float(fb.degrees_of_freedom))
-            dset = require_dataset(hdf5_data, body + structure.H5_FREEDOM_DEGREE, (num, 7), dtype=settings.NEMOH_FLOAT)
+            dset = require_dataset(hdf5_data, body + structure.H5_FREEDOM_DEGREE, (num, 7), dtype=pynemoh_settings.NEMOH_FLOAT)
             set_hdf5_attributes(dset, structure.H5_FREEDOM_DEGREE_ATTR)
 
             x1 = [fb.surge, fb.sway, fb.heave, fb.roll_about_cdg, fb.pitch_about_cdg, fb.yaw_about_cdg]
@@ -360,7 +360,7 @@ def write_calculations(params, hdf5_data):
 
             num = int(float(fb.resulting_generalised_forces))
             dset = require_dataset(hdf5_data, body + structure.H5_GENERALISED_FORCES, (num, 7),
-                                             dtype=settings.NEMOH_FLOAT)
+                                   dtype=pynemoh_settings.NEMOH_FLOAT)
             set_hdf5_attributes(dset, structure.H5_GENERALISED_FORCES_ATTR)
             x1 = [fb.force_in_x_direction, fb.force_in_y_direction, fb.force_in_z_direction,
                   fb.moment_cdg_force_in_x_direction, fb.moment_cdg_force_in_y_direction,
@@ -371,32 +371,32 @@ def write_calculations(params, hdf5_data):
                     dset[j, :] = [float(x) for x in x2[:7]]
 
     if params.wave_frequencies is not None:
-        dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_FREQUENCIES, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_FREQUENCIES, (1,), dtype=pynemoh_settings.NEMOH_INT)
         set_hdf5_attributes(dset, structure.H5_NUM_WAVE_FREQUENCIES_ATTR)
         dset[0] = int(float(params.wave_frequencies))
 
     if params.min_wave_frequencies is not None:
-        dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_FREQUENCIES, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_FREQUENCIES, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_MIN_WAVE_FREQUENCIES_ATTR)
         dset[0] = float(params.min_wave_frequencies)
 
     if params.max_wave_frequencies is not None:
-        dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_FREQUENCIES, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_FREQUENCIES, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_MAX_WAVE_FREQUENCIES_ATTR)
         dset[0] = float(params.max_wave_frequencies)
 
     if params.wave_directions is not None:
-        dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_DIRECTIONS, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_DIRECTIONS, (1,), dtype=pynemoh_settings.NEMOH_INT)
         set_hdf5_attributes(dset, structure.H5_NUM_WAVE_DIRECTIONS_ATTR)
         dset[0] = int(params.wave_directions)
 
     if params.min_wave_directions is not None:
-        dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_DIRECTIONS, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_DIRECTIONS, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_MIN_WAVE_DIRECTIONS_ATTR)
         dset[0] = float(params.min_wave_directions)
 
     if params.max_wave_direction is not None:
-        dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_DIRECTIONS, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_DIRECTIONS, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_MAX_WAVE_DIRECTIONS_ATTR)
         dset[0] = float(params.max_wave_direction)
 
@@ -404,67 +404,67 @@ def write_calculations(params, hdf5_data):
     idx = 0
     x2 = x1[idx].split()
 
-    dset = require_dataset(hdf5_data, structure.H5_COMPUTE_IRF, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_COMPUTE_IRF, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_COMPUTE_IRF_ATTR)
     dset[0] = int(x2[0])
 
-    dset = require_dataset(hdf5_data, structure.H5_IRF_TIME_STEP, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_IRF_TIME_STEP, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_IRF_TIME_STEP_ATTR)
     dset[0] = float(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_IRF_DURATION, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_IRF_DURATION, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_IRF_DURATION_ATTR)
     dset[0] = float(x2[2])
 
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_SHOW_PRESSURE, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_SHOW_PRESSURE, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_SHOW_PRESSURE_ATTR)
     dset[0] = int(x2[0])
 
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_NUMBER, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_NUMBER, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_KOCHIN_NUMBER_ATTR)
     dset[0] = float(x2[0])
-    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MIN, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MIN, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_KOCHIN_MIN_ATTR)
     dset[0] = float(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MAX, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MAX, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_KOCHIN_MAX_ATTR)
     dset[0] = float(x2[2])
 
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_X, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_X, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_POINTS_X_ATTR)
     dset[0] = int(x2[0])
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_Y, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_Y, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_POINTS_Y_ATTR)
     dset[0] = int(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_X, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_X, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_DIMENSION_X_ATTR)
     dset[0] = float(x2[2])
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_Y, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_Y, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_DIMENSION_Y_ATTR)
     dset[0] = float(x2[3])
 
     if params.indiq_solver is not None:
-        dset = require_dataset(hdf5_data, structure.H5_SOLVER_TYPE, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_SOLVER_TYPE, (1,), dtype=pynemoh_settings.NEMOH_INT)
         dset[0] = int(float(params.indiq_solver))
         set_hdf5_attributes(dset, structure.H5_SOLVER_TYPE_ATTR)
 
     if params.ires is not None:
-        dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_RESTART, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_RESTART, (1,), dtype=pynemoh_settings.NEMOH_INT)
         dset[0] = int(float(params.ires))
         set_hdf5_attributes(dset, structure.H5_SOLVER_GMRES_RESTART_ATTR)
 
     if params.tol_gmres is not None:
-        dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_STOPPING, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_STOPPING, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         dset[0] = float(params.tol_gmres)
         set_hdf5_attributes(dset, structure.H5_SOLVER_GMRES_STOPPING_ATTR)
 
     if params.max_iterations is not None:
-        dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_MAX_ITERATIONS, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_SOLVER_GMRES_MAX_ITERATIONS, (1,), dtype=pynemoh_settings.NEMOH_INT)
 
         dset[0] = int(float(params.max_iterations))
         set_hdf5_attributes(dset, structure.H5_SOLVER_GMRES_MAX_ITERATIONS_ATTR)
@@ -480,46 +480,46 @@ def write_postprocessing_section(params, hdf5_data):
 
     if params.irf is not None:
         x2 = (' '.join(params.irf)).split()
-        dset = require_dataset(hdf5_data, structure.H5_COMPUTE_IRF, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_COMPUTE_IRF, (1,), dtype=pynemoh_settings.NEMOH_INT)
         set_hdf5_attributes(dset, structure.H5_COMPUTE_IRF_ATTR)
         dset[0] = int(float(x2[0]))
 
-        dset = require_dataset(hdf5_data, structure.H5_IRF_TIME_STEP, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_IRF_TIME_STEP, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_IRF_TIME_STEP_ATTR)
         dset[0] = float(x2[1])
-        dset = require_dataset(hdf5_data, structure.H5_IRF_DURATION, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_IRF_DURATION, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_IRF_DURATION_ATTR)
         dset[0] = float(x2[2])
 
     if params.show_pressure is not None:
-        dset = require_dataset(hdf5_data, structure.H5_SHOW_PRESSURE, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_SHOW_PRESSURE, (1,), dtype=pynemoh_settings.NEMOH_INT)
         set_hdf5_attributes(dset, structure.H5_SHOW_PRESSURE_ATTR)
         dset[0] = int(float(x2[0]))
 
     if params.kochin_function is not None:
         x2 = (' '.join(params.kochin_function)).split()
-        dset = require_dataset(hdf5_data, structure.H5_KOCHIN_NUMBER, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_KOCHIN_NUMBER, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_KOCHIN_NUMBER_ATTR)
         dset[0] = float(x2[0])
-        dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MIN, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MIN, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_KOCHIN_MIN_ATTR)
         dset[0] = float(x2[1])
-        dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MAX, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MAX, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_KOCHIN_MAX_ATTR)
         dset[0] = float(x2[2])
 
     if params.free_surface_elevation:
         x2 = (' '.join(params.free_surface_elevation)).split()
-        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_X, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_X, (1,), dtype=pynemoh_settings.NEMOH_INT)
         set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_POINTS_X_ATTR)
         dset[0] = int(x2[0])
-        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_Y, (1,), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_Y, (1,), dtype=pynemoh_settings.NEMOH_INT)
         set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_POINTS_Y_ATTR)
         dset[0] = int(x2[1])
-        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_X, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_X, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_DIMENSION_X_ATTR)
         dset[0] = float(x2[2])
-        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_Y, (1,), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_Y, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_DIMENSION_Y_ATTR)
         dset[0] = float(x2[3])
 
@@ -539,23 +539,23 @@ def convert_calculations(filename, hdf5_data):
             x1.append(line)
 
     idx = 1
-    dset = require_dataset(hdf5_data, structure.H5_ENV_VOLUME, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_ENV_VOLUME, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     dset[0] = float(x1[idx].split()[0])
     set_hdf5_attributes(dset, structure.H5_ENV_VOLUME_ATTR)
     idx += 1
 
-    dset = require_dataset(hdf5_data, structure.H5_ENV_GRAVITY, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_ENV_GRAVITY, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     dset[0] = float(x1[idx].split()[0])
     set_hdf5_attributes(dset, structure.H5_ENV_GRAVITY_ATTR)
     idx += 1
 
 
-    dset = require_dataset(hdf5_data, structure.H5_ENV_DEPTH, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_ENV_DEPTH, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     dset[0] = float(x1[idx].split()[0])
     set_hdf5_attributes(dset, structure.H5_ENV_DEPTH_ATTR)
     idx += 1
 
-    dset = require_dataset(hdf5_data, structure.H5_ENV_WAVE_POINT, (2,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_ENV_WAVE_POINT, (2,), dtype=pynemoh_settings.NEMOH_FLOAT)
     x2 = x1[idx].split()
     dset[0] = float(x2[0])
     dset[1] = float(x2[1])
@@ -583,16 +583,16 @@ def convert_calculations(filename, hdf5_data):
 
         num_points = int(x2[0])
         num_panels = int(x2[1])
-        dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_POINTS, (1, ), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_POINTS, (1, ), dtype=pynemoh_settings.NEMOH_INT)
         dset[0] = num_points
         set_hdf5_attributes(dset, structure.H5_BODY_NUM_POINTS_ATTR)
 
-        dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_PANELS, (1, ), dtype=settings.NEMOH_INT)
+        dset = require_dataset(hdf5_data, body + structure.H5_BODY_NUM_PANELS, (1, ), dtype=pynemoh_settings.NEMOH_INT)
         dset[0] = num_panels
         set_hdf5_attributes(dset, structure.H5_BODY_NUM_PANELS_ATTR)
 
         mesh_idx = 0
-        dset = require_dataset(hdf5_data, body + structure.H5_BODY_MESH, (num_points+num_panels+1, 4), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, body + structure.H5_BODY_MESH, (num_points+num_panels+1, 4), dtype=pynemoh_settings.NEMOH_FLOAT)
         mesh_x2 = mesh_x[mesh_idx].split()
         set_hdf5_attributes(dset, structure.H5_BODY_MESH_ATTR)
 
@@ -609,7 +609,7 @@ def convert_calculations(filename, hdf5_data):
 
         idx += 1
         num = int(x1[idx].split()[0])
-        dset = require_dataset(hdf5_data, body + structure.H5_FREEDOM_DEGREE, (num, 7), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, body + structure.H5_FREEDOM_DEGREE, (num, 7), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_FREEDOM_DEGREE_ATTR)
         for j in range(num):
             idx += 1
@@ -618,7 +618,7 @@ def convert_calculations(filename, hdf5_data):
 
         idx += 1
         num = int(x1[idx].split()[0])
-        dset = require_dataset(hdf5_data, body + structure.H5_GENERALISED_FORCES, (num, 7), dtype=settings.NEMOH_FLOAT)
+        dset = require_dataset(hdf5_data, body + structure.H5_GENERALISED_FORCES, (num, 7), dtype=pynemoh_settings.NEMOH_FLOAT)
         set_hdf5_attributes(dset, structure.H5_GENERALISED_FORCES_ATTR)
         for j in range(num):
             idx += 1
@@ -633,74 +633,74 @@ def convert_calculations(filename, hdf5_data):
     idx += 2
     x2 = x1[idx].split()
 
-    dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_FREQUENCIES, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_FREQUENCIES, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_NUM_WAVE_FREQUENCIES_ATTR)
     dset[0] = int(x2[0])
-    dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_FREQUENCIES, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_FREQUENCIES, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_MIN_WAVE_FREQUENCIES_ATTR)
     dset[0] = float(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_FREQUENCIES, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_FREQUENCIES, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_MAX_WAVE_FREQUENCIES_ATTR)
     dset[0] = float(x2[2])
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_DIRECTIONS, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_NUM_WAVE_DIRECTIONS, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_NUM_WAVE_DIRECTIONS_ATTR)
     dset[0] = int(x2[0])
 
-    dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_DIRECTIONS, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_MIN_WAVE_DIRECTIONS, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_MIN_WAVE_DIRECTIONS_ATTR)
     dset[0] = float(x2[1])
 
-    dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_DIRECTIONS, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_MAX_WAVE_DIRECTIONS, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_MAX_WAVE_DIRECTIONS_ATTR)
     dset[0] = float(x2[2])
 
     idx += 2
     x2 = x1[idx].split()
 
-    dset = require_dataset(hdf5_data, structure.H5_COMPUTE_IRF, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_COMPUTE_IRF, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_COMPUTE_IRF_ATTR)
     dset[0] = int(x2[0])
 
-    dset = require_dataset(hdf5_data, structure.H5_IRF_TIME_STEP, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_IRF_TIME_STEP, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_IRF_TIME_STEP_ATTR)
     dset[0] = float(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_IRF_DURATION, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_IRF_DURATION, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_IRF_DURATION_ATTR)
     dset[0] = float(x2[2])
 
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_SHOW_PRESSURE, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_SHOW_PRESSURE, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_SHOW_PRESSURE_ATTR)
     dset[0] = int(x2[0])
 
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_NUMBER, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_NUMBER, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_KOCHIN_NUMBER_ATTR)
     dset[0] = float(x2[0])
-    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MIN, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MIN, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_KOCHIN_MIN_ATTR)
     dset[0] = float(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MAX, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_KOCHIN_MAX, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_KOCHIN_MAX_ATTR)
     dset[0] = float(x2[2])
 
 
     idx += 1
     x2 = x1[idx].split()
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_X, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_X, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_POINTS_X_ATTR)
     dset[0] = int(x2[0])
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_Y, (1,), dtype=settings.NEMOH_INT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_POINTS_Y, (1,), dtype=pynemoh_settings.NEMOH_INT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_POINTS_Y_ATTR)
     dset[0] = int(x2[1])
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_X, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_X, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_DIMENSION_X_ATTR)
     dset[0] = float(x2[2])
-    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_Y, (1,), dtype=settings.NEMOH_FLOAT)
+    dset = require_dataset(hdf5_data, structure.H5_FREE_SURFACE_DIMENSION_Y, (1,), dtype=pynemoh_settings.NEMOH_FLOAT)
     set_hdf5_attributes(dset, structure.H5_FREE_SURFACE_DIMENSION_Y_ATTR)
     dset[0] = float(x2[3])
 

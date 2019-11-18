@@ -18,7 +18,7 @@ import services
 import os
 import jmespath as jp
 from pyNemoh.structure import JSON_STRUCTURE
-from pyNemoh import settings
+from pyNemoh import pynemoh_settings
 import subprocess
 import settings as openwarp_settings
 
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     """
     Main module, only called when the script is started from the command line
     """
-    log_file_found = utility.setup_logging(default_conf_path=settings.LOGGING_CONFIGURATION_FILE,
+    log_file_found = utility.setup_logging(default_conf_path=pynemoh_settings.LOGGING_CONFIGURATION_FILE,
                                            logging_path=openwarp_settings.LOG_FILE)
     # Compile python module if it was not compiled.
     # This should always output to the terminal no matter the verbosity level

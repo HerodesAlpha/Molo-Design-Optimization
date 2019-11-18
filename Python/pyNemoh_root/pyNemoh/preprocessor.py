@@ -47,7 +47,7 @@ import h5py
 import numpy as np
 from .structure import H5_STRUCTURE
 
-from . import settings
+from . import pynemoh_settings
 from . import utility
 from .models import TCase
 from .models import TMesh
@@ -98,7 +98,7 @@ def read_mesh(hdf5_data, custom_config):
     interior_c_panels = np.empty((0))
     interior_n_points = 0
     interior_n_panels = 0
-    remove_irregular_frequencies = utility.get_setting(settings.REMOVE_IRREGULAR_FREQUENCIES, custom_config,
+    remove_irregular_frequencies = utility.get_setting(pynemoh_settings.REMOVE_IRREGULAR_FREQUENCIES, custom_config,
                                        'REMOVE_IRREGULAR_FREQUENCIES')
     for c in range(n_bodies):
         body = bodies[c]
@@ -445,7 +445,7 @@ def compute_nds(mesh, c, i_case, direction, axis):
     Returns:
         the integration array nds
     """
-    nds = np.zeros(mesh.n_panels*2**mesh.i_sym, settings.NEMOH_FLOAT)
+    nds = np.zeros(mesh.n_panels * 2 ** mesh.i_sym, pynemoh_settings.NEMOH_FLOAT)
     vel = np.copy(direction[0:3])
     if i_case == 1:
         for i in range(mesh.n_panels):
@@ -505,7 +505,7 @@ def compute_radiation_condition(mesh, c, i_case,  direction, axis):
     Returns:
         the radiation condition array n_vel
     """
-    n_vel = np.zeros(mesh.n_panels*2**mesh.i_sym, settings.NEMOH_COMPLEX)
+    n_vel = np.zeros(mesh.n_panels * 2 ** mesh.i_sym, pynemoh_settings.NEMOH_COMPLEX)
     vel = np.copy(direction[0:3])
     if i_case == 1:
         for i in range(mesh.n_panels):
@@ -601,8 +601,8 @@ def compute_wave(mesh, w, beta, environment):
         A dictionary containing the pressure and fluid velocities
     """
 
-    n_vel = np.zeros(mesh.n_panels*2**mesh.i_sym, settings.NEMOH_COMPLEX)
-    pressure = np.zeros(mesh.n_panels*2**mesh.i_sym, settings.NEMOH_COMPLEX)
+    n_vel = np.zeros(mesh.n_panels * 2 ** mesh.i_sym, pynemoh_settings.NEMOH_COMPLEX)
+    pressure = np.zeros(mesh.n_panels * 2 ** mesh.i_sym, pynemoh_settings.NEMOH_COMPLEX)
 
     k_wave = utility.compute_wave_number(w, environment)
 
@@ -699,7 +699,7 @@ def run(hdf5_data, custom_config):
     utility.check_dataset_type(dset, name='The maximum wave frequency', location=structure.H5_MAX_WAVE_FREQUENCIES)
     w_max = dset[0]
 
-    w = np.zeros(n_w, settings.NEMOH_FLOAT) #TODO: Allow varying spaced frequencies
+    w = np.zeros(n_w, pynemoh_settings.NEMOH_FLOAT) #TODO: Allow varying spaced frequencies
     if n_w > 1:
         for j in range(n_w):
             w[j] = w_min+(w_max-w_min)*j/(n_w-1)
@@ -722,7 +722,7 @@ def run(hdf5_data, custom_config):
     utility.check_dataset_type(dset, name='The maximum wave direction', location=structure.H5_MAX_WAVE_DIRECTIONS)
     beta_max = dset[0]
 
-    beta = np.zeros(n_beta, settings.NEMOH_FLOAT)
+    beta = np.zeros(n_beta, pynemoh_settings.NEMOH_FLOAT)
     if n_beta > 1:
         for j in range(n_beta):
             beta[j] = (beta_min+(beta_max-beta_min)*j/(n_beta-1))*math.pi/180.
@@ -859,12 +859,12 @@ def run(hdf5_data, custom_config):
     write_mesh_l12(mesh, hdf5_data)
     write_mesh_l10(mesh, hdf5_data)
 
-    mesh_tec_file = utility.get_setting(settings.MESH_TEC_FILE, custom_config, 'MESH_TEC_FILE')
+    mesh_tec_file = utility.get_setting(pynemoh_settings.MESH_TEC_FILE, custom_config, 'MESH_TEC_FILE')
 
     if mesh_tec_file:
         write_mesh_tec(mesh, mesh_tec_file)
 
-    fnds = np.zeros((n_integration, mesh.n_panels*2**mesh.i_sym), settings.NEMOH_FLOAT)
+    fnds = np.zeros((n_integration, mesh.n_panels*2**mesh.i_sym), pynemoh_settings.NEMOH_FLOAT)
 
     logger.info('Computing the integration nds')
     for j in range(n_integration):
@@ -881,9 +881,9 @@ def run(hdf5_data, custom_config):
 
     environment = utility.read_environment(hdf5_data)
 
-    normal_velocity = np.zeros((mesh.n_panels*2**mesh.i_sym, (n_beta+n_radiation)*n_w), settings.NEMOH_COMPLEX)
-    fk_pressure = np.zeros((n_w, n_beta, mesh.n_panels*2**mesh.i_sym), settings.NEMOH_COMPLEX)
-    fk_force = np.zeros((n_w, n_beta, n_integration), settings.NEMOH_COMPLEX)
+    normal_velocity = np.zeros((mesh.n_panels*2**mesh.i_sym, (n_beta+n_radiation)*n_w), pynemoh_settings.NEMOH_COMPLEX)
+    fk_pressure = np.zeros((n_w, n_beta, mesh.n_panels*2**mesh.i_sym), pynemoh_settings.NEMOH_COMPLEX)
+    fk_force = np.zeros((n_w, n_beta, n_integration), pynemoh_settings.NEMOH_COMPLEX)
 
     logger.info('Computing the body conditions for each radiation and diffraction problem (normal velocities)'
         ' and the Froude Krylov forces for each of the diffraction problem (FK forces)')
@@ -999,7 +999,7 @@ def run(hdf5_data, custom_config):
 
 
 
-    fk_force_tec_file = utility.get_setting(settings.FK_FORCE_TEC_FILE, custom_config, 'FK_FORCE_TEC_FILE')
+    fk_force_tec_file = utility.get_setting(pynemoh_settings.FK_FORCE_TEC_FILE, custom_config, 'FK_FORCE_TEC_FILE')
     if fk_force_tec_file:
         logger.info('Converting the FK forces to the Tecplot format at the file ' + str(fk_force_tec_file))
         write_fk_force_tec(int_case, fk_force, w, beta, fk_force_tec_file)
@@ -1115,28 +1115,28 @@ def run(hdf5_data, custom_config):
 
 
     # All the following are switches already logged
-    switch_ode_influence = utility.get_setting(settings.USE_ODE_INFLUENCE_COEFFICIENTS, custom_config,
+    switch_ode_influence = utility.get_setting(pynemoh_settings.USE_ODE_INFLUENCE_COEFFICIENTS, custom_config,
                                        'USE_ODE_INFLUENCE_COEFFICIENTS')
 
-    use_higher_order = utility.get_setting(settings.USE_HIGHER_ORDER, custom_config,
+    use_higher_order = utility.get_setting(pynemoh_settings.USE_HIGHER_ORDER, custom_config,
                                        'USE_HIGHER_ORDER')
 
-    num_panel_higher_order = utility.get_setting(settings.NUM_PANEL_HIGHER_ORDER, custom_config,
+    num_panel_higher_order = utility.get_setting(pynemoh_settings.NUM_PANEL_HIGHER_ORDER, custom_config,
                                        'NUM_PANEL_HIGHER_ORDER')
 
-    b_spline_order = utility.get_setting(settings.B_SPLINE_ORDER, custom_config,
+    b_spline_order = utility.get_setting(pynemoh_settings.B_SPLINE_ORDER, custom_config,
                                        'B_SPLINE_ORDER')
 
-    use_dipoles_implementation = utility.get_setting(settings.USE_DIPOLES_IMPLEMENTATION, custom_config,
+    use_dipoles_implementation = utility.get_setting(pynemoh_settings.USE_DIPOLES_IMPLEMENTATION, custom_config,
                                        'USE_DIPOLES_IMPLEMENTATION')
 
-    compute_yaw_moment = utility.get_setting(settings.COMPUTE_YAW_MOMENT, custom_config,
+    compute_yaw_moment = utility.get_setting(pynemoh_settings.COMPUTE_YAW_MOMENT, custom_config,
                                        'COMPUTE_YAW_MOMENT')
 
-    compute_drift_forces = utility.get_setting(settings.COMPUTE_DRIFT_FORCES, custom_config,
+    compute_drift_forces = utility.get_setting(pynemoh_settings.COMPUTE_DRIFT_FORCES, custom_config,
                                        'COMPUTE_DRIFT_FORCES')
 
-    thin_panels = utility.get_setting(settings.THIN_PANELS, custom_config,
+    thin_panels = utility.get_setting(pynemoh_settings.THIN_PANELS, custom_config,
                                        'THIN_PANELS')
 
     if num_panel_higher_order is not None and num_panel_higher_order > 0:
@@ -1220,9 +1220,9 @@ def preprocess(custom_config):
     # Check if custom_config is a valid dict
     utility.check_type_value(custom_config, 'The input custom_config', dict, True)
 
-    hdf5_file = utility.get_setting(settings.HDF5_FILE, custom_config, 'HDF5_FILE')
-    nemoh_cal = utility.get_setting(settings.NEMOH_CALCULATIONS_FILE, custom_config, 'NEMOH_CALCULATIONS_FILE')
-    input_file = utility.get_setting(settings.NEMOH_INPUT_FILE, custom_config, 'NEMOH_INPUT_FILE')
+    hdf5_file = utility.get_setting(pynemoh_settings.HDF5_FILE, custom_config, 'HDF5_FILE')
+    nemoh_cal = utility.get_setting(pynemoh_settings.NEMOH_CALCULATIONS_FILE, custom_config, 'NEMOH_CALCULATIONS_FILE')
+    input_file = utility.get_setting(pynemoh_settings.NEMOH_INPUT_FILE, custom_config, 'NEMOH_INPUT_FILE')
 
 
     # Check if hdf5_file is a string
@@ -1255,14 +1255,14 @@ def preprocess(custom_config):
             utility.check_is_file(input_file, 'The path to the nemoh input configured by NEMOH_INPUT_FILE')
             utility.convert_input(input_file, hdf5_db)
 
-        remove_irregular_frequencies = utility.get_setting(settings.REMOVE_IRREGULAR_FREQUENCIES, custom_config,
+        remove_irregular_frequencies = utility.get_setting(pynemoh_settings.REMOVE_IRREGULAR_FREQUENCIES, custom_config,
                                        'REMOVE_IRREGULAR_FREQUENCIES')
         if remove_irregular_frequencies is not None:
             dset = utility.require_dataset(hdf5_db, structure.H5_SOLVER_REMOVE_IRREGULAR_FREQUENCIES, (1, ), dtype='i')
             utility.set_hdf5_attributes(dset, structure.H5_SOLVER_REMOVE_IRREGULAR_FREQUENCIES_ATTR)
             dset[:] = int(remove_irregular_frequencies)
         else:
-            settings.REMOVE_IRREGULAR_FREQUENCIES = hdf5_db.get(structure.H5_SOLVER_REMOVE_IRREGULAR_FREQUENCIES)[0]
+            pynemoh_settings.REMOVE_IRREGULAR_FREQUENCIES = hdf5_db.get(structure.H5_SOLVER_REMOVE_IRREGULAR_FREQUENCIES)[0]
 
         print('XXX preprocessor:1251: {}'.format(
             hdf5_db.get('input/calculations/bodies/body1/generalised_forces')[1][0]))
@@ -1280,7 +1280,7 @@ def run_as_process(custom_config, queue):
 
 
 if __name__ == '__main__':
-    utility.setup_logging(default_conf_path=settings.LOGGING_CONFIGURATION_FILE, logging_path=settings.LOG_FILE)
+    utility.setup_logging(default_conf_path=pynemoh_settings.LOGGING_CONFIGURATION_FILE, logging_path=pynemoh_settings.LOG_FILE)
 
     try:
         preprocess({})

@@ -59,7 +59,7 @@ import numpy as np
 
 from .structure import H5_STRUCTURE
 
-from . import settings
+from . import pynemoh_settings
 from . import utility
 
 import os
@@ -477,18 +477,18 @@ def solve(custom_config):
     if not custom_config:
         custom_config = {}
 
-    hdf5_file = utility.get_setting(settings.HDF5_FILE, custom_config, 'HDF5_FILE')
+    hdf5_file = utility.get_setting(pynemoh_settings.HDF5_FILE, custom_config, 'HDF5_FILE')
     utility.check_is_file(hdf5_file, 'The path to the hdf5 file configured by HDF5_FILE')
 
-    n_tabulatedx = utility.get_setting(settings.GREEN_TABULATION_NUMX, custom_config,
+    n_tabulatedx = utility.get_setting(pynemoh_settings.GREEN_TABULATION_NUMX, custom_config,
                                        'GREEN_TABULATION_NUMX')
 
-    n_tabulatedz = utility.get_setting(settings.GREEN_TABULATION_NUMZ, custom_config,
+    n_tabulatedz = utility.get_setting(pynemoh_settings.GREEN_TABULATION_NUMZ, custom_config,
                                        'GREEN_TABULATION_NUMZ')
 
     
 
-    n_points_simpson = utility.get_setting(settings.GREEN_TABULATION_SIMPSON_NPOINTS, custom_config,
+    n_points_simpson = utility.get_setting(pynemoh_settings.GREEN_TABULATION_SIMPSON_NPOINTS, custom_config,
                                            'GREEN_TABULATION_SIMPSON_NPOINTS')
 
     with h5py.File(hdf5_file, "a") as hdf5_db:
@@ -519,7 +519,7 @@ if __name__ == '__main__':
 
     # Allow logging setup to be disabled from command line
     if len(sys.argv) < 3:
-        utility.setup_logging(default_conf_path=settings.LOGGING_CONFIGURATION_FILE, logging_path=settings.LOG_FILE)
+        utility.setup_logging(default_conf_path=pynemoh_settings.LOGGING_CONFIGURATION_FILE, logging_path=pynemoh_settings.LOG_FILE)
     try:
         solve({})
     except Exception as e:

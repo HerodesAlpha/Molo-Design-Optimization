@@ -54,7 +54,7 @@ import h5py
 import numpy as np
 
 from . import preprocessor
-from . import settings
+from . import pynemoh_settings
 from . import utility
 from .models import TIRF
 from .models import TResult
@@ -586,7 +586,7 @@ def run(hdf5_data, custom_config):
                 ' at ' + structure.H5_RESULTS_EXCITATION_FORCES + ' with characteristics ' +
                 str(dset))
 
-    tec_file = utility.get_setting(settings.RADIATION_COEFFICIENTS_TEC_FILE, custom_config,
+    tec_file = utility.get_setting(pynemoh_settings.RADIATION_COEFFICIENTS_TEC_FILE, custom_config,
                                    'RADIATION_COEFFICIENTS_TEC_FILE')
     if tec_file:
         save_radiation_coefficients(result, tec_file)
@@ -595,7 +595,7 @@ def run(hdf5_data, custom_config):
     else:
         logger.info('Radiation coefficients tecplot format generation is disabled')
 
-    tec_file = utility.get_setting(settings.DIFFRACTION_FORCE_TEC_FILE, custom_config,
+    tec_file = utility.get_setting(pynemoh_settings.DIFFRACTION_FORCE_TEC_FILE, custom_config,
                                    'DIFFRACTION_FORCE_TEC_FILE')
 
     if tec_file:
@@ -605,7 +605,7 @@ def run(hdf5_data, custom_config):
     else:
         logger.info('Diffraction forces tecplot format generation is disabled')
 
-    tec_file = utility.get_setting(settings.EXCITATION_FORCE_TEC_FILE, custom_config,
+    tec_file = utility.get_setting(pynemoh_settings.EXCITATION_FORCE_TEC_FILE, custom_config,
                                    'EXCITATION_FORCE_TEC_FILE')
     if tec_file:
         save_excitation_force(result, tec_file)
@@ -623,7 +623,7 @@ def run(hdf5_data, custom_config):
         utility.set_hdf5_attributes(dset, structure.H5_RESULTS_ADDED_MASS_INFINITE_ATTR)
         dset[:, :] = irf.added_mass
 
-        tec_file = utility.get_setting(settings.IRF_TEC_FILE, custom_config,
+        tec_file = utility.get_setting(pynemoh_settings.IRF_TEC_FILE, custom_config,
                                        'IRF_TEC_FILE')
         if tec_file:
             save_irf(irf, tec_file)
@@ -637,7 +637,7 @@ def run(hdf5_data, custom_config):
     raos = np.zeros((result.n_integration, result.n_w, result.n_beta), dtype='F')
     raos = compute_raos(raos, result)
 
-    tec_file = utility.get_setting(settings.WAVE_FIELD_TEC_FILE, custom_config,
+    tec_file = utility.get_setting(pynemoh_settings.WAVE_FIELD_TEC_FILE, custom_config,
                                    'WAVE_FIELD_TEC_FILE')
 
     dset = hdf5_data.get(structure.H5_SOLVER_USE_HIGHER_ORDER)
@@ -696,7 +696,7 @@ def postprocess(custom_config):
     if not custom_config:
         custom_config = {}
 
-    hdf5_file = utility.get_setting(settings.HDF5_FILE, custom_config, 'HDF5_FILE')
+    hdf5_file = utility.get_setting(pynemoh_settings.HDF5_FILE, custom_config, 'HDF5_FILE')
     utility.check_is_file(hdf5_file, 'The path to the hdf5 file configured by HDF5_FILE')
 
     #utility.validate_file(hdf5_file, 'HDF5_FILE')
@@ -714,7 +714,7 @@ def run_as_process(custom_config, queue):
     return postprocess(custom_config)
 
 if __name__ == '__main__':
-    utility.setup_logging(default_conf_path=settings.LOGGING_CONFIGURATION_FILE, logging_path=settings.LOG_FILE)
+    utility.setup_logging(default_conf_path=pynemoh_settings.LOGGING_CONFIGURATION_FILE, logging_path=pynemoh_settings.LOG_FILE)
     try:
         postprocess({})
         print(('Post processing successfully completed.' + '\n'))
