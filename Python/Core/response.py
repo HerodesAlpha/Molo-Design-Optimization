@@ -117,7 +117,7 @@ class ResponseModel(object):
         for ib in range(1):  # self.nbeta
             self._rao_init[:, ib, :] = self.calc_rao_linear(ib)
 
-        self._rao = self._rao_init
+        self._rao = self._rao_init.copy()
         if self._settings.do_linearize:
             self.create_viscous_damping()
 
@@ -465,3 +465,7 @@ class ResponseModel(object):
     @property
     def rao(self):
         return self._rao
+
+    @property
+    def rao_init(self):
+        return self._rao_init

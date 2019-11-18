@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import environmental_conditions as ec
 
+
 with open("this_candidate.pkl", "rb") as f:
     this_candidate = pickle.load(f)
 print('\nCase:\t{}'.format(this_candidate.settings.case_label))
@@ -106,27 +107,31 @@ print('\n--------------------------\n R A O\n--------------------------')
 d = {'Heave': 2, 'Pitch': 4}
 ax1 = axs[1, 0]
 ax2 = ax1.twinx()
-for key in d:
-
-    if key == 'Heave':
-        abs_val_rao = np.abs(this_candidate.response.rao[:, ibeta, d[key]])
-        lns1 = ax1.plot(x_tics, abs_val_rao, label=key)
-        phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
-        print('{:20} {:6.3f} {: 7.4f}'.format(key, abs_val_rao[ifreq_print],
-                                                             phase_val_rao[ifreq_print]))
 
 
-    else:
-        abs_val_rao = np.abs(this_candidate.response.rao[:, ibeta, d[key]])
-        lns2 = ax2.plot(x_tics, np.abs(this_candidate.response.rao[:, ibeta, d[key]]), '-r', label=key)
+for r in [this_candidate.response.rao, this_candidate.response.rao_init]:
 
-        phase_val_rao = np.angle(this_candidate.response.rao[:, ibeta, d[key]])
-        print('{:20} {:6.3f} {: 7.4f} ({: 5.1f} deg)'.format(key, abs_val_rao[ifreq_print],
-                                                             phase_val_rao[ifreq_print],
-                                                             abs_val_rao[ifreq_print] * 180 / np.pi))
+    for key in d:
+
+        if key == 'Heave':
+            abs_val_rao = np.abs(r[:, ibeta, d[key]])
+            lns1 = ax1.plot(x_tics, abs_val_rao, label=key)
+            phase_val_rao = np.angle(r[:, ibeta, d[key]])
+            print('{:20} {:6.3f} {: 7.4f}'.format(key, abs_val_rao[ifreq_print],
+                                                                 phase_val_rao[ifreq_print]))
 
 
-    axs[1, 1].plot(x_tics, np.angle(this_candidate.response.rao[:, ibeta, d[key]]), label=key)
+        else:
+            abs_val_rao = np.abs(r[:, ibeta, d[key]])
+            lns2 = ax2.plot(x_tics, abs_val_rao, '-r', label=key)
+
+            phase_val_rao = np.angle(r[:, ibeta, d[key]])
+            print('{:20} {:6.3f} {: 7.4f} ({: 5.1f} deg)'.format(key, abs_val_rao[ifreq_print],
+                                                                 phase_val_rao[ifreq_print],
+                                                                 abs_val_rao[ifreq_print] * 180 / np.pi))
+
+
+        axs[1, 1].plot(x_tics, phase_val_rao, label=key)
 
 
 
