@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import environmental_conditions as ec
 
-def get_axs():
+def get_axs(object):
     with open("this_candidate.pkl", "rb") as f:
         this_candidate = pickle.load(f)
 
@@ -34,9 +34,9 @@ def get_axs():
     factor = 1 / 1000000
 
     w = this_candidate.loads.w
-    fig, axs = plt.subplots(2, 2)
+    object.fig, object.axs = plt.subplots(2, 2)
     dyn_force = this_candidate.f_sec1['Dynamic']
-
+    object_axs = object.axs
     x_tics = 1/(2 * np.pi / w)
     x_label = 'Frequency [Hz]'
 
@@ -53,28 +53,29 @@ def get_axs():
             abs_val=np.abs(dyn_force[key][:, ibeta, idof]) * factor
 
             phase_val = np.angle(dyn_force[key][:, ibeta, idof])
-            axs[0, 0].plot(x_tics,abs_val, label=key, linewidth=linewidth)
-            axs[0, 1].plot(x_tics,phase_val , label=key)
+            object_axs[0, 0].plot(x_tics,abs_val, label=key, linewidth=linewidth)
+            object_axs[0, 1].plot(x_tics,phase_val , label=key)
 
-    axs[0, 0].set_title('Amplitude')
+    object_axs[0, 0].set_title('Amplitude')
     force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
-    axs[0, 0].set_ylabel(force_label[idof])
+    object_axs[0, 0].set_ylabel(force_label[idof])
 
-    axs[0, 0].legend()
-    axs[0, 0].grid()
-    axs[0, 1].set_title('Phase')
-    axs[0, 1].legend()
-    axs[0, 1].grid()
-    axs[1, 0].set_ylabel('RAO')
-    axs[1, 0].set_xlabel(x_label)
-    axs[1, 0].grid()
-    axs[1, 1].set_xlabel(x_label)
-    axs[1, 1].grid()
+    object_axs[0, 0].legend()
+    object_axs[0, 0].grid()
+    object_axs[0, 1].set_title('Phase')
+    object_axs[0, 1].legend()
+    object_axs[0, 1].grid()
+    object_axs[1, 0].set_ylabel('RAO')
+    object_axs[1, 0].set_xlabel(x_label)
+    object_axs[1, 0].grid()
+    object_axs[1, 1].set_xlabel(x_label)
+    object_axs[1, 1].grid()
 
     d = {'Heave': 2, 'Pitch': 4}
-    ax1 = axs[1, 0]
+    ax1 = object_axs[1, 0]
     ax2 = ax1.twinx()
-
+    lns1 = None
+    lns2 = None
     for r in [this_candidate.response.rao, this_candidate.response.rao_init]:
 
         for key in d:
@@ -92,13 +93,13 @@ def get_axs():
                 phase_val_rao = np.angle(r[:, ibeta, d[key]])
 
 
-            axs[1, 1].plot(x_tics, phase_val_rao, label=key)
+            object_axs[1, 1].plot(x_tics, phase_val_rao, label=key)
 
 
 
     lns = lns1 + lns2
     labs = [l.get_label() for l in lns]
-    axs[1, 0].legend(lns, labs, loc=0)
-    axs[1, 1].legend()
-    return fig, axs
+    object_axs[1, 0].legend(lns, labs, loc=0)
+    object_axs[1, 1].legend()
+
 
