@@ -106,13 +106,16 @@
                 <property name="text" translatable="yes">Main</property>
                 <child>
                   <object class="ttk.Frame" id="main_frame">
+                    <property name="borderwidth">20</property>
                     <property name="height">200</property>
+                    <property name="padding">0</property>
+                    <property name="relief">groove</property>
                     <property name="width">200</property>
                     <layout>
                       <property name="column">0</property>
                       <property name="propagate">True</property>
                       <property name="row">0</property>
-                      <property name="sticky">nsew</property>
+                      <property name="sticky">w</property>
                       <rows>
                         <row id="0">
                           <property name="pad">10</property>
@@ -130,18 +133,6 @@
                         </column>
                       </columns>
                     </layout>
-                    <child>
-                      <object class="pygubu.builder.widgets.pathchooserinput" id="analyses_root_input">
-                        <property name="path">C:\mdo_working_dir</property>
-                        <property name="type">directory</property>
-                        <layout>
-                          <property name="column">1</property>
-                          <property name="propagate">True</property>
-                          <property name="row">0</property>
-                          <property name="sticky">w</property>
-                        </layout>
-                      </object>
-                    </child>
                     <child>
                       <object class="ttk.Label" id="analyses_root_label">
                         <property name="text" translatable="yes">Analysis root</property>
@@ -194,6 +185,17 @@
                           <property name="column">1</property>
                           <property name="propagate">True</property>
                           <property name="row">2</property>
+                          <property name="sticky">w</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Entry" id="analyses_root_input">
+                        <property name="text" translatable="yes">C:\mdo_working_dir</property>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
                           <property name="sticky">w</property>
                         </layout>
                       </object>
@@ -348,11 +350,11 @@
                     </child>
                     <child>
                       <object class="ttk.Frame" id="text_box_frame">
-                        <property name="borderwidth">10</property>
-                        <property name="height">200</property>
+                        <property name="borderwidth">5</property>
+                        <property name="height">24</property>
                         <property name="padding">0</property>
                         <property name="relief">groove</property>
-                        <property name="width">200</property>
+                        <property name="width">80</property>
                         <layout>
                           <property name="column">0</property>
                           <property name="columnspan">3</property>
@@ -363,9 +365,10 @@
                         <child>
                           <object class="tk.Text" id="model_text">
                             <property name="borderwidth">0</property>
-                            <property name="height">50</property>
+                            <property name="height">24</property>
+                            <property name="state">normal</property>
                             <property name="text" translatable="yes">Press run to generate model</property>
-                            <property name="width">80</property>
+                            <property name="width">120</property>
                             <layout>
                               <property name="column">0</property>
                               <property name="propagate">True</property>
@@ -373,6 +376,32 @@
                             </layout>
                           </object>
                         </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Notebook.Tab" id="mw_stability_tab">
+                <property name="text" translatable="yes">Stability</property>
+                <child>
+                  <object class="ttk.Frame" id="hydro_frame_3">
+                    <property name="height">200</property>
+                    <property name="width">200</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="propagate">True</property>
+                      <property name="row">0</property>
+                    </layout>
+                    <child>
+                      <object class="ttk.Button" id="hydro_run_button_1">
+                        <property name="text" translatable="yes">Run</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                        </layout>
                       </object>
                     </child>
                   </object>
@@ -477,9 +506,13 @@
     </child>
   </object>
   <object class="pygubu.builder.widgets.dialog" id="dlg_about">
+    <property name="height">200</property>
     <property name="modal">false</property>
+    <property name="padx">20</property>
+    <property name="pady">20</property>
     <property name="resizable">both</property>
     <property name="title" translatable="yes">About</property>
+    <property name="width">300</property>
     <child>
       <object class="ttk.Frame" id="about_fcontaner">
         <property name="height">200</property>
@@ -539,14 +572,16 @@
             </child>
             <child>
               <object class="ttk.Label" id="Label_2">
+                <property name="borderwidth">30</property>
                 <property name="justify">center</property>
-                <property name="relief">ridge</property>
-                <property name="text" translatable="yes">This application perform conceptual dimensioning of the MOLO floater</property>
-                <property name="wraplength">120</property>
+                <property name="text" translatable="yes">An application for fast concept design of the MOLO Floating Offshore Wind Support Structure</property>
+                <property name="wraplength">200</property>
                 <layout>
                   <property name="column">0</property>
+                  <property name="padx">30</property>
                   <property name="propagate">True</property>
                   <property name="row">1</property>
+                  <property name="sticky">ew</property>
                 </layout>
               </object>
             </child>

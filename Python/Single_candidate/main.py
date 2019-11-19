@@ -10,7 +10,8 @@ from pathlib import Path
 import pickle
 from design_engine import Candidate, Parameter_Space
 import os
-
+import io
+from contextlib import redirect_stdout
 import pygubu
 from plot_forces import get_axs
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -21,6 +22,14 @@ except NameError:
     DATA_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 DEG2RAD = 4 * math.atan(1) * 2 / 360
+
+class StdoutRedirector(object):
+    def __init__(self,text_widget):
+        self.text_space = text_widget
+
+    def write(self,string):
+        self.text_space.insert('end', string)
+        self.text_space.see('end')
 
 
 class MyApplication:
@@ -79,30 +88,24 @@ class MyApplication:
         self.mainwindow.mainloop()
 
     def create_model(self):
+        self.text_box = self.builder.get_object('model_text')
+        self.text_box.delete('1.0', '2.0')
+        sys.stdout = StdoutRedirector(self.text_box)
+        analyses_root=Path(self.builder.get_object('analyses_root_input').get())
+        print(analyses_root)
 
-        #analyses_root = Path(r'C:\mdo_working_dir')
-        analyses_root = self.builder.get_object['analyses_root_input'].get().path
-        park_label = self.builder.tkvariables['park_label_input'].get()
-        wtg_label = self.builder.tkvariables['wtg_label_input'].get()
-        candidate_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
-
+        park_label =self.builder.get_object('park_label_input').get()
+        wtg_label =self.builder.get_object('wtg_label_input').get()
         template_dir = Path(os.getcwd()).parents[0].joinpath('Optimization').joinpath('templates')
 
         p = Parameter_Space(templates_dir=template_dir)
-
         p.ncol = 2
-
-        is_stable = False
-        #    for d in np.linspace(8.8, 8.8, 1, dtype=float):
-        irow = -1
-
         p.gap = 1.1
         p.height = 21
         p.column_diameter = 7.5
         p.filling_ratio = [0.1, 0.1]
         this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
         this_candidate.settings.wtg_model = "Vestas 9.5"
-        # this_candidate.settings.wtg_model = "Haliade X"
         this_candidate.init_model(state='New')
         with open("this_candidate.pkl", "wb") as f:
             pickle.dump(this_candidate, f)
