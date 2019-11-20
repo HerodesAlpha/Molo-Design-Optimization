@@ -336,6 +336,7 @@
                         <child>
                           <object class="ttk.Entry" id="gap_input">
                             <property name="text" translatable="yes">1.1</property>
+                            <property name="textvariable">double:test</property>
                             <layout>
                               <property name="column">1</property>
                               <property name="ipadx">20</property>
@@ -407,6 +408,17 @@
                           <property name="row">0</property>
                           <property name="sticky">w</property>
                         </layout>
+                        <child>
+                          <object class="ttk.Checkbutton" id="do_stability_movie_check_button">
+                            <property name="text" translatable="yes">Do stability movie</property>
+                            <property name="variable">boolean:do_stability_movie_check_var</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>

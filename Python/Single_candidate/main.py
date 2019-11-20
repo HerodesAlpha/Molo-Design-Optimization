@@ -33,6 +33,10 @@ class StdoutRedirector(object):
         self.text_space.insert('end', string)
         self.text_space.see('end')
 
+    def flush(self):
+        pass
+
+
 
 class MyApplication:
 
@@ -51,8 +55,16 @@ class MyApplication:
      # Connect to Delete event
         self.mainwindow.protocol("WM_DELETE_WINDOW", self.quit)
 
+        self.do_stability_movie_check_var = tk.BooleanVar()
+        self.do_stability_movie_check_var.set(False)
+
+
         b.connect_callbacks(self)
 
+    def get_output(self,text_box):
+        self.text_box = self.builder.get_object(text_box)
+        self.text_box.delete('1.0', 'end')
+        sys.stdout = StdoutRedirector(self.text_box)
 
     def show_about_dialog(self):
         if self.about_dialog is None:
@@ -89,10 +101,16 @@ class MyApplication:
     def run(self):
         self.mainwindow.mainloop()
 
+    def get_float(self,id):
+        return float(self.builder.get_object(id).get())
+
+
+
+
+
     def create_model(self):
-        self.text_box = self.builder.get_object('model_text')
-        self.text_box.delete('1.0', '2.0')
-        sys.stdout = StdoutRedirector(self.text_box)
+        self.get_output('model_text')
+
         analyses_root=Path(self.builder.get_object('analyses_root_input').get())
         print(analyses_root)
 
@@ -101,10 +119,10 @@ class MyApplication:
         template_dir = Path(os.getcwd()).parents[0].joinpath('Optimization').joinpath('templates')
 
         p = Parameter_Space(templates_dir=template_dir)
-        p.ncol = 2
-        p.gap = 1.1
-        p.height = 21
-        p.column_diameter = 7.5
+        p.ncol = self.get_float('ncol_input')
+        p.gap = self.get_float('gap_input')
+        p.height = self.get_float('height_input')
+        p.column_diameter = self.get_float('column_diameter_input')
         p.filling_ratio = [0.1, 0.1]
         this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
         this_candidate.settings.wtg_model = "Vestas 9.5"
@@ -113,13 +131,20 @@ class MyApplication:
             pickle.dump(this_candidate, f)
 
     def  calc_stability(self):
-        self.text_box = self.builder.get_object('stability_text')
-        self.text_box.delete('1.0', '2.0')
-        sys.stdout = StdoutRedirector(self.text_box)
+
+
+
+        self.get_output('stability_text')
+
+
         with open("this_candidate.pkl", "rb") as f:
             this_candidate = pickle.load(f)
 
-        this_candidate.settings.create_stability_movie = True
+        this_candidate.settings.create_stability_movie = self.do_stability_movie_check_var
+        if this_candidate.settings.create_stability_movie:
+            print('A movie will be made',flush=True)
+
+
 
         r = this_candidate.intact_stability_ratio()
         if r >= 1.4:

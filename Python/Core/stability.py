@@ -81,7 +81,7 @@ def righting_moment_curve(settings, hs_floater):
                     hs_floater.viewer.finalize()
 
                 print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay * 180 / np.pi,
-                                                                                 val=-hs_floater.residual / 1000000))
+                                                                                 val=-hs_floater.residual / 1000000),flush=True)
 
     return np.asarray([heel_angles, righting_moments])
 
