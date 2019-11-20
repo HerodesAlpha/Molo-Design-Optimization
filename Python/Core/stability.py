@@ -124,41 +124,63 @@ def intact_stability(settings, hs_floater):
 
     width = r'1\textwidth'
 
-    settings._report._doc.append(NewPage())
-    with settings._report._doc.create(Section('Stability')) as stability_section:
+    if 0:
+        settings._report._doc.append(NewPage())
+        with settings._report._doc.create(Section('Stability')) as stability_section:
 
-        textstr = 'Area ratio is {:1.0f}%\nU_10min = {:1.1f} m/s\nz = {:1.0f} m'.format(r * 100,
-                                                                                        settings._job_data[
-                                                                                            'design_basis'][
-                                                                                            "Wind"]['ESS']['u'],
-                                                                                        settings._job_data[
-                                                                                            'design_basis'][
-                                                                                            "Wind"]['ESS'][
-                                                                                            'Reference height'])
-        stability_section.append(textstr)
-        with stability_section.create(Figure(position='htbp')) as plot:
-            fig = plt.figure(1, figsize=(8, 5))
-            ax = fig.add_subplot(111)
-            ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
-            ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
-            ib = whm[0, intercept] * 180 / np.pi
-            ax.annotate('Second intercept',
-                        xy=(ib, whm[1, intercept]), xycoords='data',
-                        xytext=(0.8, 0.5), textcoords='axes fraction',
-                        arrowprops=dict(arrowstyle="->"))
-            ax.set_xlabel('Angle of inclination [degrees]')
-            ax.set_ylabel('Moment [MNm]')
-            ax.legend()
-            plt.grid(b=True, which='major', color='#666666', linestyle='-')
-            # Show the minor grid lines with very faint and almost transparent grey lines
-            plt.minorticks_on()
-            plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-            plot.add_plot(width=NoEscape(width))
-            plot.add_caption('Intact Stability')
-            plt.close()
+            textstr = 'Area ratio is {:1.0f}%\nU_10min = {:1.1f} m/s\nz = {:1.0f} m'.format(r * 100,
+                                                                                            settings._job_data[
+                                                                                                'design_basis'][
+                                                                                                "Wind"]['ESS']['u'],
+                                                                                            settings._job_data[
+                                                                                                'design_basis'][
+                                                                                                "Wind"]['ESS'][
+                                                                                                'Reference height'])
+            stability_section.append(textstr)
+            with stability_section.create(Figure(position='htbp')) as plot:
+                fig = plt.figure(1, figsize=(8, 5))
+                ax = fig.add_subplot(111)
+                ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
+                ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
+                ib = whm[0, intercept] * 180 / np.pi
+                ax.annotate('Second intercept',
+                            xy=(ib, whm[1, intercept]), xycoords='data',
+                            xytext=(0.8, 0.5), textcoords='axes fraction',
+                            arrowprops=dict(arrowstyle="->"))
+                ax.set_xlabel('Angle of inclination [degrees]')
+                ax.set_ylabel('Moment [MNm]')
+                ax.legend()
+                plt.grid(b=True, which='major', color='#666666', linestyle='-')
+                # Show the minor grid lines with very faint and almost transparent grey lines
+                plt.minorticks_on()
+                plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+                plot.add_plot(width=NoEscape(width))
+                plot.add_caption('Intact Stability')
+                plt.close()
 
-    with h5py.File(settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
-        hdf5_stability_db.create_dataset('intact_stability_area_ratio', data=r)
+    fig = plt.figure(1, figsize=(8, 5))
+    ax = fig.add_subplot(111)
+    ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
+    ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
+    ib = whm[0, intercept] * 180 / np.pi
+    ax.annotate('Second intercept',
+                xy=(ib, whm[1, intercept]), xycoords='data',
+                xytext=(0.8, 0.5), textcoords='axes fraction',
+                arrowprops=dict(arrowstyle="->"))
+    ax.set_xlabel('Angle of inclination [degrees]')
+    ax.set_ylabel('Moment [MNm]')
+    ax.legend()
+    plt.grid(b=True, which='major', color='#666666', linestyle='-')
+    # Show the minor grid lines with very faint and almost transparent grey lines
+    plt.minorticks_on()
+    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    #plot.add_plot(width=NoEscape(width))
+    #plot.add_caption('Intact Stability')
+    plt.show()
+
+
+    #with h5py.File(settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
+    #    hdf5_stability_db.create_dataset('intact_stability_area_ratio', data=r)
 
 
     return r

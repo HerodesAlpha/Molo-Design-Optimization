@@ -15,6 +15,8 @@ from contextlib import redirect_stdout
 import pygubu
 from plot_forces import get_axs
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pickle
+
 
 try:
     DATA_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -109,6 +111,23 @@ class MyApplication:
         this_candidate.init_model(state='New')
         with open("this_candidate.pkl", "wb") as f:
             pickle.dump(this_candidate, f)
+
+    def  calc_stability(self):
+        self.text_box = self.builder.get_object('stability_text')
+        self.text_box.delete('1.0', '2.0')
+        sys.stdout = StdoutRedirector(self.text_box)
+        with open("this_candidate.pkl", "rb") as f:
+            this_candidate = pickle.load(f)
+
+        this_candidate.settings.create_stability_movie = True
+
+        r = this_candidate.intact_stability_ratio()
+        if r >= 1.4:
+            is_stable = True
+            print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
+        else:
+            is_stable = False
+            print('This candidate is NOT stable with r = {:1.0f}%'.format(r * 100))
 
     def open_workspace(self, title=None, dirName=None):
         options = {}

@@ -3,16 +3,11 @@ __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
 import json
-import os
-
-# import matplotlib.pyplot as plt
-
 from pathlib import Path
 import getpass
 import sys
 from report import DesignReport
 import numpy as np
-
 
 class PhysicalQuantities():
     # This is the only place allowed to put physical quantities
@@ -37,7 +32,6 @@ class PhysicalQuantities():
     @property
     def emod_st(self):
         return self._emod_st
-
 
 class FileIOClass(object):
     def __init__(self, settings):
@@ -138,7 +132,6 @@ class FileIOClass(object):
     @property
     def gmsh_exe(self):
         return self._gmsh_exe
-
 
 class SettingsClass(PhysicalQuantities, object):
     def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):

@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <interface>
   <object class="tk.Toplevel" id="mainwindow">
-    <property name="height">200</property>
+    <property name="height">600</property>
     <property name="resizable">both</property>
     <property name="title" translatable="yes">MOLO</property>
-    <property name="width">200</property>
+    <property name="width">800</property>
     <child>
       <object class="ttk.Frame" id="mw_fcontainer">
-        <property name="height">200</property>
-        <property name="width">200</property>
+        <property name="height">600</property>
+        <property name="width">800</property>
         <layout>
           <property name="column">0</property>
           <property name="propagate">True</property>
@@ -230,7 +230,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="ttk.Frame" id="mode_column_frame">
+                      <object class="ttk.Frame" id="model_column_frame">
                         <property name="borderwidth">20</property>
                         <property name="height">200</property>
                         <property name="relief">groove</property>
@@ -349,7 +349,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="ttk.Frame" id="text_box_frame">
+                      <object class="ttk.Frame" id="model_text_box_frame">
                         <property name="borderwidth">5</property>
                         <property name="height">24</property>
                         <property name="padding">0</property>
@@ -386,22 +386,79 @@
               <object class="ttk.Notebook.Tab" id="mw_stability_tab">
                 <property name="text" translatable="yes">Stability</property>
                 <child>
-                  <object class="ttk.Frame" id="hydro_frame_3">
+                  <object class="ttk.Frame" id="stability_frame">
                     <property name="height">200</property>
-                    <property name="width">200</property>
+                    <property name="width">800</property>
                     <layout>
                       <property name="column">0</property>
                       <property name="propagate">True</property>
                       <property name="row">0</property>
+                      <property name="sticky">ew</property>
                     </layout>
                     <child>
-                      <object class="ttk.Button" id="hydro_run_button_1">
-                        <property name="text" translatable="yes">Run</property>
+                      <object class="ttk.Frame" id="stability_input_frame">
+                        <property name="borderwidth">5</property>
+                        <property name="height">200</property>
+                        <property name="relief">groove</property>
+                        <property name="width">200</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                          <property name="sticky">w</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Frame" id="stability_execution_frame">
+                        <property name="borderwidth">0</property>
+                        <property name="height">200</property>
+                        <property name="width">200</property>
                         <layout>
                           <property name="column">0</property>
                           <property name="propagate">True</property>
                           <property name="row">0</property>
                         </layout>
+                        <child>
+                          <object class="ttk.Button" id="calc_stability_button">
+                            <property name="command">calc_stability</property>
+                            <property name="text" translatable="yes">Stability</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">e</property>
+                            </layout>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Frame" id="stability_text_box_frame">
+                        <property name="borderwidth">5</property>
+                        <property name="height">200</property>
+                        <property name="relief">groove</property>
+                        <property name="width">200</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">1</property>
+                          <property name="sticky">ew</property>
+                        </layout>
+                        <child>
+                          <object class="tk.Text" id="stability_text">
+                            <property name="borderwidth">0</property>
+                            <property name="height">24</property>
+                            <property name="state">normal</property>
+                            <property name="text" translatable="yes">Press run to calculate stability</property>
+                            <property name="width">120</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                            </layout>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
