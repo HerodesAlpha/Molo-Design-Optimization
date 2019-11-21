@@ -87,7 +87,7 @@ def righting_moment_curve(settings, hs_floater):
 
 
 def wind_heeling_moment_curve(settings, heel_angles):
-    M_xy_unit = 0.905  # Must be multiplied with hub height, rotor diameter, and wind speed. Calibrated against 116.5m hub height
+    m_xy_unit = 0.905  # Must be multiplied with hub height, rotor diameter, and wind speed squared. Calibrated against 116.5m hub height
     # 167 m rotor diameter and 70.7 m/s wind speed at hub height
     z = settings._job_data['wtg'][settings.wtg_model]['Hub height']
     rd = settings._job_data['wtg'][settings.wtg_model]['Rotor diameter']
@@ -96,10 +96,10 @@ def wind_heeling_moment_curve(settings, heel_angles):
     z0 = settings._job_data['design_basis']["Wind"]['Surface friction coefficient']
     uh = u * (1 + np.log(z / H) / np.log(H / z0))
 
-    M_xy = M_xy_unit * z * rd * uh ** 2
+    m = m_xy_unit * z * rd * uh ** 2
     heeling_moments = np.zeros(heel_angles.shape[0])
     for i, angle in enumerate(heel_angles):
-        heeling_moments[i] = M_xy * np.cos(angle)
+        heeling_moments[i] = m * np.cos(angle)
 
     return np.asarray([heel_angles, heeling_moments])
 

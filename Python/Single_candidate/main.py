@@ -38,9 +38,9 @@ class StdoutRedirector(object):
 
 
 
-class MyApplication:
+class Application():
 
-    def __init__(self):
+    def __init__(self,master):
         self.about_dialog = None
         self.fig = None
         self.builder = b = pygubu.Builder()
@@ -48,18 +48,22 @@ class MyApplication:
         b.add_resource_path(os.path.join(DATA_DIR, 'imgs'))
         #self.canvas = b.get_object('main_canvas')
 
-        self.mainwindow = b.get_object('mainwindow')
+        self.mainwindow = b.get_object('mainwindow',master)
         self.mainwindow.iconbitmap('.\imgs\molo_256.ico')
+        #self.dlg_about = b.get_object('dlg_about')
+        #self.dlg_about.iconbitmap('.\imgs\molo_256.ico')
+
+        master.rowconfigure(0, weight=1)
+        master.columnconfigure(0, weight=1)
+
         #print(dir(self.mainwindow))
 
      # Connect to Delete event
         self.mainwindow.protocol("WM_DELETE_WINDOW", self.quit)
 
-        self.do_stability_movie_check_var = tk.BooleanVar()
-        self.do_stability_movie_check_var.set(False)
-
-
         b.connect_callbacks(self)
+
+
 
     def get_output(self,text_box):
         self.text_box = self.builder.get_object(text_box)
@@ -80,6 +84,7 @@ class MyApplication:
 
     def quit(self, event=None):
         self.mainwindow.quit()
+
 
     def btnplot_clicked(self):
         if not self.fig==None:
@@ -140,7 +145,7 @@ class MyApplication:
         with open("this_candidate.pkl", "rb") as f:
             this_candidate = pickle.load(f)
 
-        this_candidate.settings.create_stability_movie = self.do_stability_movie_check_var
+        this_candidate.settings.create_stability_movie = self.builder.get_variable('stability_movie_chkbtn_var')
         if this_candidate.settings.create_stability_movie:
             print('A movie will be made',flush=True)
 
@@ -166,6 +171,6 @@ class MyApplication:
             return fileName
 
 if __name__ == '__main__':
-    #root = tk.Tk()
-    app = MyApplication()
-    app.run()
+    root = tk.Tk()
+    app = Application(root)
+    root.mainloop()
