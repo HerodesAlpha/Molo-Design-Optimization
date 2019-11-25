@@ -16,7 +16,9 @@ import pygubu
 from plot_forces import get_axs
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pickle
-
+import tool_box as tb
+import json
+from tkinter import messagebox
 
 try:
     DATA_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -25,11 +27,14 @@ except NameError:
 
 DEG2RAD = 4 * math.atan(1) * 2 / 360
 
+nsp = tb.NumericStringParser()
+
+
 class StdoutRedirector(object):
-    def __init__(self,text_widget):
+    def __init__(self, text_widget):
         self.text_space = text_widget
 
-    def write(self,string):
+    def write(self, string):
         self.text_space.insert('end', string)
         self.text_space.see('end')
 
@@ -37,35 +42,32 @@ class StdoutRedirector(object):
         pass
 
 
-
 class Application():
 
-    def __init__(self,master):
+    def __init__(self):
         self.about_dialog = None
         self.fig = None
         self.builder = b = pygubu.Builder()
         b.add_from_file(os.path.join(DATA_DIR, 'main.ui'))
         b.add_resource_path(os.path.join(DATA_DIR, 'imgs'))
-        #self.canvas = b.get_object('main_canvas')
 
-        self.mainwindow = b.get_object('mainwindow',master)
+        self.mainwindow = b.get_object('mainwindow')
         self.mainwindow.iconbitmap('.\imgs\molo_256.ico')
-        #self.dlg_about = b.get_object('dlg_about')
-        #self.dlg_about.iconbitmap('.\imgs\molo_256.ico')
 
-        master.rowconfigure(0, weight=1)
-        master.columnconfigure(0, weight=1)
 
-        #print(dir(self.mainwindow))
 
-     # Connect to Delete event
         self.mainwindow.protocol("WM_DELETE_WINDOW", self.quit)
 
         b.connect_callbacks(self)
 
+        self.load_cfg()
 
 
-    def get_output(self,text_box):
+
+
+
+
+    def get_output(self, text_box):
         self.text_box = self.builder.get_object(text_box)
         self.text_box.delete('1.0', 'end')
         sys.stdout = StdoutRedirector(self.text_box)
@@ -74,20 +76,47 @@ class Application():
         if self.about_dialog is None:
             dialog = self.builder.get_object('dlg_about', self.mainwindow)
             self.about_dialog = dialog
+
             def dialog_btnclose_clicked():
                 dialog.close()
+
             btnclose = self.builder.get_object('about_btnclose')
             btnclose['command'] = dialog_btnclose_clicked
             dialog.run()
         else:
             self.about_dialog.show()
 
-    def quit(self, event=None):
-        self.mainwindow.quit()
+    def save_cfg(self):
+        # Save current settings
+        for id in self.cgf['user_input']:
+            if self.cgf['user_input'][id]['type']=='object':
+                value = self.builder.get_object(id).get()
+                self.cgf['user_input'][id]['value'] = value
 
+
+        with open('mdo_cfg.json', 'w') as f:
+                f.write(json.dumps(self.cgf, indent=4, sort_keys=True))
+
+
+    def load_cfg(self):
+        # Read config
+        with open('mdo_cfg.json', 'r') as f:
+            self.cgf = json.loads(f.read())
+
+        for id in self.cgf['user_input']:
+            if self.cgf['user_input'][id]['type']=='object':
+                value = self.cgf['user_input'][id]['value']
+                self.builder.get_object(id).delete(0,END)
+                self.builder.get_object(id).insert(0,value)
+
+    def quit(self, event=None):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.save_cfg()
+
+            self.mainwindow.quit()
 
     def btnplot_clicked(self):
-        if not self.fig==None:
+        if not self.fig == None:
             self.fig.clear()
         print('Plotting ...')
         self.fig, self.axs = get_axs()
@@ -99,35 +128,38 @@ class Application():
 
     def plot(self):
 
-
         btnplot = self.builder.get_object('plot_button')
         btnplot['command'] = self.btnplot_clicked()
 
     def run(self):
         self.mainwindow.mainloop()
 
-    def get_float(self,id):
-        return float(self.builder.get_object(id).get())
-
-
-
-
+    def get_float(self, id):
+        return nsp.eval(self.builder.get_object(id).get())
 
     def create_model(self):
         self.get_output('model_text')
 
-        analyses_root=Path(self.builder.get_object('analyses_root_input').get())
+        analyses_root = Path(self.builder.get_object('analyses_root_input').get())
         print(analyses_root)
 
-        park_label =self.builder.get_object('park_label_input').get()
-        wtg_label =self.builder.get_object('wtg_label_input').get()
+        park_label = self.builder.get_object('park_label_input').get()
+        wtg_label = self.builder.get_object('wtg_label_input').get()
         template_dir = Path(os.getcwd()).parents[0].joinpath('Optimization').joinpath('templates')
 
         p = Parameter_Space(templates_dir=template_dir)
-        p.ncol = self.get_float('ncol_input')
-        p.gap = self.get_float('gap_input')
+        p.ncol = int(self.get_float('ncol_input'))
+        print('Number of columns: {:6.1f}'.format(p.ncol))
+
         p.height = self.get_float('height_input')
+        print('Column height: {:6.3f}'.format(p.height))
+
         p.column_diameter = self.get_float('column_diameter_input')
+        print('Column diameter: {:6.3f}'.format(p.column_diameter))
+
+        p.gap = self.get_float('gap_input')
+        print('Gap factor: {:6.3f}'.format(p.gap))
+
         p.filling_ratio = [0.1, 0.1]
         this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
         this_candidate.settings.wtg_model = "Vestas 9.5"
@@ -135,21 +167,16 @@ class Application():
         with open("this_candidate.pkl", "wb") as f:
             pickle.dump(this_candidate, f)
 
-    def  calc_stability(self):
-
-
+    def calc_stability(self):
 
         self.get_output('stability_text')
-
 
         with open("this_candidate.pkl", "rb") as f:
             this_candidate = pickle.load(f)
 
         this_candidate.settings.create_stability_movie = self.builder.get_variable('stability_movie_chkbtn_var')
         if this_candidate.settings.create_stability_movie:
-            print('A movie will be made',flush=True)
-
-
+            print('A movie will be made', flush=True)
 
         r = this_candidate.intact_stability_ratio()
         if r >= 1.4:
@@ -170,7 +197,8 @@ class Application():
         else:
             return fileName
 
+
 if __name__ == '__main__':
-    root = tk.Tk()
-    app = Application(root)
-    root.mainloop()
+    #root = tk.Tk()
+    app = Application()
+    app.run()

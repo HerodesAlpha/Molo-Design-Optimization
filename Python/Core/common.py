@@ -61,7 +61,7 @@ class FileIOClass(object):
 
         self._templates_dir = settings.templates_dir
 
-        self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Library\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
+        self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
                 getpass.getuser())
         assert (Path(self._gmsh_exe).exists())
 

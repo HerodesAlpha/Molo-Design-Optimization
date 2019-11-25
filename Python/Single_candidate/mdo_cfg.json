@@ -1,0 +1,34 @@
+{
+    "user_input": {"object": "analyses_root_input": {
+            "value": "C:\\mdo_working_dir"
+        },
+        "column_diameter_input": {
+            "type": "object",
+            "value": "7.5"
+        },
+        "gap_input": {
+            "type": "object",
+            "value": "1.1"
+        },
+        "height_input": {
+            "type": "object",
+            "value": "21"
+        },
+        "ncol_input": {
+            "type": "object",
+            "value": "2"
+        },
+        "park_label_input": {
+            "type": "object",
+            "value": "site_01"
+        },
+        "stability_movie_chkbtn_var": {
+            "type": "variable",
+            "value": 1.1
+        },
+        "wtg_label_input": {
+            "type": "object",
+            "value": "test"
+        }
+    }
+}
