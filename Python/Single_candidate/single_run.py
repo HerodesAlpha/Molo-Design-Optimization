@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 "max_wave_frequencies": 2 * np.pi / 4,
                 "num_wave_directions" : 1,
                 "min_wave_directions" : 0,  # deg
-                "max_wave_directions" : 90,
+                "80" : 90,
         }
 
         if not this_candidate.has_stability_db() or 1:

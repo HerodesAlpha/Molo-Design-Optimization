@@ -1,34 +1,74 @@
 {
-    "user_input": {"object": "analyses_root_input": {
-            "value": "C:\\mdo_working_dir"
+    "user_input": {
+        "object": {
+            "analyses_root_input": {
+                "type": "string",
+                "value": "C:\\mdo_working_dir"
+            },
+            "column_diameter_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "7.5"
+            },
+            "gap_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "1.1+0.1"
+            },
+            "height_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "21"
+            },
+            "max_wave_directions_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "90"
+            },
+            "max_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "2 * pi / 4"
+            },
+            "min_wave_directions_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "0"
+            },
+            "min_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "2 * pi / 35"
+            },
+            "ncol_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "2"
+            },
+            "num_wave_directions_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "1"
+            },
+            "num_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "1"
+            },
+            "park_label_input": {
+                "type": "string",
+                "value": "site_01"
+            },
+            "wtg_label_input": {
+                "type": "string",
+                "value": "test2"
+            }
         },
-        "column_diameter_input": {
-            "type": "object",
-            "value": "7.5"
-        },
-        "gap_input": {
-            "type": "object",
-            "value": "1.1"
-        },
-        "height_input": {
-            "type": "object",
-            "value": "21"
-        },
-        "ncol_input": {
-            "type": "object",
-            "value": "2"
-        },
-        "park_label_input": {
-            "type": "object",
-            "value": "site_01"
-        },
-        "stability_movie_chkbtn_var": {
-            "type": "variable",
-            "value": 1.1
-        },
-        "wtg_label_input": {
-            "type": "object",
-            "value": "test"
+        "variable": {
+            "stability_movie_chkbtn_var": {
+                "type": "numeric",
+                "value": true
+            }
         }
     }
 }
