@@ -53,7 +53,7 @@
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "1"
+                "value": "5"
             },
             "park_label_input": {
                 "type": "string",
