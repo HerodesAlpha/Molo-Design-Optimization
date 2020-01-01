@@ -870,6 +870,7 @@ def run(hdf5_data, custom_config):
     for j in range(n_integration):
         fnds[j, :] = compute_nds(mesh, int_case[j].body, int_case[j].i_case, int_case[j].direction, int_case[j].axis)
 
+    #exit()
 
     dset = utility.require_dataset(hdf5_data, structure.H5_MESH_INTEGRATION, fnds.shape, dtype='f')
     utility.set_hdf5_attributes(dset, structure.H5_MESH_INTEGRATION_ATTR)

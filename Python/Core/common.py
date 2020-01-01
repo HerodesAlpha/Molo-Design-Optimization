@@ -62,7 +62,8 @@ class FileIOClass(object):
         self._templates_dir = settings.templates_dir
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
-                getpass.getuser())
+                'es')
+        #print(self._gmsh_exe)
         assert (Path(self._gmsh_exe).exists())
 
         self._freecad_path = r'C:\Program Files\FreeCAD 0.18\bin'

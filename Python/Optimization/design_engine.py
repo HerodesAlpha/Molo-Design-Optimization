@@ -70,11 +70,11 @@ class Parameter_Space():
 
     @property
     def ncol(self):
-        return self._job_data['floater']['Number of columns']
+        return self._job_data['floater']['Radial']['Number of columns']
 
     @ncol.setter
     def ncol(self, val):
-        self._job_data['floater']['Number of columns'] = val
+        self._job_data['floater']['Radial']['Number of columns'] = val
 
     @property
     def gap(self):
@@ -86,7 +86,7 @@ class Parameter_Space():
 
     @property
     def height(self):
-        return self._job_data['floater']['Gap factor']
+        return self._job_data['floater']['Radial']['Heigth']
 
     @height.setter
     def height(self, val):

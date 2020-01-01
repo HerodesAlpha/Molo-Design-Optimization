@@ -28,7 +28,7 @@
             "max_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "rad/s",
-                "value": "2 * pi / 4"
+                "value": "2 * pi / 1"
             },
             "min_wave_directions_input": {
                 "type": "numeric",
@@ -43,17 +43,17 @@
             "ncol_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "2"
+                "value": "3"
             },
             "num_wave_directions_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "1"
+                "value": "5"
             },
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "5"
+                "value": "120"
             },
             "park_label_input": {
                 "type": "string",

@@ -1,4 +1,4 @@
-copy ..\..\Fortran\Build\fNemoh_Build\libnemoh.dll .\pyNemoh\libnemoh.dll
+copy ..\..\Fortran\Build\fNemoh\libnemoh.dll .\pyNemoh\libnemoh.dll
 del libnemoh.lib
 dlltool -d..\..\Fortran\Build\fNemoh\libnemoh.def -D.\pyNemoh\libnemoh.dll -llibnemoh.lib
 python.exe setup.py cleanall

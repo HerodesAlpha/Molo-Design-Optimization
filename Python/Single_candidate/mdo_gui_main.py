@@ -155,7 +155,7 @@ class Application():
         p.gap = self.get_numeric('gap_input')
         print('Gap factor: {:6.3f}'.format(p.gap))
 
-        p.filling_ratio = [0.1, 0.1]
+        p.filling_ratio = [0.1, 0.1, 0.1]
         this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
         this_candidate.settings.wtg_model = "Vestas 9.5"
         this_candidate.init_model(state='New')

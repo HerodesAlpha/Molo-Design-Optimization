@@ -12,3 +12,4 @@ imageio-ffmpeg
 pylatex
 openpyxl
 pyparsing
+pygubu
