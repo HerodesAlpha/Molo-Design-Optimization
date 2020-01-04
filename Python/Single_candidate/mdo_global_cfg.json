@@ -48,12 +48,12 @@
             "num_wave_directions_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "5"
+                "value": "1"
             },
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "120"
+                "value": "40"
             },
             "park_label_input": {
                 "type": "string",
@@ -62,12 +62,6 @@
             "wtg_label_input": {
                 "type": "string",
                 "value": "test2"
-            }
-        },
-        "variable": {
-            "stability_movie_chkbtn_var": {
-                "type": "numeric",
-                "value": true
             }
         }
     }

@@ -1,0 +1,62 @@
+{
+    "user_input": {
+        "object": {
+            "column_diameter_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "7.5"
+            },
+            "gap_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "1.1+0.1"
+            },
+            "height_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "21"
+            },
+            "max_wave_directions_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "90"
+            },
+            "max_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "2 * pi / 1"
+            },
+            "min_wave_directions_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "0"
+            },
+            "min_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "2 * pi / 35"
+            },
+            "ncol_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "3"
+            },
+            "num_wave_directions_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "1"
+            },
+            "num_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "40"
+            }
+        },
+        "variable": {
+            "stability_movie_chkbtn_var": {
+                "type": "numeric",
+                "value": true
+            }
+        }
+    }
+}

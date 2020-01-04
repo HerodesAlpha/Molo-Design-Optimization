@@ -831,9 +831,142 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Notebook.Tab" id="mw_load_tab">
+              <object class="ttk.Notebook.Tab" id="mw_response_tab">
                 <property name="sticky">nsew</property>
-                <property name="text" translatable="yes">Loads</property>
+                <property name="text" translatable="yes">Response</property>
+                <child>
+                  <object class="ttk.Frame" id="response_frame">
+                    <property name="height">200</property>
+                    <property name="width">200</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="propagate">True</property>
+                      <property name="row">0</property>
+                    </layout>
+                    <child>
+                      <object class="ttk.Frame" id="response_top_frame">
+                        <property name="borderwidth">5</property>
+                        <property name="height">200</property>
+                        <property name="relief">groove</property>
+                        <property name="width">200</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">4</property>
+                          <property name="sticky">nsew</property>
+                          <rows>
+                            <row id="0">
+                              <property name="weight">1</property>
+                            </row>
+                          </rows>
+                          <columns>
+                            <column id="0">
+                              <property name="weight">1</property>
+                            </column>
+                            <column id="1">
+                              <property name="weight">1</property>
+                            </column>
+                          </columns>
+                        </layout>
+                        <child>
+                          <object class="ttk.Frame" id="respone_parameters_frame">
+                            <property name="borderwidth">5</property>
+                            <property name="height">200</property>
+                            <property name="width">200</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                            <child>
+                              <object class="ttk.Checkbutton" id="lin_visc_damp_checkbutton">
+                                <property name="state">normal</property>
+                                <property name="text" translatable="yes">Linearize viscous damping</property>
+                                <property name="variable">boolean:0</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                </layout>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Frame" id="response_execution_frame">
+                            <property name="height">200</property>
+                            <property name="width">200</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">ew</property>
+                              <columns>
+                                <column id="0">
+                                  <property name="weight">0</property>
+                                </column>
+                              </columns>
+                            </layout>
+                            <child>
+                              <object class="ttk.Button" id="response_run_button">
+                                <property name="command">calc_response</property>
+                                <property name="text" translatable="yes">Run</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                </layout>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Frame" id="response_text_box_frame">
+                        <property name="borderwidth">3</property>
+                        <property name="relief">sunken</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">5</property>
+                          <property name="sticky">nsew</property>
+                          <rows>
+                            <row id="0">
+                              <property name="weight">1</property>
+                            </row>
+                          </rows>
+                          <columns>
+                            <column id="0">
+                              <property name="weight">1</property>
+                            </column>
+                          </columns>
+                        </layout>
+                        <child>
+                          <object class="tk.Text" id="response_text">
+                            <property name="borderwidth">0</property>
+                            <property name="height">24</property>
+                            <property name="state">normal</property>
+                            <property name="text" translatable="yes">Press run to to calculate response</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">nsew</property>
+                            </layout>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Notebook.Tab" id="mw_report_tab">
+                <property name="sticky">nsew</property>
+                <property name="text" translatable="yes">Report</property>
                 <child>
                   <object class="ttk.Frame" id="load_frame">
                     <property name="height">200</property>
@@ -850,47 +983,6 @@
                           <property name="column">0</property>
                           <property name="propagate">True</property>
                           <property name="row">0</property>
-                        </layout>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Notebook.Tab" id="mw_response_tab">
-                <property name="sticky">nsew</property>
-                <property name="text" translatable="yes">Response</property>
-                <child>
-                  <object class="ttk.Frame" id="response_frame">
-                    <property name="height">200</property>
-                    <property name="width">200</property>
-                    <layout>
-                      <property name="column">0</property>
-                      <property name="propagate">True</property>
-                      <property name="row">0</property>
-                    </layout>
-                    <child>
-                      <object class="ttk.Checkbutton" id="lin_visc_damp_checkbutton">
-                        <property name="state">normal</property>
-                        <property name="text" translatable="yes">Linearize viscous damping</property>
-                        <property name="variable">boolean:0</property>
-                        <layout>
-                          <property name="column">0</property>
-                          <property name="propagate">True</property>
-                          <property name="row">0</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="ttk.Button" id="response_run_button">
-                        <property name="text" translatable="yes">Run</property>
-                        <layout>
-                          <property name="column">3</property>
-                          <property name="propagate">True</property>
-                          <property name="row">3</property>
-                          <property name="rowspan">1</property>
-                          <property name="sticky">se</property>
                         </layout>
                       </object>
                     </child>
