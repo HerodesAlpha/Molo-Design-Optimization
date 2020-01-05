@@ -168,7 +168,7 @@ def init_models(settings):  #
     stability_mesh.merge_duplicates()
     stability_mesh.heal_normals()
     stability_mesh.heal_mesh()
-    stability_mesh.rotate_z(-np.pi / 2)  #  # TODO: Re-orient mesh template
+    stability_mesh.rotate_z(-np.pi / 2)  #Re-orient mesh template
 
     # unit_model.print_vector_matrix_global()
     hs_floater = hs.Hydrostatics(stability_mesh, verbose=True) # TODO: Set mass, gravity and water density here

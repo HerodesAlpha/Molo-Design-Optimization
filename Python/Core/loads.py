@@ -65,7 +65,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                     # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
                     del ind
 
-            self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)  # TODO: Get vertices and points
+            self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)
             self._an = self.pd.ppanel_areas[:, np.newaxis] * self.pd.ppanel_normals
             # -------------------------------------------------------
             # step += 1
@@ -109,7 +109,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 self._force = dict()
 
                 # sys.stdout.write("\t\tStatic buoyancy pressure\n")
-                # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
+                # z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
                 assert settings.lower_face_corrected_z_pos
                 self._pressure['Buoyancy'] = (self._rho_sw * self._gravity) * self._pd.ppanel_centers[:, 2]
 
@@ -117,7 +117,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 self._force['Buoyancy'] = -self._pressure['Buoyancy'][:, np.newaxis] * self._an
 
                 # sys.stdout.write("\t\tFroude-Krylof pressure\n")
-                # TODO: z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
+                # z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
                 self._pressure['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
 
                 # sys.stdout.write("\t\tFroude-Krylof force\n")

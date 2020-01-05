@@ -90,18 +90,28 @@ class Application():
         else:
             self.about_dialog.show()
 
+
+    def get_config(self,cfg):
+        for id in cfg['user_input']['object']:
+            cfg['user_input']['object'][id]['value'] = self.builder.get_object(id).get()
+
+
     def save_cfg(self):
         # Save current settings
-        for id in self.global_cfg['user_input']['object']:
-            value = self.builder.get_object(id).get()
-            self.global_cfg['user_input']['object'][id]['value'] = value
+        self.get_config(self.global_cfg)
+        self.get_config(self.case_cfg)
 
         f_global = Path(DATA_DIR).joinpath('mdo_global_cfg.json')
         with open(f_global, 'w') as f:
             f.write(json.dumps(self.global_cfg, indent=4, sort_keys=True))
 
-        f_case = self.data_io_dir.joinpath('mdo_case_cfg.json')
-        with open(f_case, 'w') as f:
+        if  isinstance(self.data_io_dir, Path):
+            f_case = self.data_io_dir.joinpath('mdo_case_cfg.json')
+            with open(str(f_case), 'w') as f:
+                f.write(json.dumps(self.case_cfg, indent=4, sort_keys=True))
+
+        f_case_default = Path(DATA_DIR).joinpath('mdo_default_case_cfg.json')
+        with open(f_case_default, 'w') as f:
             f.write(json.dumps(self.case_cfg, indent=4, sort_keys=True))
 
     def load_cfg(self):

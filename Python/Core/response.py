@@ -114,7 +114,7 @@ class ResponseModel(object):
 
     def calc_rao_dependent_forces(self):
         self._rao_init = np.zeros([self.nw, self.nbeta, 6], dtype=complex)
-        for ib in range(1):  # self.nbeta
+        for ib in range(self.nbeta):  # self.nbeta
             self._rao_init[:, ib, :] = self.calc_rao_linear(ib)
 
         self._rao = self._rao_init.copy()
@@ -389,10 +389,10 @@ class ResponseModel(object):
         c = np.asarray(coord)
         rho = self._settings._rho_sw
         cd = 2
-        d = self._d_rc + 0.2
+        dia = self._d_rc + 0.2
         l = dx
         for coord in c:
-            self.vd_list.append(Viscous_Damper(coord, rho, cd, d, l))
+            self.vd_list.append(Viscous_Damper(coord, rho, cd, dia, l))
 
         alphas = np.asarray([vd.alpha for vd in self.vd_list])
 
@@ -435,16 +435,16 @@ class ResponseModel(object):
 
             f_d_global_sum = np.sum(f_d_global, axis=1)
 
-            d = (rao_wp * amp * wp * np.complex(0, 1))
+            vel = (rao_wp * amp * wp * np.complex(0, 1))
 
-            c_visc_1d = f_d_global_sum / d
+            c_visc_1d = f_d_global_sum / vel
 
 
             for ib in range(self.nbeta):  # self.nbeta
                 self._c_visc[ib,:,:] = np.diag(c_visc_1d[ib,:])
                 self._rao[:, ib, :] = self.calc_rao_linear(ib)
 
-            c_visc_local = (f_d_local/ d)
+            c_visc_local = (f_d_local/ vel[:,nax,:])
             self._strip_viscous_damping_force = (c_visc_local[nax,:,:,:]*self._rao[:, :,nax,:])[:,:,:,:3]
 
 
@@ -452,6 +452,7 @@ class ResponseModel(object):
         out_rao = np.zeros([len(self.w), 6], dtype=complex)
         this_c_visc = self._c_visc[ibeta, :, :]
         for i, w in enumerate(self.w):
+            #print('w = {}'.format(w))
             this_ma = self.ma[i, :, :]
 
             # print(this_c_visc)

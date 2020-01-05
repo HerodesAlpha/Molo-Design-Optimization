@@ -231,7 +231,7 @@ class FloaterClass(AssemblyClass, object):
 
             # Reduction point is set at center bottom of steel for all parts.
             # Flanges
-            # TODO: Discretize flanges every meter or so in radial direction for better mass resolution
+            # Discretize flanges every meter or so in radial direction for better mass resolution
             for istrip in range(self._n_strips):
                 self.parts_list.append(
                     FlangeClass(type='Radial {r:1.0f}, upper flange, strip {s:1.0f}'.format(r=ir + 1, s=istrip + 1),

@@ -104,7 +104,6 @@ class DesignReport(Document):
 
     def write_hydrostatic_report_latex_table(self, hydrostatics):
         def build_table_data(text, data, precision=3, dtype='f'):
-            # TODO: ajouter unit
             textwidth = 40
             label_template = "{:{fill}{align}{width}}"
             num_template = "{:{align}{width}.{precision}{dtype}} "
@@ -137,7 +136,7 @@ class DesignReport(Document):
                 data_table.add_row(build_table_data('Buoyancy center (M)', hydrostatics.buoyancy_center, precision=3))
                 data_table.add_row(build_table_data('Center of gravity (M)', hydrostatics.gravity_center, precision=3))
 
-                data_table.add_row(build_table_data('Draught (M)', hydrostatics.hs_data['draught'], precision=3))  # TODO
+                data_table.add_row(build_table_data('Draught (M)', hydrostatics.hs_data['draught'], precision=3))
                 data_table.add_row(build_table_data('Length overall submerged (M)', hydrostatics.hs_data['los'], precision=2))
                 data_table.add_row(build_table_data('Breadth overall submerged (M)', hydrostatics.hs_data['bos'], precision=2))
                 data_table.add_row(build_table_data('Length at Waterline LWL (M)', hydrostatics.hs_data['lwl'], precision=2))
@@ -166,7 +165,7 @@ class DesignReport(Document):
                 data_table.add_row(build_table_data('K55 (N.M)', hydrostatics.S55, precision=4, dtype='E'))
 
                 data_table.add_row(['', ''])
-                data_table.add_row(['INERTIAS:', ''])
+                data_table.add_row(['INERTIAS:', '']) #TODO: Use intertias from mass model instead
                 #data_table.add_row('\tINERTIAS:\n')
                 data_table.add_row(build_table_data('Ixx', hydrostatics.hs_data['Ixx'], precision=3, dtype='E'))
                 data_table.add_row(build_table_data('Ixy', hydrostatics.hs_data['Ixy'], precision=3, dtype='E'))
@@ -194,7 +193,6 @@ class DesignReport(Document):
             return '\n'
 
         # def build_line(text, data, precision=3, dtype='f'):
-        #     # TODO: ajouter unit
         #     textwidth = 40
         #     try:
         #         line = '\t{:-<{textwidth}}>  {:< .{precision}{dtype}}\n'.format(str(text).upper(), data,
@@ -215,7 +213,6 @@ class DesignReport(Document):
         #     return line
 
         def build_line(text, data, precision=3, dtype='f'):
-            # TODO: ajouter unit
             textwidth = 40
             label_template = "{:{fill}{align}{width}}"
             num_template = "{:{align}{width}.{precision}{dtype}} "
@@ -231,7 +228,6 @@ class DesignReport(Document):
                 strings.append(num_template.format(data, align='<', width=8, precision=precision, dtype=dtype))
             return ''.join(strings) + '\n'
 
-        # TODO: ajouter la reference au point de calcul de la matrice raideur
 
         msg = '\n'
         # title = 'Hydrostatic report ({0})\n
@@ -252,7 +248,7 @@ class DesignReport(Document):
         msg += build_line('Center of gravity (M)', self.gravity_center, precision=3)
 
         msg += hspace()
-        msg += build_line('Draught (M)', self.hs_data['draught'], precision=3)  # TODO
+        msg += build_line('Draught (M)', self.hs_data['draught'], precision=3)
         msg += build_line('Length overall submerged (M)', self.hs_data['los'], precision=2)
         msg += build_line('Breadth overall submerged (M)', self.hs_data['bos'], precision=2)
         msg += build_line('Length at Waterline LWL (M)', self.hs_data['lwl'], precision=2)
