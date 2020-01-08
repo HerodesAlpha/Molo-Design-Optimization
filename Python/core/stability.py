@@ -12,10 +12,68 @@ import os
 import matplotlib.pyplot as plt
 from pylatex import Section, Figure, NoEscape, NewPage
 import h5py
+import multiprocessing
+from multiprocessing import Process
+from joblib import Parallel, delayed
+import multiprocessing as mp
+from itertools import repeat
+from copy import deepcopy
+
+# print("Number of cpu's : ", multiprocessing.cpu_count())
 
 # Stiffness is linear for heel < 10 deg, param. excit. not likely
 
+def calc_residual(hs_floater, thetay):
+    thetax = 0
+    rot_matrix = hs_floater.mesh.rotate([thetax, thetay, 0.])
+    hs_floater._gravity_center = np.dot(rot_matrix, hs_floater._gravity_center)
+    hs_floater._rotation = np.dot(rot_matrix, hs_floater._rotation)
+    hs_floater.set_displacement(hs_floater.mass)
+    hs_floater._reinit_clipper()
+    return -hs_floater.residual[2]
+
+
+def righting_moment_parallell(settings, hs_floater): # Out of comission
+    # Not working well!!!
+    hs_floater.verbose_off()
+    dthetay = (np.pi / 180)
+
+    # Step 1: Init multiprocessing.Pool()
+    pool = mp.Pool(mp.cpu_count())
+
+    # Step 2: `pool.apply` the `howmany_within_range()`
+    floater_list = []
+    heel_angles=[]
+    for i in range(90):
+        floater_list.append(deepcopy(hs_floater))
+        heel_angles.append(i*dthetay)
+    righting_moments= pool.starmap(calc_residual, zip(floater_list,heel_angles))
+    del floater_list
+
+
+    # Step 3: Don't forget to close
+    pool.close()
+    pool.join()
+    # n_cpu = multiprocessing.cpu_count()
+
+    # curve = Parallel(n_jobs=n_cpu)(delayed(calc)(hs_floater, thetay) for thetay in range(90))
+
+    print(righting_moments)
+
+    with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
+        f_gz.write('{:7s} {:7s} {:7s} {:7s}\n'.format('theta', 'fz', 'my', 'mz'))
+
+    return np.asarray([heel_angles, righting_moments])
+
 def righting_moment_curve(settings, hs_floater):
+    parallell = True
+    if parallell:
+        return righting_moment_parallell(settings, hs_floater)
+    else:
+        return righting_moment_movie(settings, hs_floater)
+
+
+def righting_moment_movie(settings, hs_floater):
     # np.linalg.solve
     hs_floater.verbose_off()
     # Init
@@ -29,8 +87,6 @@ def righting_moment_curve(settings, hs_floater):
 
     heel_angles = []
     righting_moments = []
-
-
 
     with imageio.get_writer(settings.fio.stability_dir.joinpath('stability.mp4'), mode='I') as writer:
         with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
@@ -81,7 +137,8 @@ def righting_moment_curve(settings, hs_floater):
                     hs_floater.viewer.finalize()
 
                 print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(thetay * 180 / np.pi,
-                                                                                 val=-hs_floater.residual / 1000000),flush=True)
+                                                                                 val=-hs_floater.residual / 1000000),
+                      flush=True)
 
     return np.asarray([heel_angles, righting_moments])
 
@@ -127,7 +184,6 @@ def intact_stability(settings, hs_floater):
     if 0:
         settings._report._doc.append(NewPage())
         with settings._report._doc.create(Section('Stability')) as stability_section:
-
             textstr = 'Area ratio is {:1.0f}%\nU_10min = {:1.1f} m/s\nz = {:1.0f} m'.format(r * 100,
                                                                                             settings._job_data[
                                                                                                 'design_basis'][
@@ -174,13 +230,15 @@ def intact_stability(settings, hs_floater):
     # Show the minor grid lines with very faint and almost transparent grey lines
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    #plot.add_plot(width=NoEscape(width))
-    #plot.add_caption('Intact Stability')
+    # plot.add_plot(width=NoEscape(width))
+    # plot.add_caption('Intact Stability')
     plt.show()
 
-
-    #with h5py.File(settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
+    # with h5py.File(settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
     #    hdf5_stability_db.create_dataset('intact_stability_area_ratio', data=r)
 
-
     return r
+
+
+if __name__ == '__main__':
+    print('This is main')
