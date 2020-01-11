@@ -1,4 +1,22 @@
 {
+    "Generic 8MW": {
+        "Hub height": 78,
+        "Ixx": 450000,
+        "Ixy": 0,
+        "Ixz": 0,
+        "Iyy": 2000000,
+        "Iyz": 0,
+        "Izz": 2000000,
+        "Mass": 400000,
+        "Rotor diameter": 154,
+        "Tower": {
+            "Diameter": 5,
+            "Height": 75,
+            "Thickness": 0.04,
+            "Type": "Default"
+        },
+        "Type": "Default"
+    },
     "Haliade X": {
         "Hub height": 140,
         "Ixx": 450000,
@@ -25,12 +43,12 @@
         "Iyy": 2000000,
         "Iyz": 0,
         "Izz": 2000000,
-        "Mass": 45000,
+        "Mass": 450000,
         "Rotor diameter": 167,
         "Tower": {
             "Diameter": 6,
             "Height": 113.5,
-            "Thickness": 0.025,
+            "Thickness": 0.04,
             "Type": "Default"
         },
         "Type": "Default"

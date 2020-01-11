@@ -270,6 +270,8 @@
                             </child>
                             <child>
                               <object class="ttk.Entry" id="ncol_input">
+                                <property name="exportselection">false</property>
+                                <property name="font">TkHeadingFont</property>
                                 <property name="text" translatable="yes">2</property>
                                 <property name="width">20</property>
                                 <layout>
@@ -850,6 +852,7 @@
                   <object class="ttk.Frame" id="response_frame">
                     <property name="height">200</property>
                     <property name="width">200</property>
+                    <bind add="True" handler="gui_init_results" sequence="&lt;FocusIn&gt;" />
                     <layout>
                       <property name="column">0</property>
                       <property name="propagate">True</property>
@@ -881,7 +884,7 @@
                           </columns>
                         </layout>
                         <child>
-                          <object class="ttk.Frame" id="respone_parameters_frame">
+                          <object class="ttk.Frame" id="response_parameters_frame">
                             <property name="borderwidth">5</property>
                             <property name="height">200</property>
                             <property name="width">200</property>
@@ -889,7 +892,7 @@
                               <property name="column">0</property>
                               <property name="propagate">True</property>
                               <property name="row">0</property>
-                              <property name="sticky">ew</property>
+                              <property name="sticky">nsew</property>
                             </layout>
                             <child>
                               <object class="ttk.Checkbutton" id="lin_visc_damp_checkbutton">
@@ -900,6 +903,108 @@
                                   <property name="column">0</property>
                                   <property name="propagate">True</property>
                                   <property name="row">0</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Separator" id="Separator_2">
+                                <property name="orient">horizontal</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">1</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="calc_response_area_label">
+                                <property name="text" translatable="yes">Frequency (zero index)</property>
+                                <property name="width">1</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">ew</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="calc_response_area_input">
+                                <property name="exportselection">false</property>
+                                <property name="font">TkHeadingFont</property>
+                                <property name="text" translatable="yes">0</property>
+                                <property name="width">20</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="calc_response_ibeta_label">
+                                <property name="text" translatable="yes">Wave direction index (zero based)</property>
+                                <property name="width">1</property>
+                                <property name="wraplength">200</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">3</property>
+                                  <property name="sticky">ew</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="calc_response_ibeta_input">
+                                <property name="exportselection">false</property>
+                                <property name="font">TkHeadingFont</property>
+                                <property name="text" translatable="yes">0</property>
+                                <property name="width">20</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">3</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="calc_response_yr_label">
+                                <property name="text" translatable="yes">Return period in years, statistics conditioned for 3hr storms</property>
+                                <property name="width">1</property>
+                                <property name="wraplength">200</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">4</property>
+                                  <property name="sticky">ew</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="calc_response_yr_input">
+                                <property name="exportselection">false</property>
+                                <property name="font">TkHeadingFont</property>
+                                <property name="text" translatable="yes">0</property>
+                                <property name="width">20</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">4</property>
+                                  <property name="sticky">w</property>
                                 </layout>
                               </object>
                             </child>
@@ -936,7 +1041,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="ttk.Frame" id="response_text_box_frame">
+                      <object class="ttk.Frame" id="results_text_box_frame">
                         <property name="borderwidth">3</property>
                         <property name="relief">sunken</property>
                         <layout>
@@ -956,7 +1061,7 @@
                           </columns>
                         </layout>
                         <child>
-                          <object class="tk.Text" id="response_text">
+                          <object class="tk.Text" id="results_text">
                             <property name="borderwidth">0</property>
                             <property name="height">24</property>
                             <property name="state">normal</property>
@@ -976,26 +1081,207 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Notebook.Tab" id="mw_report_tab">
+              <object class="ttk.Notebook.Tab" id="mw_plot_tab">
                 <property name="sticky">nsew</property>
-                <property name="text" translatable="yes">Report</property>
+                <property name="text" translatable="yes">Plot</property>
                 <child>
-                  <object class="ttk.Frame" id="load_frame">
+                  <object class="ttk.Frame" id="plot_frame">
                     <property name="height">200</property>
                     <property name="width">200</property>
+                    <bind add="True" handler="gui_init_plot" sequence="&lt;FocusIn&gt;" />
                     <layout>
                       <property name="column">0</property>
                       <property name="propagate">True</property>
                       <property name="row">0</property>
+                      <property name="sticky">nsew</property>
                     </layout>
                     <child>
-                      <object class="ttk.Button" id="load_run_button">
-                        <property name="text" translatable="yes">Run</property>
+                      <object class="ttk.Labelframe" id="plot_pressure_frame">
+                        <property name="borderwidth">20</property>
+                        <property name="height">200</property>
+                        <property name="relief">groove</property>
+                        <property name="text" translatable="yes">Plot pressure</property>
+                        <property name="width">200</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="padx">20</property>
+                          <property name="pady">20</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                          <property name="sticky">ew</property>
+                        </layout>
+                        <child>
+                          <object class="ttk.Frame" id="plot_pressure_input_frame">
+                            <property name="borderwidth">10</property>
+                            <property name="height">200</property>
+                            <property name="width">200</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                            <child>
+                              <object class="ttk.Label" id="plot_pressure_ifreq_label">
+                                <property name="text" translatable="yes">Frequency (zero index)</property>
+                                <property name="width">1</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                  <property name="sticky">ew</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="plot_pressure_ifreq_input">
+                                <property name="exportselection">false</property>
+                                <property name="font">TkHeadingFont</property>
+                                <property name="text" translatable="yes">0</property>
+                                <property name="width">20</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="plot_pressure_type_label">
+                                <property name="text" translatable="yes">Pressure type</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">1</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Combobox" id="plot_pressure_type_input">
+                                <property name="height">0</property>
+                                <property name="justify">left</property>
+                                <property name="state">readonly</property>
+                                <property name="takefocus">false</property>
+                                <property name="values">"Froude-Krylof" "Diffraction" "Radiation"</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">1</property>
+                                  <property name="sticky">ew</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="plot_pressure_index_label">
+                                <property name="text" translatable="yes">Pressure index (either force degree of freedom or wave direction)</property>
+                                <property name="wraplength">200</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="plot_pressure_index_input">
+                                <property name="text" translatable="yes">0</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="plot_pressure_axis_label">
+                                <property name="text" translatable="yes">Axis (requested decomposed direction of the pressure)</property>
+                                <property name="wraplength">200</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="ipadx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">3</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="plot_pressure_axis_input">
+                                <property name="text" translatable="yes">0</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">3</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Button" id="plot_pressure_button">
+                            <property name="command">plot_pressure</property>
+                            <property name="text" translatable="yes">Run</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Frame" id="plot_text_box_frame">
+                        <property name="borderwidth">3</property>
+                        <property name="relief">sunken</property>
                         <layout>
                           <property name="column">0</property>
                           <property name="propagate">True</property>
-                          <property name="row">0</property>
+                          <property name="row">5</property>
+                          <property name="sticky">nsew</property>
+                          <rows>
+                            <row id="0">
+                              <property name="weight">1</property>
+                            </row>
+                          </rows>
+                          <columns>
+                            <column id="0">
+                              <property name="weight">1</property>
+                            </column>
+                          </columns>
                         </layout>
+                        <child>
+                          <object class="tk.Text" id="plot_text">
+                            <property name="borderwidth">0</property>
+                            <property name="height">24</property>
+                            <property name="state">normal</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">nsew</property>
+                            </layout>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>

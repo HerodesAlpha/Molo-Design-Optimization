@@ -25,8 +25,8 @@
                 "use_ode_influence_coefficients": false
             },
             "environment": {
-                "fluid_depth": 0,
-                "fluid_mass_volumic": 1000.0,
+                "fluid_depth": 100,
+                "fluid_mass_volumic": 1025.0,
                 "gravity": 9.81,
                 "wave_measurement_point": [
                     0.0,

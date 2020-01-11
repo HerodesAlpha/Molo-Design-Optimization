@@ -26,7 +26,8 @@ import h5py
 from pyNemoh.structure import BaseStructure
 from core.response import ResponseModel
 from core.loads import Sea_and_Inertia_Loads
-
+from multiprocessing import freeze_support
+import time
 
 class Parameter_Space():
     def __init__(self, templates_dir=None):
@@ -135,9 +136,8 @@ class Candidate():
 
     def init_model(self, state=None):
         if state == 'New':
-            print('\n--------------------------------------------------------------------------------------------')
-            print('CREATE MODEL')
-            print('--------------------------------------------------------------------------------------------')
+            start_time = time.time()
+            print('\n--------------------\nCREATE MODEL\n--------------------')
 
             self.unit_model, self.hs_floater = msu.init_models(self.settings)
             with open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'wb') as f:
@@ -156,6 +156,7 @@ class Candidate():
             tb.matprint(self.k)
             print('')
             tb.eigenvalprint(self.m, self.k)
+            print("CREATE MODEL took {:1.2f} seconds ".format(time.time() - start_time))
         elif state == 'Old':
             with open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
                 self.unit_model = pickle.load(f)
@@ -177,21 +178,23 @@ class Candidate():
         self.response = ResponseModel(self, short_term_wave_condition)
 
     def intact_stability_ratio(self):
-        print('\n--------------------------------------------------------------------------------------------')
-        print('STABILITY ANALYSIS')
-        print('--------------------------------------------------------------------------------------------')
-        return stability.intact_stability(self.settings, self.hs_floater)
+        start_time = time.time()
+        print('\n--------------------\nSTABILITY ANALYSIS\n--------------------')
+        res = stability.intact_stability(self.settings, self.hs_floater)
+
+        print("STABILITY ANALYSIS took {:1.2f} seconds ".format(time.time() - start_time))
+        return res
 
     def hydrodynamic_analysis(self):
-        print('\n--------------------------------------------------------------------------------------------')
-        print('NEMOH ANALYSIS')
-        print('--------------------------------------------------------------------------------------------')
+        start_time = time.time()
+        print('\n--------------------\nNEMOH ANALYSIS\n--------------------')
         self.remove_old_db()
         self.queue = multiprocessing.Queue(-1)
         self.ql = QueueListener(self.queue, *logging.getLogger().handlers)
         self.ql.start()
         nf.run(self.settings._job_data['analysis'], self.queue)
         self.ql.stop()
+        print("NEMOH ANALYSIS took {:1.2f} seconds ".format(time.time() - start_time))
 
     def structural_analysis(self):
 

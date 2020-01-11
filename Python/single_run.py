@@ -1,6 +1,6 @@
 from pathlib import Path
 import numpy as np
-from core.design_engine import Candidate, Parameter_Space
+from optimization.design_engine import Candidate, Parameter_Space
 import sys
 import warnings
 import core.tool_box as tb

@@ -167,7 +167,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         # Pressure index is either force degree of freedom or wave direction
         # Axis is the requested decomposed direction of the pressure
         xyz = np.zeros([self._pd._npanel, 3])
-        xyz[:, axis] = 1
+        xyz[:, axis] += 1
         nemoh_mesh = Mesh(self._pd.ppoints, self._pd.ppanels)
         p = self._pressure[pressure_type][ifreq, pressure_index, :]
         n = self._pd.ppanel_normals
@@ -196,6 +196,11 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     @property
     def w(self):
         return self._w
+
+
+    @property
+    def beta(self):
+        return self._beta
 
     def sdof_val(self, m, dir_index, dof_index):
         return m[dir_index, :, dof_index]
@@ -258,3 +263,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
     @property
     def nbeta(self):
         return self._nbeta
+
+    @property
+    def pressure(self):
+        return self._pressure

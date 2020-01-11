@@ -12,6 +12,10 @@ import core.tool_box as tb
 import json
 from tkinter import messagebox
 import core.environmental_conditions as ec
+import numpy as np
+from pyNemoh_root.pyNemoh import utility
+import h5py
+
 #import module_locator
 
 # my_path = module_locator.module_path()
@@ -57,11 +61,18 @@ class Application():
 
         self.case_cfg = None
         self.global_cfg = None
+        self.default_case_cfg = None
+        self.local_case_cfg = None
         self.this_candidate = None
         self.data_io_dir = None
         self.pkl_path = None
 
         self.load_cfg()
+        self.create_model()
+
+
+        self.run_hydro()
+
 
     def get_output(self, text_box):
         self.text_box = self.builder.get_object(text_box)
@@ -111,16 +122,31 @@ class Application():
         with open(f_global, 'r') as f:
             self.global_cfg = json.loads(f.read())
 
+        # Read default case config
+        f_case = Path(DATA_DIR).joinpath('mdo_default_case_cfg.json')
+        if f_case.exists():
+            with open(f_case, 'r') as f:
+                self.default_case_cfg = json.loads(f.read())
+
+        # Read local case config
         if isinstance(self.data_io_dir, Path):
             f_case = self.data_io_dir.joinpath('mdo_case_cfg.json')
             if f_case.exists():
                 with open(str(f_case), 'r') as f:
-                    self.case_cfg = json.loads(f.read())
+                    self.local_case_cfg = json.loads(f.read())
+
+        if self.local_case_cfg == None:
+
+            self.case_cfg=self.default_case_cfg
+
         else:
-            f_case = Path(DATA_DIR).joinpath('mdo_default_case_cfg.json')
-            if f_case.exists():
-                with open(f_case, 'r') as f:
-                    self.case_cfg = json.loads(f.read())
+            self.case_cfg=self.local_case_cfg
+
+            # Loop trough items in default case config and add missing items
+            for key in self.default_case_cfg['user_input']['object']:
+                if key not in self.case_cfg['user_input']['object']:
+                    self.case_cfg[key]=self.default_case_cfg['user_input']['object'][key]
+
 
         objects = self.global_cfg['user_input']['object']
         objects.update(self.case_cfg['user_input']['object'])
@@ -187,6 +213,10 @@ class Application():
         self.this_candidate = Candidate(analyses_root_input, park_label_input, wtg_label_input, p,
                                         case_label_type='molo_model')
         self.this_candidate.settings.wtg_model = "Vestas 9.5"
+        self.this_candidate.settings.wtg_model = "Haliade X"
+        self.this_candidate.settings.wtg_model = "Generic 8MW"
+
+
         self.this_candidate.init_model(state='New')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir
         self.pkl_path = self.data_io_dir.joinpath('this_candidate.pkl')
@@ -241,10 +271,17 @@ class Application():
             return fileName
 
     def calc_response(self):
-        self.get_output('response_text')
+
+
+        area = self.builder.get_object('calc_response_area_input').get()
+        ibeta = self.builder.get_object('calc_response_ibeta_input').get()
+        yr = 50  # Return period in years, statistics conditioned for 3hr storms
+
         tc = self.this_candidate
 
         print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
+
+        print('\nEigenvalue sollution WITH added mass')
 
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
 
@@ -252,7 +289,7 @@ class Application():
 
         # Create list of short terms from contour line
         # area = this_candidate.settings.park_data['Design Basis']['Area']
-        area = 9
+
         tc.ltwc1 = ec.Long_Term_Wave_Conditions(area=area)
         tc.cl = tc.ltwc1.contour_line(27)
         tc.contourline = []
@@ -265,31 +302,113 @@ class Application():
         tc.settings.radiaton_damping_factor = 1
 
         tc.settings.do_linearize = True
-        tc.init_load()
-        ibeta = 0
+
+        tb.eigenvalprint(tc.loads.m + tc.loads.ma[0, :, :], tc.loads.k)
+
+        d_col_central=tc.settings.floater_data['Central column diameter']
+        d_col_radial=tc.settings.floater_data['Radial']['Column']['Diameter']
+        n_col_radial=tc.settings.floater_data['Radial']['Number of columns']
+        gap = tc.settings.floater_data['Gap factor']
+        height=tc.settings.floater_data['Radial']['Heigth']
+        draught=tc.hs_floater.hs_data['draught']
+
+        # Get section forces
+        sp_x =  d_col_central* (0.5)  # + 0.8 + 1 + 0.8 + 1)
+        sp_z = height / 2 - draught
+        # sp_x = -100
+        sp_z = 0
+        sp1 = [sp_x, 0, sp_z]  # Used for moment reference
+        sn1 = [1, 0, 0]
+
+        radial_extreme=d_col_central* (0.5)+(1+gap)*n_col_radial*d_col_radial
+
+        print('\nAirgap point at {:1.2f}'.format(radial_extreme))
+
+        c1 = np.asarray([[radial_extreme, 0, 0]])
+
+        with h5py.File(tc.settings.fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
+            environment = utility.read_environment(hdf5_db)
+
+        k_wave=np.zeros(tc.loads.nw, dtype=float)
+        for iw, val in enumerate(tc.loads.w):
+            k_wave[iw] = utility.compute_wave_number(val, environment)
+        w_bar = (radial_extreme - environment.x_eff) * np.cos(tc.loads.beta) + (0 - environment.y_eff) * np.sin(tc.loads.beta[ibeta])
+        eta=np.exp(utility.II * k_wave * w_bar)
+
+
+
+
+
+
+
+
+        print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', 'FZ', 'MY', 'AG'))
         for stwc in tc.contourline:
             tc.init_response(short_term_wave_condition=stwc)
 
-            # Get section forces
-            sp_x = tc.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
-            sp_z = tc.settings.floater_data['Radial']['Heigth'] / 2 - tc.hs_floater.hs_data[
-                'draught']
-            # sp_x = -100
-            sp_z = 0
-            section_point = [sp_x, 0, sp_z]  # Used for moment reference
-            section_normal = [1, 0, 0]
 
-            imass, ipanel, istrip = tc.response.get_section_index(section_point, section_normal)
-            tc.f_sec1 = tc.response.assemble_forces(imass, ipanel, istrip, moment_ref_point=[0, 0, 0])
+
+            imass, ipanel, istrip = tc.response.get_section_index(sp1, sn1)
+            f_sec1 = tc.response.assemble_forces(imass, ipanel, istrip, moment_ref_point=[0, 0, 0])
             del imass, ipanel
 
-            fz = tc.f_sec1['Dynamic']['SUM'][:, ibeta, 2] / 1000000
-            my = tc.f_sec1['Dynamic']['SUM'][:, ibeta, 4] / 1000000
+            fz = f_sec1['Dynamic']['SUM'][:, ibeta, 2] / 1000000
+            my = f_sec1['Dynamic']['SUM'][:, ibeta, 4] / 1000000
 
             fz_elm = stwc.expected_largest_maximum(fz, tc.loads.w)
             my_elm = stwc.expected_largest_maximum(my, tc.loads.w)
 
-            print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm, my_elm))
+
+
+            p1_rao=tc.response.point_rao(c1)[:, ibeta, 0,2].flatten()
+            ag_rao = eta+p1_rao
+            ag1 = stwc.expected_largest_maximum(ag_rao, tc.loads.w)
+
+            print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm, my_elm, ag1))
+
+    def plot_pressure(self):
+        ifreq = int(self.builder.get_object('plot_pressure_ifreq_input').get())
+        pressure_index = int(self.builder.get_object('plot_pressure_index_input').get())
+        pressure_type = self.builder.get_object('plot_pressure_type_input').get()
+        axis = int(self.builder.get_object('plot_pressure_axis_input').get())
+        self.this_candidate.loads.show_pressure(ifreq, pressure_index, axis, pressure_type)
+
+    def gui_init_load(self):
+        if not self.this_candidate == None:
+            if self.this_candidate.loads == None:
+                self.this_candidate.init_load()
+                print('Loads initialized')
+
+        else:
+            print('self.this_candidate == None')
+
+    def gui_init_plot(self, event=None):
+        self.get_output('plot_text')
+        self.gui_init_load()
+        #cb = self.builder.get_object('plot_pressure_type_input')
+        #cb.delete(0, END)
+        #cb["values"] = '\"{:s}\"'.format('\" \"'.join(list(self.this_candidate.loads.pressure.keys())))
+
+        #cb["values"] = list(self.this_candidate.loads.pressure.keys())
+        #print(list(self.this_candidate.loads.pressure.keys()))
+        #cb.current(0)
+
+
+    def gui_init_results(self, event=None):
+        self.get_output('results_text')
+        self.gui_init_load()
+
+    def plot_pressure_type_input_button_release(self, event=None):
+        cb=self.builder.get_object('plot_pressure_type_input')
+        print(cb.get())
+        if event:
+            print(event.widget.get())
+
+
+
+
+
+
 
 
 if __name__ == '__main__':

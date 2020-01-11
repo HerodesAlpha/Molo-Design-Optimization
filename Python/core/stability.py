@@ -16,6 +16,7 @@ import multiprocessing
 from multiprocessing import Process
 from joblib import Parallel, delayed
 import multiprocessing as mp
+from multiprocessing import freeze_support
 from itertools import repeat
 from copy import deepcopy
 
@@ -30,43 +31,54 @@ def calc_residual(hs_floater, thetay):
     hs_floater._rotation = np.dot(rot_matrix, hs_floater._rotation)
     hs_floater.set_displacement(hs_floater.mass)
     hs_floater._reinit_clipper()
-    return -hs_floater.residual[2]
+    return hs_floater.residual
 
 
 def righting_moment_parallell(settings, hs_floater): # Out of comission
+
     # Not working well!!!
     hs_floater.verbose_off()
     dthetay = (np.pi / 180)
-
-    # Step 1: Init multiprocessing.Pool()
-    pool = mp.Pool(mp.cpu_count())
-
-    # Step 2: `pool.apply` the `howmany_within_range()`
-    floater_list = []
+    righting_moments=[]
     heel_angles=[]
-    for i in range(90):
-        floater_list.append(deepcopy(hs_floater))
-        heel_angles.append(i*dthetay)
-    righting_moments= pool.starmap(calc_residual, zip(floater_list,heel_angles))
-    del floater_list
+    int_max_deg=90
+    if 1:
+
+        # Step 1: Init multiprocessing.Pool()
+        pool = mp.Pool(mp.cpu_count())
+
+        # Step 2: `pool.apply` the `howmany_within_range()`
+        floater_list = []
+        heel_angles=[]
+        for i in range(int_max_deg):
+            floater_list.append(deepcopy(hs_floater))
+            heel_angles.append(i*dthetay)
+        residual= pool.starmap(calc_residual, zip(floater_list,heel_angles))
+        del floater_list
 
 
-    # Step 3: Don't forget to close
-    pool.close()
-    pool.join()
+        # Step 3: Don't forget to close
+        #pool.join()
+        pool.close()
+
     # n_cpu = multiprocessing.cpu_count()
 
     # curve = Parallel(n_jobs=n_cpu)(delayed(calc)(hs_floater, thetay) for thetay in range(90))
 
-    print(righting_moments)
+    for i in range(int_max_deg):
+        print('{:7.1f} {val[0]:7.2f} {val[1]:7.2f} {val[2]:7.2f}'.format(heel_angles[i] * 180 / np.pi,
+                                                                     val=-residual[i] / 1000000),
+          flush=True)
 
     with open(settings.fio.stability_dir.joinpath('gz.txt'), 'w+') as f_gz:
         f_gz.write('{:7s} {:7s} {:7s} {:7s}\n'.format('theta', 'fz', 'my', 'mz'))
 
+    righting_moments=[-row[2] for row in residual]
+
     return np.asarray([heel_angles, righting_moments])
 
 def righting_moment_curve(settings, hs_floater):
-    parallell = True
+    parallell = False
     if parallell:
         return righting_moment_parallell(settings, hs_floater)
     else:
@@ -214,31 +226,29 @@ def intact_stability(settings, hs_floater):
                 plot.add_caption('Intact Stability')
                 plt.close()
 
-    fig = plt.figure(1, figsize=(8, 5))
-    ax = fig.add_subplot(111)
-    ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
-    ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
-    ib = whm[0, intercept] * 180 / np.pi
-    ax.annotate('Second intercept',
-                xy=(ib, whm[1, intercept]), xycoords='data',
-                xytext=(0.8, 0.5), textcoords='axes fraction',
-                arrowprops=dict(arrowstyle="->"))
-    ax.set_xlabel('Angle of inclination [degrees]')
-    ax.set_ylabel('Moment [MNm]')
-    ax.legend()
-    plt.grid(b=True, which='major', color='#666666', linestyle='-')
-    # Show the minor grid lines with very faint and almost transparent grey lines
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    # plot.add_plot(width=NoEscape(width))
-    # plot.add_caption('Intact Stability')
-    plt.show()
+    if 0:
+        fig = plt.figure(1, figsize=(8, 5))
+        ax = fig.add_subplot(111)
+        ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')
+        ax.plot(whm[0, :] * 180 / np.pi, whm[1, :] / 1000000, label='Heeling moment')
+        ib = whm[0, intercept] * 180 / np.pi
+        ax.annotate('Second intercept',
+                    xy=(ib, whm[1, intercept]), xycoords='data',
+                    xytext=(0.8, 0.5), textcoords='axes fraction',
+                    arrowprops=dict(arrowstyle="->"))
+        ax.set_xlabel('Angle of inclination [degrees]')
+        ax.set_ylabel('Moment [MNm]')
+        ax.legend()
+        plt.grid(b=True, which='major', color='#666666', linestyle='-')
+        # Show the minor grid lines with very faint and almost transparent grey lines
+        plt.minorticks_on()
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        # plot.add_plot(width=NoEscape(width))
+        # plot.add_caption('Intact Stability')
+        plt.show()
+
 
     # with h5py.File(settings.fio.stability_dir.joinpath('stability.hdf5'), "a") as hdf5_stability_db:
     #    hdf5_stability_db.create_dataset('intact_stability_area_ratio', data=r)
 
     return r
-
-
-if __name__ == '__main__':
-    print('This is main')

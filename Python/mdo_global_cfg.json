@@ -8,12 +8,12 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "7.7"
+                "value": "7.8"
             },
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "1.1+0.1"
+                "value": "1.3"
             },
             "height_input": {
                 "type": "numeric",
@@ -43,25 +43,41 @@
             "ncol_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3"
+                "value": "2"
             },
             "num_wave_directions_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "1"
+                "value": "3"
             },
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "40"
+                "value": "120"
             },
             "park_label_input": {
                 "type": "string",
                 "value": "site_01"
             },
+            "plot_pressure_axis_input": {
+                "type": "numeric",
+                "value": "2"
+            },
+            "plot_pressure_ifreq_input": {
+                "type": "numeric",
+                "value": "0"
+            },
+            "plot_pressure_index_input": {
+                "type": "numeric",
+                "value": "0"
+            },
+            "plot_pressure_type_input": {
+                "type": "string",
+                "value": ""
+            },
             "wtg_label_input": {
                 "type": "string",
-                "value": "test2"
+                "value": "Haliade_X"
             }
         }
     }

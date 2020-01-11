@@ -43,6 +43,8 @@ class ResponseModel(object):
         self.nbeta = self._loads._nbeta
         self.nw = self._loads._nw
 
+        self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
+
         self._c_visc = np.zeros([self.nw, 6, 6], dtype=complex)
         self._viscous_damper_centers = None
 
@@ -93,9 +95,10 @@ class ResponseModel(object):
         #                   D Y N A M I C  E Q U I L I B R I U M
         # *****************************************************************************
 
-        self.calc_dynamic_forces()
+        self.get_wave_forces()
+        self.calc_rao_dependent_response()
 
-    def calc_dynamic_forces(self):
+    def get_wave_forces(self):
         # -----------------------------------------------------------------------------
         # Right hand side
         # -----------------------------------------------------------------------------
@@ -110,9 +113,9 @@ class ResponseModel(object):
         # Left hand side
         # -----------------------------------------------------------------------------
 
-        self.calc_rao_dependent_forces()
 
-    def calc_rao_dependent_forces(self):
+
+    def calc_rao_dependent_response(self):
         self._rao_init = np.zeros([self.nw, self.nbeta, 6], dtype=complex)
         for ib in range(self.nbeta):  # self.nbeta
             self._rao_init[:, ib, :] = self.calc_rao_linear(ib)
@@ -142,11 +145,6 @@ class ResponseModel(object):
 
         self._panel_added_mass_force = np.sum(self._panel_added_mass_force_all_dof, axis=2)
         self._panel_radiation_damping_force = np.sum(self._panel_radiation_damping_force_all_dof, axis=2)
-
-        # --------------------------------------------------------------------------------------------------------------
-        # RAO TRANSFORMATION MATRIX
-        # --------------------------------------------------------------------------------------------------------------
-
         # --------------------------------------------------------------------------------------------------------------
         # STIFFNESS
         # --------------------------------------------------------------------------------------------------------------
@@ -174,8 +172,9 @@ class ResponseModel(object):
                 axis=4)
 
     def update_rao_tra_mat(self):
-        self._rao_tra_mat = np.zeros([self._loads._nw, self._loads._nbeta, 4, 4], dtype=complex)
-
+        # --------------------------------------------------------------------------------------------------------------
+        # RAO TRANSFORMATION MATRIX
+        # --------------------------------------------------------------------------------------------------------------
         for ifreq in range(self._loads._nw):  # TODO: Vectorize
             for ibeta in range(self._loads._nbeta):
                 rot = self._rao[ifreq, ibeta, 3:6]
@@ -462,6 +461,22 @@ class ResponseModel(object):
             x = daf @ self.fe[i, ibeta, :]
             out_rao[i, :] = x
         return out_rao
+
+    def point_rao(self,c):
+        _c = np.append(c, np.ones((c.shape[0], 1)), 1)
+        # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
+        _c = _c[nax, nax, :, :, nax]
+        # Perform matmul and remove artificial dim and append 1. This code is fast ...
+        return np.squeeze(np.matmul(self._rao_tra_mat[:, :, nax, :, :], _c), axis=4)[:, :,
+                                      :, 0:3]
+
+
+
+        
+
+
+
+
 
     @property
     def rao(self):

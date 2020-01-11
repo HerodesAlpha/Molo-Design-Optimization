@@ -9,6 +9,7 @@ import sys
 from core.report import DesignReport
 import numpy as np
 
+
 class PhysicalQuantities():
     # This is the only place allowed to put physical quantities
     def __init__(self):
@@ -32,6 +33,7 @@ class PhysicalQuantities():
     @property
     def emod_st(self):
         return self._emod_st
+
 
 class FileIOClass(object):
     def __init__(self, settings):
@@ -62,8 +64,8 @@ class FileIOClass(object):
         self._templates_dir = settings.templates_dir
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
-                'es')
-        #print(self._gmsh_exe)
+            'es')
+        # print(self._gmsh_exe)
         assert (Path(self._gmsh_exe).exists())
 
         self._freecad_path = r'C:\Program Files\FreeCAD 0.18\bin'
@@ -134,6 +136,7 @@ class FileIOClass(object):
     def gmsh_exe(self):
         return self._gmsh_exe
 
+
 class SettingsClass(PhysicalQuantities, object):
     def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):
         super().__init__()
@@ -142,7 +145,6 @@ class SettingsClass(PhysicalQuantities, object):
         self._do_equilibrate = True
         self._do_linearize = False
         self._create_stability_movie = False
-
 
         self._parameter_space = parameter_space
         self._job_data = parameter_space.job_data
@@ -167,9 +169,11 @@ class SettingsClass(PhysicalQuantities, object):
         self._run_nemoh = False
         self._postprocessing = False
 
+        self._job_data['analysis']['simulations']['default']['environment']['fluid_depth'] = self._rho_sw
+        self._job_data['analysis']['simulations']['default']['environment']['gravity'] = self._gravity
+
         self.set_molo_label()
         self._radiaton_damping_factor = 1
-
 
         if case_label_type == None:
             self._case_label = None  # Auto numbering in FileIOClass
@@ -441,4 +445,3 @@ class SettingsClass(PhysicalQuantities, object):
     @create_stability_movie.setter
     def create_stability_movie(self, val):
         self._create_stability_movie = val
-
