@@ -51,21 +51,33 @@
         "unit": "-",
         "value": "120"
       },
-      "plot_pressure_type_input": {
-        "type": "string",
-        "value": "Froude-Krylof"
-      },
       "plot_pressure_axis_input": {
         "type": "numeric",
-        "value": 0
-      },
-      "plot_pressure_index_input": {
-        "type": "numeric",
-        "value": 0
+        "value": "2"
       },
       "plot_pressure_ifreq_input": {
         "type": "numeric",
-        "value": 0
+        "value": "0"
+      },
+      "plot_pressure_index_input": {
+        "type": "numeric",
+        "value": "0"
+      },
+      "plot_pressure_type_input": {
+        "type": "string",
+        "value": ""
+      },
+      "calc_response_area_input": {
+        "type": "numeric",
+        "value": "9"
+      },
+      "calc_response_ibeta_input": {
+        "type": "numeric",
+        "value": "0"
+      },
+      "calc_response_yr_input": {
+        "type": "numeric",
+        "value": "50"
       }
     },
     "variable": {

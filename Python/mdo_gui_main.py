@@ -47,6 +47,7 @@ class Application():
 
     def __init__(self):
         self.about_dialog = None
+        self.nautic_zones_dialog = None
         self.fig = None
         self.builder = b = pygubu.Builder()
         b.add_from_file(os.path.join(DATA_DIR, 'main.ui'))
@@ -67,11 +68,22 @@ class Application():
         self.data_io_dir = None
         self.pkl_path = None
 
+
+
+        self.nautic_zones_gif= PhotoImage(file=r".\imgs\nautic_zones.gif")
+
         self.load_cfg()
-        self.create_model()
+        #self.create_model()
+        cb = self.builder.get_object('plot_pressure_type_input')
+        #cb = self.builder.get_object('plot_pressure_type_input')
+        #cb.delete(0, END)
+        #cb["values"] = '\"{:s}\"'.format('\" \"'.join(list(self.this_candidate.loads.pressure.keys())))
+
+        #cb["values"] = list(self.this_candidate.loads.pressure.keys())
+        #print(list(self.this_candidate.loads.pressure.keys()))
+        cb.current(0)
 
 
-        self.run_hydro()
 
 
     def get_output(self, text_box):
@@ -92,6 +104,25 @@ class Application():
             dialog.run()
         else:
             self.about_dialog.show()
+
+    def show_nautic_zones_dialog(self):
+        if self.nautic_zones_dialog is None:
+            dialog = self.builder.get_object('dlg_nautic_zones', self.mainwindow)
+            canvas = self.builder.get_object('dlg_nautic_zones_canvas')
+            canvas.create_image(0,0, anchor = NW, image = self.nautic_zones_gif)
+
+            self.nautic_zones_dialog = dialog
+
+            def dialog_btnclose_clicked():
+                dialog.close()
+
+            btnclose = self.builder.get_object('nautic_zones_btnclose')
+            btnclose['command'] = dialog_btnclose_clicked
+            dialog.run()
+        else:
+            self.nautic_zones_dialog.show()
+
+
 
     def get_config(self, cfg):
         for id in cfg['user_input']['object']:
@@ -217,7 +248,7 @@ class Application():
         self.this_candidate.settings.wtg_model = "Generic 8MW"
 
 
-        self.this_candidate.init_model(state='New')
+        self.this_candidate.init_model(state='Old')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir
         self.pkl_path = self.data_io_dir.joinpath('this_candidate.pkl')
         with open(self.pkl_path, "wb") as f:
@@ -271,21 +302,19 @@ class Application():
             return fileName
 
     def calc_response(self):
+        self.get_output('response_text')
 
-
-        area = self.builder.get_object('calc_response_area_input').get()
-        ibeta = self.builder.get_object('calc_response_ibeta_input').get()
-        yr = 50  # Return period in years, statistics conditioned for 3hr storms
+        area = int(self.builder.get_object('calc_response_area_input').get())
+        ibeta = int(self.builder.get_object('calc_response_ibeta_input').get())
+        yr = float(self.builder.get_object('calc_response_yr_input').get())  # Return period in years, statistics conditioned for 3hr storms
 
         tc = self.this_candidate
 
-        print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
 
-        print('\nEigenvalue sollution WITH added mass')
 
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
 
-        yr = self.this_candidate.settings.park_data['Design Basis']['ULS']['Return period']
+
 
         # Create list of short terms from contour line
         # area = this_candidate.settings.park_data['Design Basis']['Area']
@@ -301,7 +330,17 @@ class Application():
 
         tc.settings.radiaton_damping_factor = 1
 
-        tc.settings.do_linearize = True
+        bool_lin=self.builder.tkvariables.__getitem__('lin_visc_damp_var').get()
+        tc.settings.do_linearize = bool_lin
+
+        if tc.settings.do_linearize:
+            print('\nLinearized viscous damping will be included')
+        else:
+            print('\nLinearized viscous damping will NOT be included')
+
+        print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
+
+        print('\nEigenvalue sollution WITH added mass')
 
         tb.eigenvalprint(tc.loads.m + tc.loads.ma[0, :, :], tc.loads.k)
 
@@ -342,7 +381,7 @@ class Application():
 
 
 
-        print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', 'FZ', 'MY', 'AG'))
+        print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', force_label[2], force_label[4], 'AG'))
         for stwc in tc.contourline:
             tc.init_response(short_term_wave_condition=stwc)
 
@@ -367,6 +406,7 @@ class Application():
             print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm, my_elm, ag1))
 
     def plot_pressure(self):
+        self.get_output('plot_text')
         ifreq = int(self.builder.get_object('plot_pressure_ifreq_input').get())
         pressure_index = int(self.builder.get_object('plot_pressure_index_input').get())
         pressure_type = self.builder.get_object('plot_pressure_type_input').get()
@@ -385,24 +425,12 @@ class Application():
     def gui_init_plot(self, event=None):
         self.get_output('plot_text')
         self.gui_init_load()
-        #cb = self.builder.get_object('plot_pressure_type_input')
-        #cb.delete(0, END)
-        #cb["values"] = '\"{:s}\"'.format('\" \"'.join(list(self.this_candidate.loads.pressure.keys())))
 
-        #cb["values"] = list(self.this_candidate.loads.pressure.keys())
-        #print(list(self.this_candidate.loads.pressure.keys()))
-        #cb.current(0)
+    def gui_init_response(self, event=None):
 
-
-    def gui_init_results(self, event=None):
-        self.get_output('results_text')
         self.gui_init_load()
 
-    def plot_pressure_type_input_button_release(self, event=None):
-        cb=self.builder.get_object('plot_pressure_type_input')
-        print(cb.get())
-        if event:
-            print(event.widget.get())
+
 
 
 

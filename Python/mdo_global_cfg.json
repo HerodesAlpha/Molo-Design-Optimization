@@ -5,6 +5,18 @@
                 "type": "string",
                 "value": "C:\\mdo_working_dir"
             },
+            "calc_response_area_input": {
+                "type": "numeric",
+                "value": "61"
+            },
+            "calc_response_ibeta_input": {
+                "type": "numeric",
+                "value": "0"
+            },
+            "calc_response_yr_input": {
+                "type": "numeric",
+                "value": "50"
+            },
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
@@ -48,12 +60,12 @@
             "num_wave_directions_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3"
+                "value": "1"
             },
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "120"
+                "value": "80"
             },
             "park_label_input": {
                 "type": "string",
@@ -73,7 +85,7 @@
             },
             "plot_pressure_type_input": {
                 "type": "string",
-                "value": ""
+                "value": "Froude-Krylof"
             },
             "wtg_label_input": {
                 "type": "string",

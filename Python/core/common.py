@@ -170,7 +170,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._postprocessing = False
 
         self._job_data['analysis']['simulations']['default']['environment']['fluid_depth'] = self._rho_sw
-        self._job_data['analysis']['simulations']['default']['environment']['gravity'] = self._gravity
+        self._job_data['analysis']['simulations']['default']['environment']['gravity'] = np.abs(self._gravity)
 
         self.set_molo_label()
         self._radiaton_damping_factor = 1
