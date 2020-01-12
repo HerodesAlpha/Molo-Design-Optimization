@@ -30,14 +30,11 @@ from multiprocessing import freeze_support
 import time
 
 class Parameter_Space():
-    def __init__(self, templates_dir=None):
+    def __init__(self, templates_dir):
         self._json_list = ['park', 'wtg', 'floater', 'analysis', 'design_basis']
         self._job_data = dict()
 
-        if templates_dir==None:
-            self._templates_dir=Path(os.getcwd()).joinpath('templates')
-        else:
-            self._templates_dir=templates_dir
+        self._templates_dir = templates_dir
 
         # Collect template data
         for item in self._json_list:

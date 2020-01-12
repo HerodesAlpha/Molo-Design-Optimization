@@ -8,6 +8,7 @@ import getpass
 import sys
 from core.report import DesignReport
 import numpy as np
+import os
 
 
 class PhysicalQuantities():
@@ -36,18 +37,35 @@ class PhysicalQuantities():
 
 
 class FileIOClass(object):
-    def __init__(self, settings):
+    def __init__(self, analyses_root, park_label, wtg_label, case_label_type,nrc, rcd,gf,rh,templates_dir=None):
 
-        case_parent_dir = settings.analyses_root.joinpath(settings.park_label).joinpath(settings.wtg_label)
-        if settings.case_label == None:
+        self._analyses_root = analyses_root
+        self._park_label = park_label
+        self._wtg_label = wtg_label
+
+        case_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
+
+        if templates_dir==None:
+            self._templates_dir=Path(os.getcwd()).joinpath('templates')
+        else:
+            self._templates_dir=templates_dir
+
+
+        #self._molo_model =
+        #self._molo_label = '{}-{}'.format(mt, self._molo_model)
+
+        if case_label_type == None:
             i = 0
             while 1:
                 i += 1
                 if not case_parent_dir.joinpath('case{:04d}'.format(i)).exists():
                     break
             self._case_label = 'case{:04d}'.format(i)
+        elif case_label_type == 'molo_model':
+            self._case_label = '{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(nrc, rcd * 10, gf * 10, rh * 10)
         else:
-            self._case_label = settings.case_label
+            self._case_label = case_label_type
+
 
         self._mesh_name = None
 
@@ -61,7 +79,6 @@ class FileIOClass(object):
         self._stability_dir = self._case_dir.joinpath('stability')
         self._structural_dir = self._case_dir.joinpath('structural')
 
-        self._templates_dir = settings.templates_dir
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
             'es')
@@ -77,6 +94,8 @@ class FileIOClass(object):
         #     exit()
 
         self.create_dir()
+
+
 
     def create_dir(self):
         exist_ok_bool = True
@@ -138,7 +157,7 @@ class FileIOClass(object):
 
 
 class SettingsClass(PhysicalQuantities, object):
-    def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):
+    def __init__(self, parameter_space, fio):
         super().__init__()
 
         self._mesh_name = None
@@ -149,11 +168,13 @@ class SettingsClass(PhysicalQuantities, object):
         self._parameter_space = parameter_space
         self._job_data = parameter_space.job_data
 
-        self._analyses_root = analyses_root
-        self._park_label = park_label
-        self._wtg_label = wtg_label
+        self._analyses_root = fio._analyses_root
+        self._park_label = fio._park_label
+        self._wtg_label = fio._wtg_label
 
         self._fio = None
+        self._fio = fio
+
         self._report = None
         self._wtg_model = None
 
@@ -172,35 +193,13 @@ class SettingsClass(PhysicalQuantities, object):
         self._job_data['analysis']['simulations']['default']['environment']['fluid_depth'] = self._rho_sw
         self._job_data['analysis']['simulations']['default']['environment']['gravity'] = np.abs(self._gravity)
 
-        self.set_molo_label()
         self._radiaton_damping_factor = 1
 
-        if case_label_type == None:
-            self._case_label = None  # Auto numbering in FileIOClass
-        elif case_label_type == 'molo_model':
-            nrc = self._job_data['floater']['Radial']['Number of columns']
-            bfr_c = np.array(self._job_data['floater']['Ballast filling ratio'][0]) * 10
-            bfr_r = np.array(self._job_data['floater']['Ballast filling ratio'][1][:nrc]) * 10
-            radial_ballast_string = np.array2string(bfr_r.astype(int), precision=0, separator='', suppress_small=True)[
-                                    1:-1]
-            self._case_label = '{:s}-b{:d}{:s}'.format(self._molo_model, bfr_c.astype(int), radial_ballast_string)
-        else:
-            self._case_label = case_label_type
-        # print('\nMODEL: {}'.format(self._molo_model))
-        # print('CASE: {}'.format(self._case_label))
 
-    def set_molo_label(self):
-        nrc = self._job_data['floater']['Radial']['Number of columns']
-        rcd = self._job_data['floater']['Radial']['Column']['Diameter']
-        gf = self._job_data['floater']['Gap factor']
-        rh = self._job_data['floater']['Radial']['Heigth']
-        mt = self._job_data['floater']['Type']
-        self._molo_model = '{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(nrc, rcd * 10, gf * 10, rh * 10)
-        self._molo_label = '{}-{}'.format(mt, self._molo_model)
 
     def set_file_structure_and_report(self):
 
-        self._fio = FileIOClass(self)
+
         # print(self._job_data['analysis']['simulations'])
         self._job_data['analysis']['simulations']['sim01']['simulation_dir'] = str(self._fio.nemoh_root)
         self.save_job_settings()

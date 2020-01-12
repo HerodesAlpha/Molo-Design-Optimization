@@ -12,11 +12,12 @@ import core.tool_box as tb
 import json
 from tkinter import messagebox
 import core.environmental_conditions as ec
+import core.common as cc
 import numpy as np
 from pyNemoh_root.pyNemoh import utility
 import h5py
 
-#import module_locator
+# import module_locator
 
 # my_path = module_locator.module_path()
 # print(my_path)
@@ -67,24 +68,29 @@ class Application():
         self.this_candidate = None
         self.data_io_dir = None
         self.pkl_path = None
+        self.fio = None
 
-
-
-        self.nautic_zones_gif= PhotoImage(file=r".\imgs\nautic_zones.gif")
+        self.nautic_zones_gif = PhotoImage(file=r".\imgs\nautic_zones.gif")
 
         self.load_cfg()
-        #self.create_model()
-        cb = self.builder.get_object('plot_pressure_type_input')
-        #cb = self.builder.get_object('plot_pressure_type_input')
-        #cb.delete(0, END)
-        #cb["values"] = '\"{:s}\"'.format('\" \"'.join(list(self.this_candidate.loads.pressure.keys())))
+        self.sef_fio()
 
-        #cb["values"] = list(self.this_candidate.loads.pressure.keys())
-        #print(list(self.this_candidate.loads.pressure.keys()))
+
+        # Some tweaks
+        cb = self.builder.get_object('plot_pressure_type_input')
         cb.current(0)
 
+    def set_fio(self, case_label_type='molo_model'):
+        analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
+        park_label_input = self.builder.get_object('park_label_input').get()
+        wtg_label_input = self.builder.get_object('wtg_label_input').get()
+        nrc = int(self.get_numeric('ncol_input'))
+        rh = self.get_numeric('height_input')
+        rcd = self.get_numeric('column_diameter_input')
+        gf = self.get_numeric('gap_input')
 
-
+        self.fio = cc.FileIOClass(analyses_root_input, park_label_input, wtg_label_input, case_label_type, nrc,
+                                  rcd, gf, rh, templates_dir=None)
 
     def get_output(self, text_box):
         self.text_box = self.builder.get_object(text_box)
@@ -109,7 +115,7 @@ class Application():
         if self.nautic_zones_dialog is None:
             dialog = self.builder.get_object('dlg_nautic_zones', self.mainwindow)
             canvas = self.builder.get_object('dlg_nautic_zones_canvas')
-            canvas.create_image(0,0, anchor = NW, image = self.nautic_zones_gif)
+            canvas.create_image(0, 0, anchor=NW, image=self.nautic_zones_gif)
 
             self.nautic_zones_dialog = dialog
 
@@ -121,8 +127,6 @@ class Application():
             dialog.run()
         else:
             self.nautic_zones_dialog.show()
-
-
 
     def get_config(self, cfg):
         for id in cfg['user_input']['object']:
@@ -168,16 +172,15 @@ class Application():
 
         if self.local_case_cfg == None:
 
-            self.case_cfg=self.default_case_cfg
+            self.case_cfg = self.default_case_cfg
 
         else:
-            self.case_cfg=self.local_case_cfg
+            self.case_cfg = self.local_case_cfg
 
             # Loop trough items in default case config and add missing items
             for key in self.default_case_cfg['user_input']['object']:
                 if key not in self.case_cfg['user_input']['object']:
-                    self.case_cfg[key]=self.default_case_cfg['user_input']['object'][key]
-
+                    self.case_cfg[key] = self.default_case_cfg['user_input']['object'][key]
 
         objects = self.global_cfg['user_input']['object']
         objects.update(self.case_cfg['user_input']['object'])
@@ -247,7 +250,6 @@ class Application():
         self.this_candidate.settings.wtg_model = "Haliade X"
         self.this_candidate.settings.wtg_model = "Generic 8MW"
 
-
         self.this_candidate.init_model(state='Old')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir
         self.pkl_path = self.data_io_dir.joinpath('this_candidate.pkl')
@@ -306,15 +308,12 @@ class Application():
 
         area = int(self.builder.get_object('calc_response_area_input').get())
         ibeta = int(self.builder.get_object('calc_response_ibeta_input').get())
-        yr = float(self.builder.get_object('calc_response_yr_input').get())  # Return period in years, statistics conditioned for 3hr storms
+        yr = float(self.builder.get_object(
+            'calc_response_yr_input').get())  # Return period in years, statistics conditioned for 3hr storms
 
         tc = self.this_candidate
 
-
-
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
-
-
 
         # Create list of short terms from contour line
         # area = this_candidate.settings.park_data['Design Basis']['Area']
@@ -330,7 +329,7 @@ class Application():
 
         tc.settings.radiaton_damping_factor = 1
 
-        bool_lin=self.builder.tkvariables.__getitem__('lin_visc_damp_var').get()
+        bool_lin = self.builder.tkvariables.__getitem__('lin_visc_damp_var').get()
         tc.settings.do_linearize = bool_lin
 
         if tc.settings.do_linearize:
@@ -344,22 +343,22 @@ class Application():
 
         tb.eigenvalprint(tc.loads.m + tc.loads.ma[0, :, :], tc.loads.k)
 
-        d_col_central=tc.settings.floater_data['Central column diameter']
-        d_col_radial=tc.settings.floater_data['Radial']['Column']['Diameter']
-        n_col_radial=tc.settings.floater_data['Radial']['Number of columns']
+        d_col_central = tc.settings.floater_data['Central column diameter']
+        d_col_radial = tc.settings.floater_data['Radial']['Column']['Diameter']
+        n_col_radial = tc.settings.floater_data['Radial']['Number of columns']
         gap = tc.settings.floater_data['Gap factor']
-        height=tc.settings.floater_data['Radial']['Heigth']
-        draught=tc.hs_floater.hs_data['draught']
+        height = tc.settings.floater_data['Radial']['Heigth']
+        draught = tc.hs_floater.hs_data['draught']
 
         # Get section forces
-        sp_x =  d_col_central* (0.5)  # + 0.8 + 1 + 0.8 + 1)
+        sp_x = d_col_central * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         sp_z = height / 2 - draught
         # sp_x = -100
         sp_z = 0
         sp1 = [sp_x, 0, sp_z]  # Used for moment reference
         sn1 = [1, 0, 0]
 
-        radial_extreme=d_col_central* (0.5)+(1+gap)*n_col_radial*d_col_radial
+        radial_extreme = d_col_central * (0.5) + (1 + gap) * n_col_radial * d_col_radial
 
         print('\nAirgap point at {:1.2f}'.format(radial_extreme))
 
@@ -368,24 +367,17 @@ class Application():
         with h5py.File(tc.settings.fio.nemoh_root.joinpath('db.hdf5'), "r") as hdf5_db:
             environment = utility.read_environment(hdf5_db)
 
-        k_wave=np.zeros(tc.loads.nw, dtype=float)
+        k_wave = np.zeros(tc.loads.nw, dtype=float)
         for iw, val in enumerate(tc.loads.w):
             k_wave[iw] = utility.compute_wave_number(val, environment)
-        w_bar = (radial_extreme - environment.x_eff) * np.cos(tc.loads.beta) + (0 - environment.y_eff) * np.sin(tc.loads.beta[ibeta])
-        eta=np.exp(utility.II * k_wave * w_bar)
+        w_bar = (radial_extreme - environment.x_eff) * np.cos(tc.loads.beta) + (0 - environment.y_eff) * np.sin(
+            tc.loads.beta[ibeta])
+        eta = np.exp(utility.II * k_wave * w_bar)
 
-
-
-
-
-
-
-
-        print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', force_label[2], force_label[4], 'AG'))
+        print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', force_label[2],
+                                                                       force_label[4], 'AG'))
         for stwc in tc.contourline:
             tc.init_response(short_term_wave_condition=stwc)
-
-
 
             imass, ipanel, istrip = tc.response.get_section_index(sp1, sn1)
             f_sec1 = tc.response.assemble_forces(imass, ipanel, istrip, moment_ref_point=[0, 0, 0])
@@ -397,13 +389,12 @@ class Application():
             fz_elm = stwc.expected_largest_maximum(fz, tc.loads.w)
             my_elm = stwc.expected_largest_maximum(my, tc.loads.w)
 
-
-
-            p1_rao=tc.response.point_rao(c1)[:, ibeta, 0,2].flatten()
-            ag_rao = eta+p1_rao
+            p1_rao = tc.response.point_rao(c1)[:, ibeta, 0, 2].flatten()
+            ag_rao = eta + p1_rao
             ag1 = stwc.expected_largest_maximum(ag_rao, tc.loads.w)
 
-            print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm, my_elm, ag1))
+            print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm,
+                                                                                my_elm, ag1))
 
     def plot_pressure(self):
         self.get_output('plot_text')
@@ -429,14 +420,6 @@ class Application():
     def gui_init_response(self, event=None):
 
         self.gui_init_load()
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
