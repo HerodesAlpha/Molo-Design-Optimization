@@ -72,7 +72,7 @@ class Application():
 
         self.nautic_zones_gif = PhotoImage(file=r".\imgs\nautic_zones.gif")
 
-        self.load_cfg()
+
         self.set_fio()
 
 
@@ -81,6 +81,27 @@ class Application():
         cb.current(0)
 
         self.template_dir = Path(os.getcwd()).joinpath('templates')
+
+        with open(self.template_dir.joinpath('wtg_template.json'), 'r') as f:
+            self._wtg_template = json.loads(f.read())
+
+
+            #a.append('\"')
+
+        #print(''.join(a))
+        cb1=self.builder.get_object('combobox_1')
+        a = list()
+
+        for key in self._wtg_template:
+            a.append('\"')
+            a.append(key)
+            a.append('\" ')
+        cb1['value']=''.join(a)
+        cb1.current(0)
+        #cb1.delete(0, END)
+        #cb1.insert(0, 'test')
+        self.load_cfg()
+
 
     def set_fio(self, case_label_type='molo_model'):
         analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
