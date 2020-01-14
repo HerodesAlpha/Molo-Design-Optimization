@@ -80,6 +80,8 @@ class Application():
         cb = self.builder.get_object('plot_pressure_type_input')
         cb.current(0)
 
+        self.template_dir = Path(os.getcwd()).joinpath('templates')
+
     def set_fio(self, case_label_type='molo_model'):
         analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
         park_label_input = self.builder.get_object('park_label_input').get()
@@ -222,15 +224,11 @@ class Application():
 
     def create_model(self):
         self.get_output('model_text')
+        self.set_fio()
 
-        analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
-        print(analyses_root_input)
 
-        park_label_input = self.builder.get_object('park_label_input').get()
-        wtg_label_input = self.builder.get_object('wtg_label_input').get()
-        template_dir = Path(os.getcwd()).joinpath('templates')
 
-        p = Parameter_Space(templates_dir=template_dir)
+        p = Parameter_Space(templates_dir=self.template_dir)
         p.ncol = int(self.get_numeric('ncol_input'))
         print('Number of columns: {:6.1f}'.format(p.ncol))
 
@@ -415,14 +413,14 @@ class Application():
                 print('Loads initialized')
 
         else:
-            print('self.this_candidate == None')
+            print('Please initialize Model and/or run Hydro')
 
     def gui_init_plot(self, event=None):
         self.get_output('plot_text')
         self.gui_init_load()
 
     def gui_init_response(self, event=None):
-
+        self.get_output('response_text')
         self.gui_init_load()
 
 

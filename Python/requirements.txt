@@ -13,3 +13,5 @@ pylatex
 openpyxl
 pyparsing
 pygubu
+joblib
+
