@@ -18,7 +18,7 @@ from pyNemoh_root.pyNemoh import utility
 import h5py
 
 # import module_locator
-
+nax=np.newaxis
 # my_path = module_locator.module_path()
 # print(my_path)
 
@@ -73,7 +73,7 @@ class Application():
         self.nautic_zones_gif = PhotoImage(file=r".\imgs\nautic_zones.gif")
 
         self.load_cfg()
-        self.sef_fio()
+        self.set_fio()
 
 
         # Some tweaks
@@ -244,13 +244,12 @@ class Application():
         print('Gap factor: {:6.3f}'.format(p.gap))
 
         p.filling_ratio = [0.1, 0.1, 0.1]
-        self.this_candidate = Candidate(analyses_root_input, park_label_input, wtg_label_input, p,
-                                        case_label_type='molo_model')
-        self.this_candidate.settings.wtg_model = "Vestas 9.5"
+        self.this_candidate = Candidate(p,self.fio)
+        #self.this_candidate.settings.wtg_model = "Vestas 9.5"
         self.this_candidate.settings.wtg_model = "Haliade X"
-        self.this_candidate.settings.wtg_model = "Generic 8MW"
+        #self.this_candidate.settings.wtg_model = "Generic 8MW"
 
-        self.this_candidate.init_model(state='Old')
+        self.this_candidate.init_model(state='New')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir
         self.pkl_path = self.data_io_dir.joinpath('this_candidate.pkl')
         with open(self.pkl_path, "wb") as f:
@@ -342,6 +341,11 @@ class Application():
         print('\nEigenvalue sollution WITH added mass')
 
         tb.eigenvalprint(tc.loads.m + tc.loads.ma[0, :, :], tc.loads.k)
+        np.set_printoptions(precision=4)
+        print(tc.loads.m)
+        print(tc.loads.ma[0, :, :])
+        print(tc.loads.k)
+
 
         d_col_central = tc.settings.floater_data['Central column diameter']
         d_col_radial = tc.settings.floater_data['Radial']['Column']['Diameter']
@@ -371,8 +375,8 @@ class Application():
         for iw, val in enumerate(tc.loads.w):
             k_wave[iw] = utility.compute_wave_number(val, environment)
         w_bar = (radial_extreme - environment.x_eff) * np.cos(tc.loads.beta) + (0 - environment.y_eff) * np.sin(
-            tc.loads.beta[ibeta])
-        eta = np.exp(utility.II * k_wave * w_bar)
+            tc.loads.beta)
+        eta = np.exp(utility.II * k_wave[:,nax] * w_bar[nax,:])
 
         print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', force_label[2],
                                                                        force_label[4], 'AG'))
@@ -390,7 +394,7 @@ class Application():
             my_elm = stwc.expected_largest_maximum(my, tc.loads.w)
 
             p1_rao = tc.response.point_rao(c1)[:, ibeta, 0, 2].flatten()
-            ag_rao = eta + p1_rao
+            ag_rao = eta[:,ibeta] + p1_rao
             ag1 = stwc.expected_largest_maximum(ag_rao, tc.loads.w)
 
             print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm,

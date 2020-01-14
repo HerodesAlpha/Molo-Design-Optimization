@@ -112,9 +112,9 @@ class Parameter_Space():
 
 
 class Candidate():
-    def __init__(self, analyses_root, park_label, wtg_label, parameter_space, case_label_type):
+    def __init__(self, parameter_space, fio):
 
-        self.settings = SettingsClass(analyses_root, park_label, wtg_label, parameter_space, case_label_type)
+        self.settings = SettingsClass(parameter_space, fio)
         self.h5_bs = BaseStructure()
 
         # TODO: Allow for none equidistant frequencies

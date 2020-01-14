@@ -87,7 +87,9 @@ def init_models(settings):  #
     nc = floater_data.nc
     a_wp = np.pi * (d_hc ** 2 + nr * nc * d_rc ** 2) / 4
     floater_hgt = floater_data.hgt
-    m_ball = (floater_data.hgt / 2 - hs_floater.hs_data['draught']) * a_wp * settings.rho_sw
+    #m_ball = (floater_data.hgt / 2 - hs_floater.hs_data['draught']) * a_wp * settings.rho_sw
+    m_ball = (floater_data.hgt / 2 - hs_floater.hs_data['draught']) * a_wp * 3500
+
     fr = (m_ball / (a_wp * settings.job_data['floater']['Ballast density'])) / floater_hgt
     print(
         '\nRequired ballast to {:1.2f} m is {:1.1f} ton\nFilling ratio is {:1.2f}'.format(floater_hgt / 2, m_ball / 1000,

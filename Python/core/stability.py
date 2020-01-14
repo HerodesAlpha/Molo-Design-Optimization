@@ -226,7 +226,7 @@ def intact_stability(settings, hs_floater):
                 plot.add_caption('Intact Stability')
                 plt.close()
 
-    if 0:
+    if 1:
         fig = plt.figure(1, figsize=(8, 5))
         ax = fig.add_subplot(111)
         ax.plot(rmc[0, :] * 180 / np.pi, rmc[1, :] / 1000000, label='Righting moment')

@@ -171,6 +171,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._analyses_root = fio._analyses_root
         self._park_label = fio._park_label
         self._wtg_label = fio._wtg_label
+        self._molo_model = 'MOLO_{:s}'.format(fio._case_label)
 
         self._fio = None
         self._fio = fio
@@ -261,7 +262,7 @@ class SettingsClass(PhysicalQuantities, object):
 
     @property
     def case_label(self):
-        return self._case_label
+        return self.fio._case_label
 
     @property
     def park_data(self):

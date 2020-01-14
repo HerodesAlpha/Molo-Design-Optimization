@@ -10,7 +10,7 @@
         ]
     ],
     "Central column diameter": 7,
-    "Central column thickness": 0.04,
+    "Central column thickness": 0.025,
     "Correct z pos of lower faces": true,
     "Draught": 0,
     "Gap factor": 0.8,
@@ -18,7 +18,7 @@
     "Radial": {
         "Column": {
             "Diameter": 8.5,
-            "Thickness": 0.04
+            "Thickness": 0.025
         },
         "Flange": {
             "Lower": {
@@ -28,22 +28,22 @@
                 },
                 "Stiffener": {
                     "Longitudinal": {
-                        "Height": 0.8,
+                        "Height": 1.0,
                         "Number of": 4,
-                        "Thickness": 0.07
+                        "Thickness": 0.025
                     }
                 }
             },
             "Upper": {
                 "Plate": {
-                    "Thickness": 0.04,
+                    "Thickness": 0.025,
                     "Width": "NA"
                 },
                 "Stiffener": {
                     "Longitudinal": {
-                        "Height": 0.5,
-                        "Number of": 4,
-                        "Thickness": 0.04
+                        "Height": 1.0,
+                        "Number of": 2,
+                        "Thickness": 0.025
                     }
                 }
             }

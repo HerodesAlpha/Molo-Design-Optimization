@@ -30,7 +30,7 @@
         "Tower": {
             "Diameter": 6,
             "Height": 137,
-            "Thickness": 0.05,
+            "Thickness": 0.025,
             "Type": "Default"
         },
         "Type": "Default"
