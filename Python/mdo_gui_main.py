@@ -73,35 +73,29 @@ class Application():
         self.nautic_zones_gif = PhotoImage(file=r".\imgs\nautic_zones.gif")
 
 
-        self.set_fio()
-
-
-        # Some tweaks
-        cb = self.builder.get_object('plot_pressure_type_input')
-        cb.current(0)
-
         self.template_dir = Path(os.getcwd()).joinpath('templates')
 
         with open(self.template_dir.joinpath('wtg_template.json'), 'r') as f:
             self._wtg_template = json.loads(f.read())
 
-
-            #a.append('\"')
-
-        #print(''.join(a))
-        cb1=self.builder.get_object('combobox_1')
+        self.cb1=self.builder.get_object('wtg_label_input')
         a = list()
-
         for key in self._wtg_template:
-            a.append('\"')
             a.append(key)
-            a.append('\" ')
-        cb1['value']=''.join(a)
-        cb1.current(0)
-        #cb1.delete(0, END)
-        #cb1.insert(0, 'test')
-        self.load_cfg()
+        self.cb1['value']=a
+        #print(self.cb1['values'])
+        self.cb1.current(0)
 
+        self.load_global_cfg()
+        print('Global config loaded')
+
+        self.set_fio()
+        self.load_case_cfg()
+        print('Case config loaded')
+
+        # Some tweaks
+        self.cb = self.builder.get_object('plot_pressure_type_input')
+        self.cb.current(0)
 
     def set_fio(self, case_label_type='molo_model'):
         analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
@@ -174,11 +168,26 @@ class Application():
             f.write(json.dumps(self.case_cfg, indent=4, sort_keys=True))
 
     def load_cfg(self):
+        self.load_global_cfg()
+        self.load_case_cfg()
+
+    def load_global_cfg(self):
         # Read global config
         f_global = Path(DATA_DIR).joinpath('mdo_global_cfg.json')
 
         with open(f_global, 'r') as f:
             self.global_cfg = json.loads(f.read())
+
+        objects = self.global_cfg['user_input']['object']
+        for id in objects:
+            value = objects[id]['value']
+            try:
+                self.builder.get_object(id).delete(0, END)
+                self.builder.get_object(id).insert(0, value)
+            except:
+                print('{} not defined'.format(id))
+
+    def load_case_cfg(self):
 
         # Read default case config
         f_case = Path(DATA_DIR).joinpath('mdo_default_case_cfg.json')
@@ -205,8 +214,7 @@ class Application():
                 if key not in self.case_cfg['user_input']['object']:
                     self.case_cfg[key] = self.default_case_cfg['user_input']['object'][key]
 
-        objects = self.global_cfg['user_input']['object']
-        objects.update(self.case_cfg['user_input']['object'])
+        objects = self.case_cfg['user_input']['object']
         for id in objects:
             value = objects[id]['value']
             try:
@@ -214,7 +222,6 @@ class Application():
                 self.builder.get_object(id).insert(0, value)
             except:
                 print('{} not defined'.format(id))
-
     def quit(self, event=None):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.save_cfg()
@@ -243,6 +250,17 @@ class Application():
     def get_numeric(self, id):
         return nsp.eval(self.builder.get_object(id).get())
 
+    def notebooktabchanged(self, event=None):
+        str=self.builder.get_object('wtg_label_input').get()
+        print(str)
+
+        self.builder.get_object('model_wtg_label')['text']=str
+        pass
+
+    def set_model_wtg_label(self):
+        pass
+
+
     def create_model(self):
         self.get_output('model_text')
         self.set_fio()
@@ -264,9 +282,8 @@ class Application():
 
         p.filling_ratio = [0.1, 0.1, 0.1]
         self.this_candidate = Candidate(p,self.fio)
-        #self.this_candidate.settings.wtg_model = "Vestas 9.5"
-        self.this_candidate.settings.wtg_model = "Haliade X"
-        #self.this_candidate.settings.wtg_model = "Generic 8MW"
+        self.this_candidate.settings.wtg_model = self.builder.get_object('wtg_label_input').get()
+        print('\nTurbine type is the {:s}'.format(self.this_candidate.settings.wtg_model.replace('_',' ')))
 
         self.this_candidate.init_model(state='New')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir

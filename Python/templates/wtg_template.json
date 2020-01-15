@@ -1,5 +1,5 @@
 {
-    "Generic 8MW": {
+    "Generic_8MW": {
         "Hub height": 78,
         "Ixx": 450000,
         "Ixy": 0,
@@ -17,7 +17,7 @@
         },
         "Type": "Default"
     },
-    "Haliade X": {
+    "Haliade_X": {
         "Hub height": 140,
         "Ixx": 450000,
         "Ixy": 0,
@@ -35,7 +35,7 @@
         },
         "Type": "Default"
     },
-    "Vestas 9.5": {
+    "Vestas_9.5": {
         "Hub height": 116.5,
         "Ixx": 450000,
         "Ixy": 0,
