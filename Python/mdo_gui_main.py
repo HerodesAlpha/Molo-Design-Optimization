@@ -91,6 +91,12 @@ class Application():
 
         self.set_fio()
         self.load_case_cfg()
+
+        self.wtg_label_variable=self.builder.tkvariables.__getitem__('wtg_label_variable')
+
+        self.wtg_label_variable.trace('w', self.set_model_wtg_label)
+
+        self.set_model_wtg_label()
         print('Case config loaded')
 
         # Some tweaks
@@ -222,6 +228,7 @@ class Application():
                 self.builder.get_object(id).insert(0, value)
             except:
                 print('{} not defined'.format(id))
+
     def quit(self, event=None):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.save_cfg()
@@ -250,16 +257,10 @@ class Application():
     def get_numeric(self, id):
         return nsp.eval(self.builder.get_object(id).get())
 
-    def notebooktabchanged(self, event=None):
-        str=self.builder.get_object('wtg_label_input').get()
-        print(str)
-
+    def set_model_wtg_label(self,*args):
+        str=self.wtg_label_variable.get().replace('_',' ')
+        #print(str)
         self.builder.get_object('model_wtg_label')['text']=str
-        pass
-
-    def set_model_wtg_label(self):
-        pass
-
 
     def create_model(self):
         self.get_output('model_text')
@@ -282,8 +283,8 @@ class Application():
 
         p.filling_ratio = [0.1, 0.1, 0.1]
         self.this_candidate = Candidate(p,self.fio)
-        self.this_candidate.settings.wtg_model = self.builder.get_object('wtg_label_input').get()
-        print('\nTurbine type is the {:s}'.format(self.this_candidate.settings.wtg_model.replace('_',' ')))
+        self.this_candidate.settings.wtg_model = self.wtg_label_variable.get()
+        print('\nTurbine type is the {:s}'.format(self.wtg_label_variable.get().replace('_',' ')))
 
         self.this_candidate.init_model(state='New')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir

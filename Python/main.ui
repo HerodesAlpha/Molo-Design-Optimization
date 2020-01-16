@@ -91,7 +91,6 @@
         </child>
         <child>
           <object class="ttk.Notebook" id="mw_fnotebook">
-            <bind add="" handler="notebooktabchanged" sequence="&lt;NotebookTabChanged&gt;" />
             <layout>
               <property name="column">0</property>
               <property name="propagate">True</property>
@@ -128,71 +127,96 @@
                       </columns>
                     </layout>
                     <child>
-                      <object class="ttk.Label" id="analyses_root_label">
-                        <property name="text" translatable="yes">Analysis root</property>
+                      <object class="ttk.Frame" id="main_top_frame">
+                        <property name="borderwidth">10</property>
+                        <property name="height">200</property>
+                        <property name="padding">10</property>
+                        <property name="relief">groove</property>
+                        <property name="width">200</property>
                         <layout>
                           <property name="column">0</property>
                           <property name="propagate">True</property>
                           <property name="row">0</property>
-                          <property name="sticky">w</property>
+                          <property name="sticky">nsew</property>
                         </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="ttk.Entry" id="analyses_root_input">
-                        <property name="text" translatable="yes">C:\mdo_working_dir</property>
-                        <layout>
-                          <property name="column">1</property>
-                          <property name="propagate">True</property>
-                          <property name="row">0</property>
-                          <property name="sticky">w</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="ttk.Label" id="park_label_label">
-                        <property name="text" translatable="yes">Park label</property>
-                        <layout>
-                          <property name="column">0</property>
-                          <property name="propagate">True</property>
-                          <property name="row">1</property>
-                          <property name="sticky">w</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="ttk.Entry" id="park_label_input">
-                        <property name="text" translatable="yes">site_01</property>
-                        <layout>
-                          <property name="column">1</property>
-                          <property name="propagate">True</property>
-                          <property name="row">1</property>
-                          <property name="sticky">w</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="ttk.Label" id="wtg_label_label">
-                        <property name="text" translatable="yes">WTG label</property>
-                        <layout>
-                          <property name="column">0</property>
-                          <property name="pady">10</property>
-                          <property name="propagate">True</property>
-                          <property name="row">2</property>
-                          <property name="sticky">w</property>
-                        </layout>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="ttk.Combobox" id="wtg_label_input">
-                        <property name="validate">focus</property>
-                        <property name="validatecommand">set_model_wtg_label</property>
-                        <layout>
-                          <property name="column">1</property>
-                          <property name="propagate">True</property>
-                          <property name="row">2</property>
-                          <property name="sticky">w</property>
-                        </layout>
+                        <child>
+                          <object class="ttk.Label" id="analyses_root_label">
+                            <property name="text" translatable="yes">Analysis root</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="padx">10</property>
+                              <property name="pady">10</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Entry" id="analyses_root_input">
+                            <property name="text" translatable="yes">C:\mdo_working_dir</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="padx">10</property>
+                              <property name="pady">10</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Label" id="park_label_label">
+                            <property name="text" translatable="yes">Park label</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="padx">10</property>
+                              <property name="pady">10</property>
+                              <property name="propagate">True</property>
+                              <property name="row">1</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Entry" id="park_label_input">
+                            <property name="text" translatable="yes">site_01</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="padx">10</property>
+                              <property name="pady">10</property>
+                              <property name="propagate">True</property>
+                              <property name="row">1</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Label" id="wtg_label_label">
+                            <property name="text" translatable="yes">WTG label</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="padx">10</property>
+                              <property name="pady">10</property>
+                              <property name="propagate">True</property>
+                              <property name="row">2</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Combobox" id="wtg_label_input">
+                            <property name="textvariable">string:wtg_label_variable</property>
+                            <layout>
+                              <property name="column">1</property>
+                              <property name="padx">10</property>
+                              <property name="pady">10</property>
+                              <property name="propagate">True</property>
+                              <property name="row">2</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
@@ -205,7 +229,6 @@
                 <child>
                   <object class="ttk.Frame" id="model_frame">
                     <property name="height">200</property>
-                    <property name="relief">raised</property>
                     <layout>
                       <property name="column">0</property>
                       <property name="propagate">True</property>
@@ -223,7 +246,7 @@
                     </layout>
                     <child>
                       <object class="ttk.Frame" id="model_top_frame">
-                        <property name="borderwidth">5</property>
+                        <property name="borderwidth">10</property>
                         <property name="height">200</property>
                         <property name="relief">groove</property>
                         <property name="width">200</property>
@@ -248,8 +271,10 @@
                         </layout>
                         <child>
                           <object class="ttk.Frame" id="model_parameters_frame">
-                            <property name="borderwidth">5</property>
+                            <property name="borderwidth">10</property>
                             <property name="height">200</property>
+                            <property name="padding">10</property>
+                            <property name="relief">groove</property>
                             <property name="width">200</property>
                             <layout>
                               <property name="column">0</property>
@@ -384,7 +409,8 @@
                             </layout>
                             <child>
                               <object class="ttk.Label" id="model_wtg_label">
-                                <property name="relief">sunken</property>
+                                <property name="font">{Franklin Gothic Medium} 12 {}</property>
+                                <property name="padding">20</property>
                                 <property name="text" translatable="yes">WTG Type</property>
                                 <layout>
                                   <property name="column">1</property>
@@ -485,7 +511,9 @@
                     </layout>
                     <child>
                       <object class="ttk.Frame" id="stability_top_frame">
+                        <property name="borderwidth">10</property>
                         <property name="height">200</property>
+                        <property name="relief">groove</property>
                         <property name="width">200</property>
                         <layout>
                           <property name="column">0</property>
@@ -495,6 +523,8 @@
                         </layout>
                         <child>
                           <object class="ttk.Frame" id="stability_input_frame">
+                            <property name="borderwidth">10</property>
+                            <property name="padding">10</property>
                             <property name="relief">groove</property>
                             <layout>
                               <property name="column">0</property>
@@ -517,6 +547,7 @@
                         </child>
                         <child>
                           <object class="ttk.Frame" id="stability_execution_frame">
+                            <property name="padding">10</property>
                             <layout>
                               <property name="column">1</property>
                               <property name="propagate">True</property>
@@ -613,7 +644,7 @@
                     </layout>
                     <child>
                       <object class="ttk.Frame" id="hydro_top_frame">
-                        <property name="borderwidth">5</property>
+                        <property name="borderwidth">10</property>
                         <property name="height">200</property>
                         <property name="relief">groove</property>
                         <property name="width">200</property>
@@ -638,8 +669,10 @@
                         </layout>
                         <child>
                           <object class="ttk.Frame" id="hydro_parameters_frame">
-                            <property name="borderwidth">5</property>
+                            <property name="borderwidth">10</property>
                             <property name="height">200</property>
+                            <property name="padding">10</property>
+                            <property name="relief">groove</property>
                             <property name="width">200</property>
                             <layout>
                               <property name="column">0</property>
@@ -803,6 +836,7 @@
                         <child>
                           <object class="ttk.Frame" id="hydro_execution_frame">
                             <property name="height">200</property>
+                            <property name="padding">10</property>
                             <property name="width">200</property>
                             <layout>
                               <property name="column">1</property>
@@ -907,7 +941,7 @@
                     </layout>
                     <child>
                       <object class="ttk.Frame" id="response_top_frame">
-                        <property name="borderwidth">15</property>
+                        <property name="borderwidth">10</property>
                         <property name="height">200</property>
                         <property name="relief">groove</property>
                         <property name="width">200</property>
@@ -934,7 +968,8 @@
                           <object class="ttk.Frame" id="response_parameters_frame">
                             <property name="borderwidth">10</property>
                             <property name="height">200</property>
-                            <property name="relief">raised</property>
+                            <property name="padding">10</property>
+                            <property name="relief">groove</property>
                             <property name="width">200</property>
                             <layout>
                               <property name="column">0</property>
@@ -951,6 +986,8 @@
                                 <property name="variable">boolean:lin_visc_damp_var</property>
                                 <layout>
                                   <property name="column">0</property>
+                                  <property name="padx">10</property>
+                                  <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">0</property>
                                 </layout>
@@ -972,10 +1009,11 @@
                               <object class="ttk.Label" id="calc_response_area_label">
                                 <property name="text" translatable="yes">DNVGL-RP-C205 Nautic Zone (1-52)</property>
                                 <property name="width">1</property>
+                                <property name="wraplength">160</property>
                                 <bind add="True" handler="show_nautic_zones_dialog" sequence="&lt;KeyRelease&gt;" />
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">2</property>
@@ -991,7 +1029,7 @@
                                 <property name="width">20</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">2</property>
@@ -1005,6 +1043,8 @@
                                 <property name="text" translatable="yes">Show nautic zones</property>
                                 <layout>
                                   <property name="column">2</property>
+                                  <property name="padx">10</property>
+                                  <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">2</property>
                                 </layout>
@@ -1014,10 +1054,10 @@
                               <object class="ttk.Label" id="calc_response_ibeta_label">
                                 <property name="text" translatable="yes">Wave direction index (zero based)</property>
                                 <property name="width">1</property>
-                                <property name="wraplength">200</property>
+                                <property name="wraplength">160</property>
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">3</property>
@@ -1033,7 +1073,7 @@
                                 <property name="width">20</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">3</property>
@@ -1045,10 +1085,10 @@
                               <object class="ttk.Label" id="calc_response_yr_label">
                                 <property name="text" translatable="yes">Return period in years, statistics conditioned for 3hr storms</property>
                                 <property name="width">1</property>
-                                <property name="wraplength">200</property>
+                                <property name="wraplength">160</property>
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">4</property>
@@ -1064,7 +1104,7 @@
                                 <property name="width">20</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">4</property>
@@ -1077,6 +1117,7 @@
                         <child>
                           <object class="ttk.Frame" id="response_execution_frame">
                             <property name="height">200</property>
+                            <property name="padding">10</property>
                             <property name="width">200</property>
                             <layout>
                               <property name="column">1</property>

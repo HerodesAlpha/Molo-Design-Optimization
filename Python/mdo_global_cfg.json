@@ -20,7 +20,7 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "6"
+                "value": "7"
             },
             "gap_input": {
                 "type": "numeric",
@@ -55,7 +55,7 @@
             "ncol_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3"
+                "value": "2"
             },
             "num_wave_directions_input": {
                 "type": "numeric",
@@ -89,7 +89,7 @@
             },
             "wtg_label_input": {
                 "type": "string",
-                "value": "Haliade_X"
+                "value": "Vestas_9.5"
             }
         }
     }
