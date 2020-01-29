@@ -1,90 +1,94 @@
 {
-  "user_input": {
-    "object": {
-      "column_diameter_input": {
-        "type": "numeric",
-        "unit": "m",
-        "value": "7.8"
-      },
-      "gap_input": {
-        "type": "numeric",
-        "unit": "-",
-        "value": "1.3"
-      },
-      "height_input": {
-        "type": "numeric",
-        "unit": "m",
-        "value": "21"
-      },
-      "max_wave_directions_input": {
-        "type": "numeric",
-        "unit": "rad/s",
-        "value": "90"
-      },
-      "max_wave_frequencies_input": {
-        "type": "numeric",
-        "unit": "rad/s",
-        "value": "2 * pi / 1"
-      },
-      "min_wave_directions_input": {
-        "type": "numeric",
-        "unit": "rad/s",
-        "value": "0"
-      },
-      "min_wave_frequencies_input": {
-        "type": "numeric",
-        "unit": "rad/s",
-        "value": "2 * pi / 35"
-      },
-      "ncol_input": {
-        "type": "numeric",
-        "unit": "-",
-        "value": "2"
-      },
-      "num_wave_directions_input": {
-        "type": "numeric",
-        "unit": "-",
-        "value": "3"
-      },
-      "num_wave_frequencies_input": {
-        "type": "numeric",
-        "unit": "-",
-        "value": "120"
-      },
-      "plot_pressure_axis_input": {
-        "type": "numeric",
-        "value": "2"
-      },
-      "plot_pressure_ifreq_input": {
-        "type": "numeric",
-        "value": "0"
-      },
-      "plot_pressure_index_input": {
-        "type": "numeric",
-        "value": "0"
-      },
-      "plot_pressure_type_input": {
-        "type": "string",
-        "value": ""
-      },
-      "calc_response_area_input": {
-        "type": "numeric",
-        "value": "9"
-      },
-      "calc_response_ibeta_input": {
-        "type": "numeric",
-        "value": "0"
-      },
-      "calc_response_yr_input": {
-        "type": "numeric",
-        "value": "50"
-      }
-    },
-    "variable": {
-      "stability_movie_chkbtn_var": {
-        "type": "numeric",
-        "value": true
-      }
+    "user_input": {
+        "object": {
+            "lower_plate_width_input": {
+                "type": "numeric",
+                "value": "10"
+            },
+            "calc_response_area_input": {
+                "type": "numeric",
+                "value": "27"
+            },
+            "calc_response_ibeta_input": {
+                "type": "numeric",
+                "value": "0"
+            },
+            "calc_response_yr_input": {
+                "type": "numeric",
+                "value": "50"
+            },
+            "column_diameter_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "7"
+            },
+            "gap_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "2.5"
+            },
+            "height_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "21"
+            },
+            "max_wave_directions_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "90"
+            },
+            "max_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "2 * pi / 1"
+            },
+            "min_wave_directions_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "0"
+            },
+            "min_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "rad/s",
+                "value": "2 * pi / 35"
+            },
+            "ncol_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "2"
+            },
+            "num_wave_directions_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "2"
+            },
+            "num_wave_frequencies_input": {
+                "type": "numeric",
+                "unit": "-",
+                "value": "1"
+            },
+            "plot_pressure_axis_input": {
+                "type": "numeric",
+                "value": "2"
+            },
+            "plot_pressure_ifreq_input": {
+                "type": "numeric",
+                "value": "0"
+            },
+            "plot_pressure_index_input": {
+                "type": "numeric",
+                "value": "4"
+            },
+            "plot_pressure_type_input": {
+                "type": "string",
+                "value": "Froude-Krylof"
+            }
+        },
+        "variable": {
+            "stability_movie_chkbtn_var": {
+                "type": "numeric",
+                "value": true
+            }
+        }
     }
-  }
 }

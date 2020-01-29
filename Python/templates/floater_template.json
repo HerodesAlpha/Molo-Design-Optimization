@@ -24,7 +24,7 @@
             "Lower": {
                 "Plate": {
                     "Thickness": 0.025,
-                    "Width": "NA"
+                    "Width": 10
                 },
                 "Stiffener": {
                     "Longitudinal": {
@@ -37,7 +37,7 @@
             "Upper": {
                 "Plate": {
                     "Thickness": 0.025,
-                    "Width": "NA"
+                    "Width": 10
                 },
                 "Stiffener": {
                     "Longitudinal": {

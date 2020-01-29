@@ -110,6 +110,15 @@ class Parameter_Space():
     def filling_ratio(self, val):
         self._job_data['floater']['Ballast filling ratio'][1] = val
 
+    @property
+    def lower_plate_width(self):
+        return self._job_data['floater']['Radial']['Flange']['Lower']['Plate']['Width']
+
+    @lower_plate_width.setter
+    def lower_plate_width(self, val):
+        self._job_data['floater']['Radial']['Flange']['Lower']['Plate']['Width'] = val
+
+
 
 class Candidate():
     def __init__(self, parameter_space, fio):

@@ -422,6 +422,8 @@ def msh_file(settings, mesh_type=None):
     filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
     filedata = filedata.replace('#t_lf#', '{}'.format(
             settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']))
+    filedata = filedata.replace('#w_lf#', '{}'.format(
+            settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Width']))
 
     if mesh_type == 'nemoh':
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))

@@ -20,7 +20,7 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "7"
+                "value": "8"
             },
             "gap_input": {
                 "type": "numeric",
@@ -30,7 +30,7 @@
             "height_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "21"
+                "value": "25"
             },
             "max_wave_directions_input": {
                 "type": "numeric",
@@ -89,7 +89,7 @@
             },
             "wtg_label_input": {
                 "type": "string",
-                "value": "Vestas_9.5"
+                "value": "Vestas 9.5"
             }
         }
     }

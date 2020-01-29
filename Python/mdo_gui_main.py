@@ -86,27 +86,31 @@ class Application():
         #print(self.cb1['values'])
         self.cb1.current(0)
 
+        self.get_output('main_text')
+
         self.load_global_cfg()
         print('Global config loaded')
 
         self.set_fio()
         self.load_case_cfg()
+        print('Case config loaded')
 
         self.wtg_label_variable=self.builder.tkvariables.__getitem__('wtg_label_variable')
 
-        self.wtg_label_variable.trace('w', self.set_model_wtg_label)
+        self.wtg_label_variable.trace('w', self.react_to_wtg_label_change)
 
-        self.set_model_wtg_label()
-        print('Case config loaded')
+        self.react_to_wtg_label_change()
 
         # Some tweaks
         self.cb = self.builder.get_object('plot_pressure_type_input')
         self.cb.current(0)
 
+
+
     def set_fio(self, case_label_type='molo_model'):
         analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
-        park_label_input = self.builder.get_object('park_label_input').get()
-        wtg_label_input = self.builder.get_object('wtg_label_input').get()
+        park_label_input = self.builder.get_object('park_label_input').get().replace(' ','_')
+        wtg_label_input = self.builder.get_object('wtg_label_input').get().replace(' ','_')
         nrc = int(self.get_numeric('ncol_input'))
         rh = self.get_numeric('height_input')
         rcd = self.get_numeric('column_diameter_input')
@@ -257,16 +261,17 @@ class Application():
     def get_numeric(self, id):
         return nsp.eval(self.builder.get_object(id).get())
 
-    def set_model_wtg_label(self,*args):
+    def react_to_wtg_label_change(self, *args):
         str=self.wtg_label_variable.get().replace('_',' ')
         #print(str)
         self.builder.get_object('model_wtg_label')['text']=str
+        self.set_fio()
+        #print('Case directory is {:s}'.format())
+        print('Case parent directory is {}'.format(self.fio.case_parent_dir))
 
     def create_model(self):
         self.get_output('model_text')
         self.set_fio()
-
-
 
         p = Parameter_Space(templates_dir=self.template_dir)
         p.ncol = int(self.get_numeric('ncol_input'))
@@ -281,10 +286,13 @@ class Application():
         p.gap = self.get_numeric('gap_input')
         print('Gap factor: {:6.3f}'.format(p.gap))
 
+        p.lower_plate_width=self.get_numeric('lower_plate_width_input')
+
+
         p.filling_ratio = [0.1, 0.1, 0.1]
         self.this_candidate = Candidate(p,self.fio)
         self.this_candidate.settings.wtg_model = self.wtg_label_variable.get()
-        print('\nTurbine type is the {:s}'.format(self.wtg_label_variable.get().replace('_',' ')))
+        print('\nTurbine type is the {:s}'.format(self.wtg_label_variable.get()))
 
         self.this_candidate.init_model(state='New')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir

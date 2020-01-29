@@ -43,7 +43,7 @@ class FileIOClass(object):
         self._park_label = park_label
         self._wtg_label = wtg_label
 
-        case_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
+        self.case_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
 
         if templates_dir==None:
             self._templates_dir=Path(os.getcwd()).joinpath('templates')
@@ -58,7 +58,7 @@ class FileIOClass(object):
             i = 0
             while 1:
                 i += 1
-                if not case_parent_dir.joinpath('case{:04d}'.format(i)).exists():
+                if not self.case_parent_dir.joinpath('case{:04d}'.format(i)).exists():
                     break
             self._case_label = 'case{:04d}'.format(i)
         elif case_label_type == 'molo_model':
@@ -69,7 +69,7 @@ class FileIOClass(object):
 
         self._mesh_name = None
 
-        self._case_dir = case_parent_dir.joinpath(self._case_label)
+        self._case_dir = self.case_parent_dir.joinpath(self._case_label)
 
         self._nemoh_root = self._case_dir.joinpath('nemoh')
         self._gmsh_root = self._case_dir.joinpath('gmsh')

@@ -12,10 +12,11 @@ Geometry.CopyMeshingMethod = 1;
 // ----------------------------------------------------------------------------
 
 lc = 1e-2;	        //
-drc = 7.5;     // Diameter of radial columns
-dcc = 7;     // Diameter of central column
+drc = 7.5;     	// Diameter of radial columns
+dcc = 7;     	// Diameter of central column
+wlf = 13; 	//Width lower flange/plate
 gaf = 0.8; 	    // Gap factor (ratio of drc)
-hgt = 6.356260514543988;	    // Height of columns
+hgt = 6.35;	    // Height of columns
 xO = 0;		// Model origin x-axis
 yO = 0;		// Model origin y-axis
 zO = -6.356260514543988;	// Model origin z-axis
@@ -169,38 +170,3 @@ Symmetry {1, 0, 0, -1.5*p12x} {
   Duplicata { Surface{24}; Surface{2}; Surface{23}; Surface{29}; Surface{34}; Surface{4}; }
 }
 
-//+
-Recursive Delete {
-  Surface{43}; Surface{63}; 
-}
-
-Translate {Sqrt(2)/2*rrc, Sqrt(2)/2*rrc, 0} {
-  Duplicata { Point{163}; }
-}
-
-Translate {0, 0, -vdist} {
-  Duplicata { Point{121}; }
-}
-
-Line(92) = {163, 185};//+
-Circle(93) = {185, 163, 184};
-//+
-Circle(94) = {184, 163, 172};
-//+
-Curve Loop(5) = {92, 93, 94, 62};
-//+
-Plane Surface(59) = {5};
-//+
-Transfinite Curve {92, 93, 94} = 5 Using Progression 1;
-//+
-Transfinite Surface {59};
-//+
-Recombine Surface {59};
-//+
-Symmetry {-Sqrt(3)/2, 1/2, 0, 0} {
-  Duplicata { Surface{19}; Surface{1}; Surface{3}; Surface{23}; Surface{2}; Surface{24}; Surface{4}; Surface{29}; Surface{38}; Surface{34}; Surface{53}; Surface{48}; Surface{58}; Surface{59}; }
-}
-//+
-Symmetry {-Sqrt(3)/2, -1/2, 0, 0} {
-  Duplicata { Surface{95}; Surface{100}; Surface{110}; Surface{115}; Surface{120}; Surface{130}; Surface{135}; Surface{145}; Surface{150}; Surface{160}; Surface{105}; Surface{125}; Surface{140}; Surface{155}; }
-}

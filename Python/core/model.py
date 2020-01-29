@@ -162,7 +162,7 @@ class FloaterClass(AssemblyClass, object):
 
         self._n_strips = 200  # Number of flange strips in longitudinal direction
 
-        self._w_lf = self._dia_rc
+        self._w_lf = floater_data.w_lf
         self._w_uf = self._dia_rc
 
         self._draught = settings.draught
@@ -512,6 +512,7 @@ class FloaterDataClass():
         self.thi_hc = fdi['Central column thickness']
         self.hgt = fdi['Radial']['Heigth']
         self.t_lf = fdi['Radial']['Flange']['Lower']['Plate']['Thickness']
+        self.w_lf = fdi['Radial']['Flange']['Lower']['Plate']['Width']
         self.t_uf = fdi['Radial']['Flange']['Upper']['Plate']['Thickness']
         self._ballast_filling = fdi['Ballast filling ratio']
         self.rho_bal = fdi['Ballast density']
@@ -519,3 +520,4 @@ class FloaterDataClass():
         self.h_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
         self.t_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Thickness']
         self.h_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Height']
+
