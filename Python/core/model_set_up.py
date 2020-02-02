@@ -106,7 +106,7 @@ def init_models(settings):  #
     print('\nRecreate mass model for ballasted draught = {:5.2f}m'.format(settings.draught))
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)
 
-    # hs_floater.show()
+    #hs_floater.show()
     print(hs_floater.get_hydrostatic_report())
     settings._report.write_hydrostatic_report_latex_table(hs_floater)
 

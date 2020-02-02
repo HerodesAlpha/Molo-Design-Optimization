@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
                     p.gap = g
                     p.height = h
-                    p.column_diameter = d
+                    p.radial_column_diameter = d
                     p.filling_ratio = [b] * 3
                     this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
                     with open(this_candidate.settings.fio.case_dir.joinpath('stdout_redirect.txt'), 'w') as fout:

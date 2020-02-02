@@ -96,10 +96,12 @@ class Application():
         print('Case config loaded')
 
         self.wtg_label_variable=self.builder.tkvariables.__getitem__('wtg_label_variable')
-
         self.wtg_label_variable.trace('w', self.react_to_wtg_label_change)
-
         self.react_to_wtg_label_change()
+
+        self.plot_pressure_type_variable=self.builder.tkvariables.__getitem__('plot_pressure_type_variable')
+        self.plot_pressure_type_variable.trace('w', self.react_to_pressure_type_change)
+        #self.react_to_pressure_type_change()
 
         # Some tweaks
         self.cb = self.builder.get_object('plot_pressure_type_input')
@@ -261,6 +263,16 @@ class Application():
     def get_numeric(self, id):
         return nsp.eval(self.builder.get_object(id).get())
 
+
+    def react_to_pressure_type_change(self, *args):
+        str=self.plot_pressure_type_variable.get().replace('_',' ')
+        if str == 'Radiation':
+            self.builder.get_object('plot_pressure_index_input')['text']='Degree of freedom'
+        else:
+            self.builder.get_object('plot_pressure_index_input')['text']='Wave direction'
+
+
+
     def react_to_wtg_label_change(self, *args):
         str=self.wtg_label_variable.get().replace('_',' ')
         #print(str)
@@ -280,17 +292,27 @@ class Application():
         p.height = self.get_numeric('height_input')
         print('Column height: {:6.3f}'.format(p.height))
 
-        p.column_diameter = self.get_numeric('column_diameter_input')
-        print('Column diameter: {:6.3f}'.format(p.column_diameter))
+        p.radial_column_diameter = self.get_numeric('column_diameter_input')
+        print('Column diameter: {:6.3f}'.format(p.radial_column_diameter))
+        p.radial_column_thickness = self.get_numeric('column_tickness_input')
 
         p.gap = self.get_numeric('gap_input')
         print('Gap factor: {:6.3f}'.format(p.gap))
 
-        p.lower_plate_width=self.get_numeric('lower_plate_width_input')
+
+
+        p.upper_flange_thickness = self.get_numeric('upper_flange_thickness_input')
+        p.lower_flange_thickness = self.get_numeric('lower_flange_thickness_input')
+
+
+        p.lower_plate_width= p.radial_column_diameter + 2 * self.get_numeric('lower_plate_overwidth_input')
+        p.lower_flange_overlength = self.get_numeric('lower_plate_overlength_input')
+
 
 
         p.filling_ratio = [0.1, 0.1, 0.1]
         self.this_candidate = Candidate(p,self.fio)
+        self.this_candidate.settings.lower_face_corrected_z_pos = False
         self.this_candidate.settings.wtg_model = self.wtg_label_variable.get()
         print('\nTurbine type is the {:s}'.format(self.wtg_label_variable.get()))
 

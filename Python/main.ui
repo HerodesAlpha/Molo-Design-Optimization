@@ -333,7 +333,6 @@
                                 <property name="text" translatable="yes">Number of columns per wing</property>
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">0</property>
@@ -349,7 +348,6 @@
                                 <property name="width">20</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">0</property>
@@ -362,7 +360,6 @@
                                 <property name="text" translatable="yes">Diameter [m]</property>
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">1</property>
@@ -375,10 +372,33 @@
                                 <property name="text" translatable="yes">7.8</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">1</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="column_thickness_label">
+                                <property name="text" translatable="yes">Thickness [m]</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="column_thickness_input">
+                                <property name="text" translatable="yes">0.04</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
                                   <property name="sticky">w</property>
                                 </layout>
                               </object>
@@ -388,10 +408,9 @@
                                 <property name="text" translatable="yes">Height[m]</property>
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
-                                  <property name="row">2</property>
+                                  <property name="row">3</property>
                                   <property name="sticky">w</property>
                                 </layout>
                               </object>
@@ -401,10 +420,9 @@
                                 <property name="text" translatable="yes">20</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
-                                  <property name="row">2</property>
+                                  <property name="row">3</property>
                                   <property name="sticky">w</property>
                                 </layout>
                               </object>
@@ -414,10 +432,9 @@
                                 <property name="text" translatable="yes">Gap factor</property>
                                 <layout>
                                   <property name="column">0</property>
-                                  <property name="ipadx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
-                                  <property name="row">3</property>
+                                  <property name="row">4</property>
                                   <property name="sticky">w</property>
                                 </layout>
                               </object>
@@ -427,7 +444,94 @@
                                 <property name="text" translatable="yes">1.1</property>
                                 <layout>
                                   <property name="column">1</property>
-                                  <property name="ipadx">20</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">4</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="upper_flange_thickness_label">
+                                <property name="text" translatable="yes">Upper flange thickness</property>
+                                <layout>
+                                  <property name="column">2</property>
+                                  <property name="padx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="upper_flange_thickness_input">
+                                <property name="text" translatable="yes">1.1</property>
+                                <layout>
+                                  <property name="column">3</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">0</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="lower_flange_thickness_labe">
+                                <property name="text" translatable="yes">Lower flange thickness</property>
+                                <layout>
+                                  <property name="column">2</property>
+                                  <property name="padx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">1</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="lower_flange_thickness_input">
+                                <property name="text" translatable="yes">1.1</property>
+                                <layout>
+                                  <property name="column">3</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">1</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="lower_flange_overwidth_label">
+                                <property name="text" translatable="yes">Lower flange overwidth</property>
+                                <layout>
+                                  <property name="column">2</property>
+                                  <property name="padx">10</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Entry" id="lower_flange_overwidth_input">
+                                <property name="text" translatable="yes">3</property>
+                                <layout>
+                                  <property name="column">3</property>
+                                  <property name="pady">10</property>
+                                  <property name="propagate">True</property>
+                                  <property name="row">2</property>
+                                  <property name="sticky">w</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="ttk.Label" id="lower_flange_overlength_label">
+                                <property name="text" translatable="yes">Lower flange overlength</property>
+                                <layout>
+                                  <property name="column">2</property>
+                                  <property name="padx">10</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
                                   <property name="row">3</property>
@@ -436,27 +540,13 @@
                               </object>
                             </child>
                             <child>
-                              <object class="ttk.Label" id="lower_plate_width_label">
-                                <property name="text" translatable="yes">Lower plate width</property>
+                              <object class="ttk.Entry" id="lower_flange_overlength_input">
+                                <property name="text" translatable="yes">3</property>
                                 <layout>
-                                  <property name="column">0</property>
-                                  <property name="ipadx">10</property>
+                                  <property name="column">3</property>
                                   <property name="pady">10</property>
                                   <property name="propagate">True</property>
-                                  <property name="row">4</property>
-                                  <property name="sticky">w</property>
-                                </layout>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="ttk.Entry" id="lower_plate_width_input">
-                                <property name="text" translatable="yes">10</property>
-                                <layout>
-                                  <property name="column">1</property>
-                                  <property name="ipadx">20</property>
-                                  <property name="pady">10</property>
-                                  <property name="propagate">True</property>
-                                  <property name="row">4</property>
+                                  <property name="row">3</property>
                                   <property name="sticky">w</property>
                                 </layout>
                               </object>
@@ -468,9 +558,9 @@
                             <property name="height">200</property>
                             <property name="width">200</property>
                             <layout>
-                              <property name="column">1</property>
+                              <property name="column">0</property>
                               <property name="propagate">True</property>
-                              <property name="row">0</property>
+                              <property name="row">1</property>
                               <property name="sticky">nsew</property>
                               <columns>
                                 <column id="0">
@@ -484,7 +574,7 @@
                                 <property name="padding">20</property>
                                 <property name="text" translatable="yes">WTG Type</property>
                                 <layout>
-                                  <property name="column">1</property>
+                                  <property name="column">0</property>
                                   <property name="propagate">True</property>
                                   <property name="row">0</property>
                                   <property name="sticky">nsew</property>
@@ -498,8 +588,8 @@
                                 <layout>
                                   <property name="column">1</property>
                                   <property name="propagate">True</property>
-                                  <property name="row">1</property>
-                                  <property name="sticky">nsew</property>
+                                  <property name="row">0</property>
+                                  <property name="sticky">ew</property>
                                 </layout>
                               </object>
                             </child>
@@ -1384,6 +1474,7 @@
                                 <property name="justify">left</property>
                                 <property name="state">readonly</property>
                                 <property name="takefocus">false</property>
+                                <property name="textvariable">string:plot_pressure_type_variable</property>
                                 <property name="values">"Froude-Krylof" "Diffraction" "Radiation"</property>
                                 <layout>
                                   <property name="column">1</property>
@@ -1395,7 +1486,7 @@
                             </child>
                             <child>
                               <object class="ttk.Label" id="plot_pressure_index_label">
-                                <property name="text" translatable="yes">Pressure index (either force degree of freedom or wave direction)</property>
+                                <property name="text" translatable="yes">Pressure index (either degree of freedom or wave direction)</property>
                                 <property name="wraplength">200</property>
                                 <layout>
                                   <property name="column">0</property>

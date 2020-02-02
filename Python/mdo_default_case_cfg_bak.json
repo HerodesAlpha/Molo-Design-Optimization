@@ -1,13 +1,9 @@
 {
     "user_input": {
         "object": {
-            "lower_plate_width_input": {
-                "type": "numeric",
-                "value": "10"
-            },
             "calc_response_area_input": {
                 "type": "numeric",
-                "value": "27"
+                "value": "11"
             },
             "calc_response_ibeta_input": {
                 "type": "numeric",
@@ -20,17 +16,33 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "7"
+                "value": "8.5"
             },
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "2.5"
+                "value": "3"
             },
             "height_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "21"
+                "value": "24"
+            },
+            "lower_flange_overwidth_input": {
+                "type": "numeric",
+                "value": "1.75"
+            },
+            "lower_flange_overlength_input": {
+                "type": "numeric",
+                "value": "3"
+            },
+            "lower_flange_thickness_input": {
+                "type": "numeric",
+                "value": "0.03"
+            },
+            "upper_flange_thickness_input": {
+                "type": "numeric",
+                "value": "0.03"
             },
             "max_wave_directions_input": {
                 "type": "numeric",
@@ -77,7 +89,7 @@
             },
             "plot_pressure_index_input": {
                 "type": "numeric",
-                "value": "4"
+                "value": ""
             },
             "plot_pressure_type_input": {
                 "type": "string",

@@ -59,13 +59,22 @@ class Parameter_Space():
         self._job_data['floater']['Number of radials'] = val
 
     @property
-    def column_diameter(self):
+    def radial_column_diameter(self):
         return self._job_data['floater']['Radial']['Column']['Diameter']
 
-    @column_diameter.setter
-    def column_diameter(self, val):
+    @radial_column_diameter.setter
+    def radial_column_diameter(self, val):
         self._job_data['floater']['Radial']['Column']['Diameter'] = val
 
+    @property
+    def radial_column_thickness(self):
+        return self._job_data['floater']['Radial']['Column']['Thickness']
+
+    @radial_column_thickness.setter
+    def radial_column_thickness(self, val):
+        self._job_data['floater']['Radial']['Column']['Thickness'] = val
+
+    @property
     @property
     def ncol(self):
         return self._job_data['floater']['Radial']['Number of columns']
@@ -117,6 +126,32 @@ class Parameter_Space():
     @lower_plate_width.setter
     def lower_plate_width(self, val):
         self._job_data['floater']['Radial']['Flange']['Lower']['Plate']['Width'] = val
+
+    @property
+    def lower_flange_overlength(self):
+        return self._job_data['floater']['Radial']['Flange']['Lower']['Overlength']
+
+    @lower_flange_overlength.setter
+    def lower_flange_overlength(self, val):
+        self._job_data['floater']['Radial']['Flange']['Lower']['Overlength'] = val
+
+    @property
+    def lower_flange_thickness(self):
+        return self._job_data['floater']['Radial']['Flange']['Lower']['eq_thick']
+
+    @lower_flange_thickness.setter
+    def lower_flange_thickness(self, val):
+        self._job_data['floater']['Radial']['Flange']['Lower']['eq_thick'] = val
+
+
+    @property
+    def upper_flange_thickness(self):
+        return self._job_data['floater']['Radial']['Flange']['Upper']['eq_thick']
+
+    @upper_flange_thickness.setter
+    def upper_flange_thickness(self, val):
+        self._job_data['floater']['Radial']['Flange']['Upper']['eq_thick'] = val
+
 
 
 

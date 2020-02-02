@@ -7,7 +7,7 @@
             },
             "calc_response_area_input": {
                 "type": "numeric",
-                "value": "27"
+                "value": "11"
             },
             "calc_response_ibeta_input": {
                 "type": "numeric",
@@ -20,17 +20,17 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "8"
+                "value": "8.5"
             },
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "2.5"
+                "value": "3"
             },
             "height_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "25"
+                "value": "24"
             },
             "max_wave_directions_input": {
                 "type": "numeric",
@@ -69,7 +69,7 @@
             },
             "park_label_input": {
                 "type": "string",
-                "value": "site_01"
+                "value": "my_site"
             },
             "plot_pressure_axis_input": {
                 "type": "numeric",
@@ -81,7 +81,7 @@
             },
             "plot_pressure_index_input": {
                 "type": "numeric",
-                "value": "4"
+                "value": ""
             },
             "plot_pressure_type_input": {
                 "type": "string",
@@ -89,7 +89,7 @@
             },
             "wtg_label_input": {
                 "type": "string",
-                "value": "Vestas 9.5"
+                "value": "Haliade X"
             }
         }
     }

@@ -78,9 +78,9 @@ class ModelClass(object):
     def print_vector_matrix_global(self):
         if not self.verbose == 0:
             print(
-                    '{} {}\n\tMass = {m:6.1f} t\n\tReduction point is [{a[0]:6.2f}, {a[1]:6.2f}, {a[2]:6.2f}]\n\n\tVector matrix'.format(
-                            self.__class__.__name__, self._type, m=self.inertias.mass / 1000,
-                            a=self.inertias.reduction_point))
+                '{} {}\n\tMass = {m:6.1f} t\n\tReduction point is [{a[0]:6.2f}, {a[1]:6.2f}, {a[2]:6.2f}]\n\n\tVector matrix'.format(
+                    self.__class__.__name__, self._type, m=self.inertias.mass / 1000,
+                    a=self.inertias.reduction_point))
             m = self.inertias.mass_matrix_global / self.inertias.mass
             s = ''
             for i in range(6):
@@ -107,9 +107,10 @@ class AssemblyClass(ModelClass, object):
             self.inertias._point += part.inertias._point * part.mass
         self.inertias._point /= sum_mass_matrix_global[0, 0]
 
-        self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * sum_mass_matrix_global[0,0]
+        self.inertias._mass_matrix_local = sum_mass_matrix_global - self.inertias._huygens_transport() * \
+                                           sum_mass_matrix_global[0, 0]
         self._inertias.cog = np.zeros(3)  # Just to be sure
-        #self.print_vector_matrix_global()
+        # self.print_vector_matrix_global()
 
 
 class UnitClass(AssemblyClass, object):
@@ -163,27 +164,31 @@ class FloaterClass(AssemblyClass, object):
         self._n_strips = 200  # Number of flange strips in longitudinal direction
 
         self._w_lf = floater_data.w_lf
+        print('Width of lower flange {:1.2f}'.format(self._w_lf))
         self._w_uf = self._dia_rc
+        print('Width of upper flange {:1.2f}'.format(self._w_uf))
+
+        self._l_uf = (1 + self._gap) * self._dia_rc * self._nc
+        print('Length of upper flange {:1.2f}'.format(self._l_uf))
+        self._l_lf = self._l_uf + floater_data.l_lf_overlength
+        print('Length of lower flange {:1.2f}'.format(self._l_lf))
+
 
         self._draught = settings.draught
 
         self._generate_parts()
 
-
-
         self.aggregate_inertias_from_parts(self.parts_list)
 
-
         pass
-        #self.print_vector_matrix_global()
-
+        # self.print_vector_matrix_global()
 
     def _generate_parts(self):
         # self._inertias.reset()
 
-
         da = (1 + self._gap) * self._dia_rc
-        a = da * self._nc / self._n_strips
+        lower_flange_strip_width = self._l_lf / self._n_strips
+        upper_flange_strip_width = self._l_uf / self._n_strips
         dtheta = 2 * pi / self._nr
         theta = [i * dtheta for i in range(self._nr)]
         zr = -(self._hgt / 2 + self._t_lf)
@@ -237,53 +242,53 @@ class FloaterClass(AssemblyClass, object):
                     FlangeClass(type='Radial {r:1.0f}, upper flange, strip {s:1.0f}'.format(r=ir + 1, s=istrip + 1),
                                 irow=ir,
                                 icol=None,
-                                a=a,
+                                a=upper_flange_strip_width,
                                 b=self._w_uf,
                                 h=self._t_uf,
                                 density=self._rho_st,
                                 theta=theta[ir],
                                 red_point=rot_mat @ [rpx(istrip), rpy, rpz_uf + self._draught]))
 
-                for ist in range(2):
-                    self.parts_list.append(FlangeClass(
-                            type='Radial {r:1.0f}, upper flange, {a} stiffener, strip {s:1.0f}'.format(r=ir + 1,
-                                                                                                       a=lr[ist],
-                                                                                                       s=istrip + 1),
-                            irow=ir,
-                            icol=None,
-                            a=a,
-                            b=self._t_ufst,
-                            h=self._h_ufst,
-                            density=self._rho_st,
-                            theta=theta[ir],
-                            red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_ufst,
-                                                 rpz_uf + dz_ufst + self._draught]))
+                # for ist in range(2):
+                #     self.parts_list.append(FlangeClass(
+                #         type='Radial {r:1.0f}, upper flange, {a} stiffener, strip {s:1.0f}'.format(r=ir + 1,
+                #                                                                                    a=lr[ist],
+                #                                                                                    s=istrip + 1),
+                #         irow=ir,
+                #         icol=None,
+                #         a=upper_flange_strip_width,
+                #         b=self._t_ufst,
+                #         h=self._h_ufst,
+                #         density=self._rho_st,
+                #         theta=theta[ir],
+                #         red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_ufst,
+                #                              rpz_uf + dz_ufst + self._draught]))
 
                 self.parts_list.append(
                     FlangeClass(type='Radial {r:1.0f}, lower flange, strip {s:1.0f}'.format(r=ir + 1, s=istrip + 1),
                                 irow=ir,
                                 icol=None,
-                                a=a,
+                                a=lower_flange_strip_width,
                                 b=self._w_lf,
                                 h=self._t_lf,
                                 density=self._rho_st,
                                 theta=theta[ir],
                                 red_point=rot_mat @ [rpx(istrip), rpy, rpz_lf + self._draught]))
 
-                for ist in range(2):
-                    self.parts_list.append(FlangeClass(
-                            type='Radial {r:1.0f}, lower flange, {a} stiffener, strip {s:1.0f}'.format(r=ir + 1,
-                                                                                                       a=lr[ist],
-                                                                                                       s=istrip + 1),
-                            irow=ir,
-                            icol=None,
-                            a=a,
-                            b=self._t_ufst,
-                            h=self._h_ufst,
-                            density=self._rho_st,
-                            theta=theta[ir],
-                            red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_lfst,
-                                                 rpz_lf + dz_lfst + self._draught]))
+                # for ist in range(2):
+                #     self.parts_list.append(FlangeClass(
+                #         type='Radial {r:1.0f}, lower flange, {a} stiffener, strip {s:1.0f}'.format(r=ir + 1,
+                #                                                                                    a=lr[ist],
+                #                                                                                    s=istrip + 1),
+                #         irow=ir,
+                #         icol=None,
+                #         a=lower_flange_strip_width,
+                #         b=self._t_ufst,
+                #         h=self._h_ufst,
+                #         density=self._rho_st,
+                #         theta=theta[ir],
+                #         red_point=rot_mat @ [rpx(istrip), rpy + (-1) ** ist * dy_lfst,
+                #                              rpz_lf + dz_lfst + self._draught]))
 
             # Radial columns
             for ic in range(self._nc):
@@ -310,8 +315,6 @@ class FloaterClass(AssemblyClass, object):
                                                     filling=hf_rc,
                                                     rho_bal=self._rho_bal,
                                                     red_point=rot_mat @ [xr, yr, zrc_bal + self._draught]))
-
-
 
     @property
     def nc(self):
@@ -511,13 +514,14 @@ class FloaterDataClass():
         self.dia_hc = fdi['Central column diameter']
         self.thi_hc = fdi['Central column thickness']
         self.hgt = fdi['Radial']['Heigth']
-        self.t_lf = fdi['Radial']['Flange']['Lower']['Plate']['Thickness']
+        self.t_lf = fdi['Radial']['Flange']['Lower']['eq_thick']
         self.w_lf = fdi['Radial']['Flange']['Lower']['Plate']['Width']
-        self.t_uf = fdi['Radial']['Flange']['Upper']['Plate']['Thickness']
+        self.t_uf = fdi['Radial']['Flange']['Upper']['eq_thick']
         self._ballast_filling = fdi['Ballast filling ratio']
         self.rho_bal = fdi['Ballast density']
         self.t_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Thickness']
         self.h_lfst = fdi['Radial']['Flange']['Lower']['Stiffener']['Longitudinal']['Height']
         self.t_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Thickness']
         self.h_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Height']
+        self.l_lf_overlength = fdi['Radial']['Flange']['Lower']['Overlength']
 

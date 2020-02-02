@@ -19,7 +19,7 @@ irow = -1
 
 p.gap = 1.7
 p.height = 21
-p.column_diameter = 7.8
+p.radial_column_diameter = 7.8
 p.filling_ratio = [0.1, 0.1]
 this_candidate = Candidate(analyses_root, park_label, wtg_label, p, case_label_type='molo_model')
 this_candidate.settings.wtg_model = "Vestas 9.5"

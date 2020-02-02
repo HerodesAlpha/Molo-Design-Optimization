@@ -422,12 +422,14 @@ def msh_file(settings, mesh_type=None):
     filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
     filedata = filedata.replace('#t_lf#', '{}'.format(
             settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']))
-    filedata = filedata.replace('#w_lf#', '{}'.format(
+    filedata = filedata.replace('#wlf#', '{}'.format(
             settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Width']))
+    filedata = filedata.replace('#overlength#', '{}'.format(
+            settings.job_data['floater']['Radial']['Flange']['Lower']['Overlength']))
 
     if mesh_type == 'nemoh':
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
-        filedata = filedata.replace('#zO#', '{}'.format(-settings.job_data['floater']['Draught']))
+        filedata = filedata.replace('#z0#', '{}'.format(-settings.job_data['floater']['Draught']))
         filedata = filedata.replace('#vdist#', '{}'.format(settings.job_data['floater']['Thin panel offset']))
     else:
         filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial']['Heigth']))
