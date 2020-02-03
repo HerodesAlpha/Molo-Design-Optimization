@@ -20,12 +20,12 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "8.5"
+                "value": "8.0"
             },
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3"
+                "value": "3.5"
             },
             "height_input": {
                 "type": "numeric",
@@ -60,12 +60,12 @@
             "num_wave_directions_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "2"
+                "value": "1"
             },
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "1"
+                "value": "120"
             },
             "park_label_input": {
                 "type": "string",
@@ -81,7 +81,7 @@
             },
             "plot_pressure_index_input": {
                 "type": "numeric",
-                "value": ""
+                "value": "0"
             },
             "plot_pressure_type_input": {
                 "type": "string",

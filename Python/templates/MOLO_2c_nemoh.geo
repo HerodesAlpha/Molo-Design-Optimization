@@ -21,7 +21,7 @@ hgt = 6.35;	    // Height of columns
 x0 = 0;		// Model origin x-axis
 y0 = 0;		// Model origin y-axis
 z0 = -6.356260514543988;	// Model origin z-axis
-nel_rrc = 16;    // Number of elements around cylinder circ.
+nel_rrc = 12;    // Number of elements around cylinder circ.
 vdist = 5;
 
 // ----------------------------------------------------------------------------
@@ -38,7 +38,8 @@ nop_flat1 = nel_rrc/4 + 1;
 nop_flat2 = nel_rrc/2 + 1;
 nop_height1 = Floor(dz/(Pi*drc/nel_rrc))+1;
 nop_height2 = Floor(dz/(Pi*drc/(2*nel_rrc)))+1;
-nop_lower_edge = Floor(2.5*dx/(drc*Pi/16));
+nop_lower_long_edge = Floor(2.5*dx/(drc*Pi/16)/1.5);
+nop_lower_short_edge = 4;
 
 // ----------------------------------------------------------------------------
 // 	CENTRAL HUB LOWER FLANGE
@@ -211,9 +212,9 @@ Curve Loop(7) = {92, 93, 90, 91};
 //+
 Plane Surface(86) = {7};
 //+
-Transfinite Curve {90, 92} = nop_lower_edge Using Progression 1;
+Transfinite Curve {90, 92} = nop_lower_long_edge Using Progression 1;
 //+
-Transfinite Curve {93, 91} = nop_flat1 Using Progression 1;
+Transfinite Curve {93, 91} = nop_lower_short_edge Using Progression 1;
 Transfinite Surface {86};
 //+
 Recombine Surface {86};

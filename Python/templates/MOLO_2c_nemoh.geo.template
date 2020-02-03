@@ -38,7 +38,8 @@ nop_flat1 = nel_rrc/4 + 1;
 nop_flat2 = nel_rrc/2 + 1;
 nop_height1 = Floor(dz/(Pi*drc/nel_rrc))+1;
 nop_height2 = Floor(dz/(Pi*drc/(2*nel_rrc)))+1;
-nop_lower_edge = Floor(2.5*dx/(drc*Pi/16));
+nop_lower_long_edge = Floor(2.5*dx/(drc*Pi/16)/1.5);
+nop_lower_short_edge = 4;
 
 // ----------------------------------------------------------------------------
 // 	CENTRAL HUB LOWER FLANGE
@@ -211,19 +212,16 @@ Curve Loop(7) = {92, 93, 90, 91};
 //+
 Plane Surface(86) = {7};
 //+
-Transfinite Curve {90, 92} = nop_lower_edge Using Progression 1;
+Transfinite Curve {90, 92} = nop_lower_long_edge Using Progression 1;
 //+
-Transfinite Curve {93, 91} = nop_flat1 Using Progression 1;
+Transfinite Curve {93, 91} = nop_lower_short_edge Using Progression 1;
 Transfinite Surface {86};
 //+
 Recombine Surface {86};
 //+
-
-//+
 Translate {rcc + overlength -dx/2, 0, 0} {
   Point{89}; Point{90}; Point{225}; Point{226};
 }
-
 //+
 Symmetry {-Sqrt(3)/2, 1/2, 0, 0} {
   Duplicata { Surface{17}; Surface{21}; Surface{1}; Surface{2}; Surface{25}; Surface{3}; Surface{29}; Surface{4}; Surface{40}; Surface{45}; Surface{35}; Surface{30}; Surface{85}; Surface{80}; Surface{75}; Surface{70}; Surface{60}; Surface{55}; Surface{65}; Surface{50}; Surface{86}; }
@@ -232,3 +230,5 @@ Symmetry {-Sqrt(3)/2, 1/2, 0, 0} {
 Symmetry {-Sqrt(3)/2, -1/2, 0, 0} {
   Duplicata { Surface{179}; Surface{189}; Surface{174}; Surface{184}; Surface{164}; Surface{169}; Surface{154}; Surface{159}; Surface{139}; Surface{149}; Surface{134}; Surface{144}; Surface{124}; Surface{129}; Surface{114}; Surface{119}; Surface{104}; Surface{94}; Surface{99}; Surface{109}; Surface{194}; }
 }
+//+
+

@@ -74,7 +74,7 @@ class Parameter_Space():
     def radial_column_thickness(self, val):
         self._job_data['floater']['Radial']['Column']['Thickness'] = val
 
-    @property
+
     @property
     def ncol(self):
         return self._job_data['floater']['Radial']['Number of columns']

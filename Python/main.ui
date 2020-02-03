@@ -342,8 +342,6 @@
                             </child>
                             <child>
                               <object class="ttk.Entry" id="ncol_input">
-                                <property name="exportselection">false</property>
-                                <property name="font">TkHeadingFont</property>
                                 <property name="text" translatable="yes">2</property>
                                 <property name="width">20</property>
                                 <layout>
@@ -1400,6 +1398,31 @@
                       </columns>
                     </layout>
                     <child>
+                      <object class="ttk.Frame" id="plot_init_frame">
+                        <property name="height">200</property>
+                        <property name="padding">20</property>
+                        <property name="width">200</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="propagate">True</property>
+                          <property name="row">0</property>
+                          <property name="sticky">nsew</property>
+                        </layout>
+                        <child>
+                          <object class="ttk.Button" id="plot_init_button">
+                            <property name="command">gui_init_plot</property>
+                            <property name="text" translatable="yes">Init</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="propagate">True</property>
+                              <property name="row">0</property>
+                              <property name="sticky">w</property>
+                            </layout>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
                       <object class="ttk.Labelframe" id="plot_pressure_frame">
                         <property name="borderwidth">20</property>
                         <property name="height">200</property>
@@ -1411,7 +1434,7 @@
                           <property name="padx">20</property>
                           <property name="pady">20</property>
                           <property name="propagate">True</property>
-                          <property name="row">0</property>
+                          <property name="row">1</property>
                           <property name="sticky">ew</property>
                         </layout>
                         <child>
@@ -1487,6 +1510,7 @@
                             <child>
                               <object class="ttk.Label" id="plot_pressure_index_label">
                                 <property name="text" translatable="yes">Pressure index (either degree of freedom or wave direction)</property>
+                                <property name="textvariable">string:plot_pressure_index_label_variable</property>
                                 <property name="wraplength">200</property>
                                 <layout>
                                   <property name="column">0</property>
@@ -1543,7 +1567,7 @@
                         <child>
                           <object class="ttk.Button" id="plot_pressure_button">
                             <property name="command">plot_pressure</property>
-                            <property name="text" translatable="yes">Run</property>
+                            <property name="text" translatable="yes">Plot</property>
                             <layout>
                               <property name="column">0</property>
                               <property name="columnspan">3</property>
@@ -1555,25 +1579,42 @@
                       </object>
                     </child>
                     <child>
-                      <object class="ttk.Frame" id="plot_init_frame">
+                      <object class="ttk.Labelframe" id="plot_rao_frame">
+                        <property name="borderwidth">20</property>
                         <property name="height">200</property>
-                        <property name="padding">20</property>
+                        <property name="relief">groove</property>
+                        <property name="text" translatable="yes">Plot RAO</property>
                         <property name="width">200</property>
                         <layout>
                           <property name="column">1</property>
+                          <property name="padx">20</property>
+                          <property name="pady">20</property>
                           <property name="propagate">True</property>
-                          <property name="row">0</property>
-                          <property name="sticky">nsew</property>
+                          <property name="row">1</property>
+                          <property name="sticky">ew</property>
                         </layout>
                         <child>
-                          <object class="ttk.Button" id="plot_init_button">
-                            <property name="command">gui_init_plot</property>
-                            <property name="text" translatable="yes">Init</property>
+                          <object class="ttk.Frame" id="plot_rao_input_frame">
+                            <property name="borderwidth">10</property>
+                            <property name="height">200</property>
+                            <property name="width">200</property>
                             <layout>
                               <property name="column">0</property>
                               <property name="propagate">True</property>
                               <property name="row">0</property>
-                              <property name="sticky">w</property>
+                              <property name="sticky">ew</property>
+                            </layout>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="ttk.Button" id="plot_rao_button">
+                            <property name="command">plot_rao</property>
+                            <property name="text" translatable="yes">Plot</property>
+                            <layout>
+                              <property name="column">0</property>
+                              <property name="columnspan">3</property>
+                              <property name="propagate">True</property>
+                              <property name="row">1</property>
                             </layout>
                           </object>
                         </child>
@@ -1587,7 +1628,7 @@
                           <property name="column">0</property>
                           <property name="columnspan">2</property>
                           <property name="propagate">True</property>
-                          <property name="row">1</property>
+                          <property name="row">2</property>
                           <property name="sticky">nsew</property>
                           <rows>
                             <row id="0">
