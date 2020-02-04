@@ -59,11 +59,15 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 del b
 
                 # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                if settings.lower_face_corrected_z_pos:  # Move lower faces to correct position
-                    ind = self._nemoh_mesh_vertices[:, 2] <= np.min(self._nemoh_mesh_vertices[:, 2]) * 0.99
-                    self._nemoh_mesh_vertices[ind, 2] += settings.thin_panel_offset - settings.flange_thickness
-                    # print('Bottom {}'.format(np.min(self._nemoh_mesh_vertices[:,2])))
-                    del ind
+            if settings.lower_face_corrected_z_pos:  # Move lower faces to correct position
+                ind = self._nemoh_mesh_vertices[:, 2] <= np.min(self._nemoh_mesh_vertices[:, 2]) * 0.99
+                dz=settings.thin_panel_offset - settings.parameter_space.lower_flange_thickness
+                self._nemoh_mesh_vertices[ind, 2] += dz
+                print('Lower face correction performed. z-coordinate moved {:1.3f} m'.format(dz))
+                del ind
+            else:
+                print('Lower face correction NOT performed')
+
 
             self._pd = tb.PanelData(self._nemoh_mesh_vertices, self._nemoh_mesh_faces)
             self._an = self.pd.ppanel_areas[:, np.newaxis] * self.pd.ppanel_normals
@@ -110,7 +114,8 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
                 # sys.stdout.write("\t\tStatic buoyancy pressure\n")
                 # z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for hydro stat. pressure
-                assert settings.lower_face_corrected_z_pos
+                if not settings.lower_face_corrected_z_pos:
+                    print('Warning, lower face correction not performed. Bouyancy may be artificially high')
                 self._pressure['Buoyancy'] = (self._rho_sw * self._gravity) * self._pd.ppanel_centers[:, 2]
 
                 # sys.stdout.write("\t\tStatic buoyancy force\n")

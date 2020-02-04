@@ -25,7 +25,7 @@
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3.5"
+                "value": "3"
             },
             "height_input": {
                 "type": "numeric",
@@ -65,7 +65,7 @@
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "120"
+                "value": "1"
             },
             "park_label_input": {
                 "type": "string",

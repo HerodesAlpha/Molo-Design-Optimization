@@ -81,7 +81,7 @@ class FileIOClass(object):
 
 
         self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
-            'es')
+            'eison')
         # print(self._gmsh_exe)
         assert (Path(self._gmsh_exe).exists())
 
@@ -157,7 +157,7 @@ class FileIOClass(object):
 
 
 class SettingsClass(PhysicalQuantities, object):
-    def __init__(self, parameter_space, fio):
+    def __init__(self, parameter_space_input, fio):
         super().__init__()
 
         self._mesh_name = None
@@ -165,8 +165,8 @@ class SettingsClass(PhysicalQuantities, object):
         self._do_linearize = False
         self._create_stability_movie = False
 
-        self._parameter_space = parameter_space
-        self._job_data = parameter_space.job_data
+        self._parameter_space = parameter_space_input
+        self._job_data = self.parameter_space.job_data
 
         self._analyses_root = fio._analyses_root
         self._park_label = fio._park_label
@@ -235,6 +235,11 @@ class SettingsClass(PhysicalQuantities, object):
     @property
     def wtg_label(self):
         return self._wtg_label
+
+    @property
+    def parameter_space(self):
+        return self._parameter_space
+
 
     @property
     def mesh_file(self):
@@ -404,7 +409,8 @@ class SettingsClass(PhysicalQuantities, object):
 
     @lower_face_corrected_z_pos.setter
     def lower_face_corrected_z_pos(self, val):
-        self._lower_face_corrected_z_pos = val
+        self._job_data['floater']['Correct z pos of lower faces']=val
+        self.save_job_settings()
 
     @property
     def critical_damping_ratio(self):

@@ -21,7 +21,7 @@ overlength = #overlength#; // Lower flange overlength
 x0 = 0;		// Model origin x-axis
 y0 = 0;		// Model origin y-axis
 z0 = #z0#;	// Model origin z-axis
-nel_rrc = #nel#;    // Number of elements around cylinder circ.
+nel_rrc = 12;    // Number of elements around cylinder circ.
 vdist = #vdist#;
 
 // ----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ Transfinite Surface {25};
 //+
 Transfinite Surface {29};
 
-Reverse Surface { 17,21,25,29 };
+//Reverse Surface { 17,21,25,29 };
 
 // ----------------------------------------------------------------------------
 // 	COPY COLUMNS ALONG RADIAL

@@ -475,8 +475,9 @@ class Application():
 
     def plot_rao(self):
         self.get_output('plot_text')
-        # with open("this_candidate.pkl", "rb") as f:
-        #     this_candidate = pickle.load(f)
+        ifreq = int(self.builder.get_object('plot_rao_ifreq_input').get())
+
+
         print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
 
         yr = self.this_candidate.settings.park_data['Design Basis']['ULS']['Return period']
@@ -535,7 +536,7 @@ class Application():
         # --------------
         # FREQUENCY
         # --------------
-        ifreq_print = 15
+        ifreq_print = ifreq
 
         print('\n--------------------------\n D Y N A M I C   F O R C E\n--------------------------')
         print('{:16} {:5.3f}\n'.format(x_label, x_tics[ifreq_print]))

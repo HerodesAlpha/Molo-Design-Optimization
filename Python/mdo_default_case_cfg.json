@@ -21,7 +21,7 @@
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3.5"
+                "value": "3"
             },
             "height_input": {
                 "type": "numeric",
@@ -73,7 +73,7 @@
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "120"
+                "value": "1"
             },
             "plot_pressure_axis_input": {
                 "type": "numeric",
@@ -90,6 +90,10 @@
             "plot_pressure_type_input": {
                 "type": "string",
                 "value": "Froude-Krylof"
+            },
+            "plot_rao_ifreq_input": {
+                "type": "numeric",
+                "value": "0"
             },
             "upper_flange_thickness_input": {
                 "type": "numeric",
