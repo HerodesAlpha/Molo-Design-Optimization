@@ -110,6 +110,8 @@ class Application():
         self.cb = self.builder.get_object('plot_pressure_type_input')
         self.cb.current(0)
 
+        self.rao_x_tics_is_freq = True
+
     def set_fio(self, case_label_type='molo_model'):
         analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
         park_label_input = self.builder.get_object('park_label_input').get().replace(' ','_')
@@ -310,7 +312,7 @@ class Application():
 
         p.filling_ratio = [0.1, 0.1, 0.1]
         self.this_candidate = Candidate(p,self.fio)
-        self.this_candidate.settings.lower_face_corrected_z_pos = False
+        self.this_candidate.settings.lower_face_corrected_z_pos = True
         self.this_candidate.settings.wtg_model = self.wtg_label_variable.get()
         print('\nTurbine type is the {:s}'.format(self.wtg_label_variable.get()))
 
@@ -476,6 +478,8 @@ class Application():
     def plot_rao(self):
         self.get_output('plot_text')
         ifreq = int(self.builder.get_object('plot_rao_ifreq_input').get())
+        sp_x_input = int(self.builder.get_object('plot_rao_section_pos_input').get())
+
 
 
         print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
@@ -500,7 +504,10 @@ class Application():
         self.this_candidate.init_response(short_term_wave_condition=stwc)
 
         # Get section forces
-        sp_x = self.this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
+        if sp_x_input == 0:
+            sp_x = self.this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
+        else:
+            sp_x=sp_x_input
         sp_z = self.this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - self.this_candidate.hs_floater.hs_data[
             'draught']
         #sp_x = -100
@@ -530,11 +537,12 @@ class Application():
         fig, axs = plt.subplots(2, 2)
         dyn_force = self.this_candidate.f_sec1['Dynamic']
 
-        # x_tics = 1 / (2 * np.pi / w)
-        # x_label = 'Frequency [Hz]'
-
-        x_tics = 2 * np.pi / w
-        x_label = 'Period [s]'
+        if self.rao_x_tics_is_freq:
+            x_tics = 1 / (2 * np.pi / w)
+            x_label = 'Frequency [Hz]'
+        else:
+            x_tics = 2 * np.pi / w
+            x_label = 'Period [s]'
 
         # --------------
         # FREQUENCY
@@ -581,7 +589,8 @@ class Application():
         ax1 = axs[1, 0]
         ax2 = ax1.twinx()
 
-        for r in [self.this_candidate.response.rao, self.this_candidate.response.rao_init]:
+        for r in [self.this_candidate.response.rao]:
+            #for r in [self.this_candidate.response.rao, self.this_candidate.response.rao_init]:
 
             for key in d:
 
