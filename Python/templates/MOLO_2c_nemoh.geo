@@ -21,7 +21,7 @@ hgt = 6.35;	    // Height of columns
 x0 = 0;		// Model origin x-axis
 y0 = 0;		// Model origin y-axis
 z0 = -6.356260514543988;	// Model origin z-axis
-nel_rrc = 12;    // Number of elements around cylinder circ.
+nel_rrc = 16;    // Number of elements around cylinder circ.
 vdist = 5;
 
 // ----------------------------------------------------------------------------
@@ -32,14 +32,24 @@ rrc = drc/2;
 rcc = dcc/2;
 dx  = (1 + gaf)*drc; // Distance between column centers
 dz = hgt;
+Printf("dz = %f",dz);
+l_el = Pi*drc/nel_rrc;
+Printf("l_el = %f",l_el);
+
+val=Floor((wlf/2-rrc)/l_el);
+nop_flat0 =  (val < 2) ? 2 : val;
+nop_flat1 = nel_rrc/8 + 1;
+//nop_flat2 = nel_rrc/2 + 1;
+nop_flat3 = nop_flat1 + nop_flat0 - 1;
+
+nop_x_edge = Floor(((1 + 2*gaf)*drc/2)/l_el) + 1;
 
 
-nop_flat1 = nel_rrc/4 + 1;
-nop_flat2 = nel_rrc/2 + 1;
-nop_height1 = Floor(dz/(Pi*drc/nel_rrc))+1;
-nop_height2 = Floor(dz/(Pi*drc/(2*nel_rrc)))+1;
-nop_lower_long_edge = Floor(2.5*dx/(drc*Pi/16)/1.5);
-nop_lower_short_edge = 4;
+nop_height_radial_column = Floor(dz/(l_el)) + 1;
+Printf("dz/(l_el) = %f",dz/(l_el));
+nop_height_center_column = Floor(dz/(l_el*dcc/drc)) + 1;
+nop_lower_long_edge = Floor(2.5*dx/l_el) + 1;
+nop_lower_short_edge = Floor(wlf/l_el) + 1;
 
 // ----------------------------------------------------------------------------
 // 	CENTRAL HUB LOWER FLANGE
@@ -82,153 +92,83 @@ p11x = x0 + rcc *Sqrt(3)/2;
 p11y = y0 + rcc/2;
 Point(11) = {  p11x,  p11y,  z0, lc};
 
-p12x = x0 + dx - rrc*Sqrt(2)/2;
-p12y = y0 + rrc*Sqrt(2)/2;
+p12x = x0 + p03x;
+p12y = y0 + rrc*1/2;
 Point(12) = {  p12x,  p12y,  z0, lc};//+
 
-// ----------------------------------------------------------------------------
-// 	FLANGES; LINES >> SURFACE
-// ----------------------------------------------------------------------------
-
+//p13x = x0 + dx - rrc*Sqrt(2)/2;
+//p13y = y0 + rrc*Sqrt(2)/2;
+p13x = x0 + dx - rrc*Sqrt(3)/2;
+p13y = y0 + rrc*1/2;
+Point(13) = {  p13x,  p13y,  z0, lc};//+
+//+
 Line(1) = {2, 3};
 //+
-Line(2) = {3, 9};
+Line(2) = {3, 12};
 //+
-Line(3) = {9, 8};
+Line(3) = {12, 11};
 //+
-Line(4) = {8, 6};
+Circle(4) = {11, 1, 2};
 //+
-Circle(5) = {6, 1, 11};
+Line(5) = {12, 9};
 //+
-Circle(6) = {11, 1, 2};
+Line(6) = {9, 8};
 //+
-Line(7) = {3, 4};
+Line(7) = {8, 6};
 //+
-Circle(8) = {4, 5, 12};
+Circle(8) = {6, 1, 11};
 //+
-Circle(9) = {12, 5, 7};
+Line(9) = {3, 4};
 //+
-Line(10) = {7, 10};
+Circle(10) = {4, 5, 13};
 //+
-Line(11) = {10, 9};
+Line(11) = {13, 12};
 //+
-Line(12) = {11, 9};
+Circle(12) = {13, 5, 7};
 //+
-Line(13) = {12, 9};
+Line(13) = {7, 10};
 //+
-Transfinite Curve {10, 9, 13, 11, 8, 3, 2, 7, 12, 5, 4, 6, 1} = nop_flat1 Using Progression 1;
+Line(14) = {10, 9};
 //+
-Curve Loop(3) = {3, 4, 5, 12};
+Curve Loop(1) = {1, 2, 3, 4};
 //+
-Plane Surface(1) = {3};
+Plane Surface(1) = {1};
 //+
-Curve Loop(4) = {12, -2, -1, -6};
+Curve Loop(2) = {3, -8, -7, -6, -5};
 //+
-Plane Surface(2) = {4};
+Plane Surface(2) = {2};
 //+
-Curve Loop(5) = {2, -13, -8, -7};
+Curve Loop(3) = {9, 10, 11, -2};
 //+
-Plane Surface(3) = {5};
+Plane Surface(3) = {3};
 //+
-Curve Loop(6) = {13, -11, -10, -9};
+Curve Loop(4) = {11, 5, -14, -13, -12};
 //+
-Plane Surface(4) = {6};
-
-Reverse Surface { 1,2,3,4 };
+Plane Surface(4) = {4};
+//+
 
 // ----------------------------------------------------------------------------
 // 	FLANGES; MESH PROPERTIES
 // ----------------------------------------------------------------------------
 
+Transfinite Curve {13, 12, 10, 14, 5, 11, 9, 2, 1, 4, 3, 6, 7, 8} = nop_flat1 Using Progression 1;
+//+
+Transfinite Surface {2} = {8, 11, 12, 9};
+//+
+Transfinite Surface {4} = {9, 12, 13, 10};
 //+
 Transfinite Surface {1};
 //+
-Transfinite Surface {2};
-//+
 Transfinite Surface {3};
 //+
-Transfinite Surface {4};
+Transfinite Curve {7, 13} = nop_flat0 Using Progression 1;
+//+
+Transfinite Curve {5} = nop_flat3 Using Progression 1;
+//+
+Transfinite Curve {6, 14, 3, 11, 1, 9} = nop_x_edge Using Progression 1;
+//+
+Transfinite Curve {14} = nop_x_edge Using Progression 0.9;
 //+
 Recombine Surface {4, 3, 1, 2};
 
-
-// ----------------------------------------------------------------------------
-// 	CYLINDERS; EXTRUDE AND APPLY MESH PROPERTIES
-// ----------------------------------------------------------------------------
-
-//+
-Extrude {0, 0, dz} {
-  Curve{5}; Curve{6}; Curve{8}; Curve{9}; 
-}
-//+
-Transfinite Curve {15, 16, 20} = nop_height2 Using Progression 1;
-//+
-Transfinite Curve {23, 24, 28} = nop_height1 Using Progression 1;
-//+
-Recombine Surface {17, 21, 25, 29};
-//+
-Transfinite Surface {17};
-//+
-Transfinite Surface {21};
-//+
-Transfinite Surface {25};
-//+
-Transfinite Surface {29};
-
-Reverse Surface { 17,21,25,29 };
-
-// ----------------------------------------------------------------------------
-// 	COPY COLUMNS ALONG RADIAL
-// ----------------------------------------------------------------------------
-//+
-Symmetry {1, 0, 0, -p05x} {
-  Duplicata { Surface{3}; Surface{4}; Surface{29}; Surface{25}; }
-}
-//+
-Symmetry {1, 0, 0, -1.5*p05x} {
-  Duplicata { Surface{3}; Surface{25}; Surface{29}; Surface{4}; Surface{35}; Surface{40}; Surface{30}; Surface{45}; }
-}
-
-// ----------------------------------------------------------------------------
-// 	Z-NEGATIVE FACE LOWER FLANGE
-// ----------------------------------------------------------------------------
-
-
-//+
-Translate {0, 0, -vdist} {
-  Duplicata { Point{1}; Point{8}; Point{90}; Point{89}; }
-}
-//+
-Line(90) = {223, 226};
-//+
-Line(91) = {226, 225};
-//+
-Line(92) = {225, 224};
-//+
-Line(93) = {224, 223};
-//+
-Curve Loop(7) = {92, 93, 90, 91};
-
-//+
-Plane Surface(86) = {7};
-//+
-Transfinite Curve {90, 92} = nop_lower_long_edge Using Progression 1;
-//+
-Transfinite Curve {93, 91} = nop_lower_short_edge Using Progression 1;
-Transfinite Surface {86};
-//+
-Recombine Surface {86};
-//+
-Translate {rcc + overlength -dx/2, 0, 0} {
-  Point{89}; Point{90}; Point{225}; Point{226};
-}
-//+
-Symmetry {-Sqrt(3)/2, 1/2, 0, 0} {
-  Duplicata { Surface{17}; Surface{21}; Surface{1}; Surface{2}; Surface{25}; Surface{3}; Surface{29}; Surface{4}; Surface{40}; Surface{45}; Surface{35}; Surface{30}; Surface{85}; Surface{80}; Surface{75}; Surface{70}; Surface{60}; Surface{55}; Surface{65}; Surface{50}; Surface{86}; }
-}
-//+
-Symmetry {-Sqrt(3)/2, -1/2, 0, 0} {
-  Duplicata { Surface{179}; Surface{189}; Surface{174}; Surface{184}; Surface{164}; Surface{169}; Surface{154}; Surface{159}; Surface{139}; Surface{149}; Surface{134}; Surface{144}; Surface{124}; Surface{129}; Surface{114}; Surface{119}; Surface{104}; Surface{94}; Surface{99}; Surface{109}; Surface{194}; }
-}
-//+
 

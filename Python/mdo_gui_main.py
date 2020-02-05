@@ -530,8 +530,11 @@ class Application():
         fig, axs = plt.subplots(2, 2)
         dyn_force = self.this_candidate.f_sec1['Dynamic']
 
-        x_tics = 1 / (2 * np.pi / w)
-        x_label = 'Frequency [Hz]'
+        # x_tics = 1 / (2 * np.pi / w)
+        # x_label = 'Frequency [Hz]'
+
+        x_tics = 2 * np.pi / w
+        x_label = 'Period [s]'
 
         # --------------
         # FREQUENCY

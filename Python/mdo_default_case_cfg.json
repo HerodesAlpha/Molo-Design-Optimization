@@ -85,11 +85,11 @@
             },
             "plot_pressure_index_input": {
                 "type": "numeric",
-                "value": "0"
+                "value": "4"
             },
             "plot_pressure_type_input": {
                 "type": "string",
-                "value": "Froude-Krylof"
+                "value": "Radiation"
             },
             "plot_rao_ifreq_input": {
                 "type": "numeric",

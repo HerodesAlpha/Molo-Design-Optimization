@@ -12,17 +12,17 @@ Geometry.CopyMeshingMethod = 1;
 // ----------------------------------------------------------------------------
 
 lc = 1e-2;	        //
-drc = #dia_rc#;     // Diameter of radial columns
-dcc = #dia_hc#;     // Diameter of central column
-gaf = #gap#; 	    // Gap factor (ratio of drc)
-hgt = #hgt#;	    // Height of columns
-wlf = #wlf#; 	//Width lower flange/plate
-overlength = #overlength#; // Lower flange overlength
+drc = 8.6;     	// Diameter of radial columns
+dcc = 8.6;     	// Diameter of central column
+wlf = 10; 	//Width lower flange/plate
+overlength = 1; // Lower flange overlength
+gaf = 0.8; 	    // Gap factor (ratio of drc)
+hgt = 6.35;	    // Height of columns
 x0 = 0;		// Model origin x-axis
 y0 = 0;		// Model origin y-axis
-z0 = #z0#;	// Model origin z-axis
+z0 = -6.356260514543988;	// Model origin z-axis
 nel_rrc = 16;    // Number of elements around cylinder circ.
-vdist = #vdist#;
+vdist = 5;
 
 // ----------------------------------------------------------------------------
 // 	DERIVED UNITS
