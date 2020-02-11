@@ -3,7 +3,7 @@
         "object": {
             "calc_response_area_input": {
                 "type": "numeric",
-                "value": "11"
+                "value": "1"
             },
             "calc_response_ibeta_input": {
                 "type": "numeric",
@@ -16,21 +16,26 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "8.4"
+                "value": "8"
+            },
+            "column_thickness_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "0.025"
             },
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3.0"
+                "value": "3"
             },
             "height_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "22"
+                "value": "21"
             },
             "lower_flange_overlength_input": {
                 "type": "numeric",
-                "value": "3.0"
+                "value": "5"
             },
             "lower_flange_overwidth_input": {
                 "type": "numeric",
@@ -48,7 +53,7 @@
             "max_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "rad/s",
-                "value": "2 * pi / 6"
+                "value": "2 * pi / 4"
             },
             "min_wave_directions_input": {
                 "type": "numeric",
@@ -58,7 +63,7 @@
             "min_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "rad/s",
-                "value": "2 * pi / 35"
+                "value": "2 * pi / 36"
             },
             "ncol_input": {
                 "type": "numeric",
@@ -73,7 +78,7 @@
             "num_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "80"
+                "value": "120"
             },
             "plot_pressure_axis_input": {
                 "type": "numeric",
@@ -81,15 +86,15 @@
             },
             "plot_pressure_ifreq_input": {
                 "type": "numeric",
-                "value": "0"
+                "value": "30"
             },
             "plot_pressure_index_input": {
                 "type": "numeric",
-                "value": "0"
+                "value": "4"
             },
             "plot_pressure_type_input": {
                 "type": "string",
-                "value": "Froude-Krylof"
+                "value": "Radiation"
             },
             "plot_rao_ifreq_input": {
                 "type": "numeric",

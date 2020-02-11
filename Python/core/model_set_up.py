@@ -52,11 +52,12 @@ def create_mass_models(settings):
 def init_models(settings):  #
     # Set ballast to zero
     nc=settings.job_data['floater']['Radial']['Number of columns']
-    settings.job_data['floater']['Ballast filling ratio'] = [0.0, [0.0 for i in range(nc)]]
+    settings.job_data['floater']['Ballast filling ratio'] = 0.0
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)
 
     for part in unit_model.parts_list:
         part.print_vector_matrix_global()
+    unit_model.print_vector_matrix_global()
 
     msh_file = tb.msh_file(settings, mesh_type='stability')
     stability_vertices, stability_panels = mmio.load_MSH(msh_file)
@@ -80,6 +81,7 @@ def init_models(settings):  #
     #     hs_floater.equilibrate()
     hs_floater.set_displacement(hs_floater.mass)
     print('Un-ballasted draught is {:1.2f} m'.format(hs_floater.hs_data['draught']))
+    print(hs_floater.get_hydrostatic_report())
 
     d_rc = floater_data.dia_rc
     d_hc = floater_data.dia_hc
@@ -93,28 +95,40 @@ def init_models(settings):  #
     print(
         '\nRequired ballast to {:1.2f} m is {:1.1f} ton\nFilling ratio is {:1.2f}'.format(floater_hgt / 2, m_ball / 1000,
                                                                                          fr))
-    settings.job_data['floater']['Ballast filling ratio'] = [fr, [fr for i in range(nc)]]
+    settings.job_data['floater']['Ballast filling ratio'] = fr
+
+
+
+
+
     print("\nRecreate mass model with target ballast")
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)
+    hs_floater = hs.Hydrostatics(stability_mesh, verbose=True)  # TODO: Set mass, gravity and water density here
+    hs_floater.gravity = abs(settings.gravity)
+    hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
     print('\nBallasted mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
+    #hs_floater.equilibrate()
     hs_floater.set_displacement(hs_floater.mass)
 
-
+    settings.job_data['floater']['Ballast filling ratio'] = fr # TODO: Why have to be set twice, see above. Check setter/getter
     settings.draught = hs_floater.hs_data['draught']
     print('\nRecreate mass model for ballasted draught = {:5.2f}m'.format(settings.draught))
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)
 
     #hs_floater.show()
-    print(hs_floater.get_hydrostatic_report())
-    settings._report.write_hydrostatic_report_latex_table(hs_floater)
+
+
 
     tb.save_M_and_K(settings, M=unit_model.inertias.mass_matrix_global,
                     MMK=hs_floater.hs_data['stiffness_matrix'])
 
     for part in unit_model.parts_list:
         part.print_vector_matrix_global()
+    unit_model.print_vector_matrix_global()
+    print(hs_floater.get_hydrostatic_report())
+    settings._report.write_hydrostatic_report_latex_table(hs_floater)
 
     # unit_model.inertias.reduction_point = [0, 0, unit_model.inertias.reduction_point[2] + hs_floater.hs_data['draught']]
     # print('\nEquilibrium calc gives {:5.2f} m draught'.format(hs_floater.hs_data['draught']))

@@ -567,6 +567,7 @@ class Hydrostatics(object):
             clipper = MeshClipper(self.mesh, assert_closed_boundaries=False, verbose=False)
             self.hs_data['clipper'] = clipper
             clipped_mesh = clipper.clipped_mesh
+            #clipped_mesh.show()
 
         # Retrieving faces properties for the clipped mesh
         areas = clipped_mesh.faces_areas
@@ -579,8 +580,10 @@ class Hydrostatics(object):
             raise Exception
 
         wet_surface_area = areas.sum()
-
+        #clipper.clipped_crown_mesh.show()
+        #clipped_mesh.show()
         inertia = clipped_mesh.eval_plain_mesh_inertias(rho_medium=self.rho_water)
+
         xb, yb, zb = inertia.gravity_center
         disp_volume = inertia.mass / self.rho_water
 
@@ -653,6 +656,7 @@ class Hydrostatics(object):
 
         # Metacentric height
         a = self.zg - zb  # BG
+        #print('self.zg {:1.2f}'.format(self.zg))
         gm_x = transversal_metacentric_radius - a
         gm_y = longitudinal_metacentric_radius - a
 

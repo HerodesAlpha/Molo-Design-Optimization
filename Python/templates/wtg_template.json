@@ -1,4 +1,22 @@
 {
+    "Generic 20.0": {
+        "Hub height": 170,
+        "Ixx": 41250000,
+        "Ixy": 0,
+        "Ixz": 0,
+        "Iyy": 165000000,
+        "Iyz": 0,
+        "Izz": 165000000,
+        "Mass": 1650000,
+        "Rotor diameter": 300,
+        "Tower": {
+            "Diameter": 7,
+            "Height": 165,
+            "Thickness": 0.05,
+            "Type": "Default"
+        },
+        "Type": "Default"
+    },
     "Generic 8.0": {
         "Hub height": 78,
         "Ixx": 450000,

@@ -112,6 +112,10 @@ class Application():
 
         self.rao_x_tics_is_freq = True
 
+        self.stability_movie_chkbtn_var=self.builder.tkvariables.__getitem__('stability_movie_chkbtn_var')
+
+
+
     def set_fio(self, case_label_type='molo_model'):
         analyses_root_input = Path(self.builder.get_object('analyses_root_input').get())
         park_label_input = self.builder.get_object('park_label_input').get().replace(' ','_')
@@ -310,7 +314,7 @@ class Application():
 
 
 
-        p.filling_ratio = [0.1, 0.1, 0.1]
+        #p.filling_ratio = [0.1, 0.1, 0.1]
         self.this_candidate = Candidate(p,self.fio)
         self.this_candidate.settings.lower_face_corrected_z_pos = True
         self.this_candidate.settings.wtg_model = self.wtg_label_variable.get()
@@ -329,9 +333,11 @@ class Application():
         with open(self.pkl_path, "rb") as f:
             self.this_candidate = pickle.load(f)
 
-        self.this_candidate.settings.create_stability_movie = self.builder.get_variable('stability_movie_chkbtn_var')
+        self.this_candidate.settings.create_stability_movie = self.stability_movie_chkbtn_var.get()
         if self.this_candidate.settings.create_stability_movie:
             print('A movie will be made', flush=True)
+        else:
+            print('A movie will NOT be made', flush=True)
 
         r = self.this_candidate.intact_stability_ratio()
         if r >= 1.4:
@@ -408,10 +414,14 @@ class Application():
         print('\nEigenvalue sollution WITH added mass')
 
         tb.eigenvalprint(tc.loads.m + tc.loads.ma[0, :, :], tc.loads.k)
-        np.set_printoptions(precision=4)
-        print(tc.loads.m)
-        print(tc.loads.ma[0, :, :])
-        print(tc.loads.k)
+
+        print('\nMass [t]')
+        tb.matprint(tc.loads.m/1000, fmt="f", prec="0")
+        print('\nAdded mass [t]')
+        tb.matprint(tc.loads.ma[0, :, :]/1000, fmt="f", prec="0")
+
+        print('\nStiffness [kN]')
+        tb.matprint(tc.loads.k/1000, fmt="f", prec="0")
 
 
         d_col_central = tc.settings.floater_data['Central column diameter']
@@ -497,8 +507,8 @@ class Application():
             self.this_candidate.contourline.append(ec.Short_Term_Wave_Conditions(hs=hs, tz=tz))
 
         self.this_candidate.settings.radiaton_damping_factor = 1
-
-        self.this_candidate.settings.do_linearize = True
+        bool_lin = self.builder.tkvariables.__getitem__('lin_visc_damp_var').get()
+        self.this_candidate.settings.do_linearize = bool_lin
         self.this_candidate.init_load()
         stwc = ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3)
         self.this_candidate.init_response(short_term_wave_condition=stwc)

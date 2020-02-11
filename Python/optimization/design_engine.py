@@ -113,11 +113,11 @@ class Parameter_Space():
 
     @property
     def filling_ratio(self):
-        return self._job_data['floater']['Ballast filling ratio'][1]
+        return self._job_data['floater']['Ballast filling ratio']
 
     @filling_ratio.setter
     def filling_ratio(self, val):
-        self._job_data['floater']['Ballast filling ratio'][1] = val
+        self._job_data['floater']['Ballast filling ratio'] = val
 
     @property
     def lower_plate_width(self):
@@ -216,7 +216,11 @@ class Candidate():
 
     def init_response(self, short_term_wave_condition):
 
-        self.response = ResponseModel(self, short_term_wave_condition)
+        if self.response == None:
+            self.response = ResponseModel(self, short_term_wave_condition)
+        else:
+            self.response = None
+            self.response = ResponseModel(self, short_term_wave_condition)
 
     def intact_stability_ratio(self):
         start_time = time.time()

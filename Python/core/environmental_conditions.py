@@ -46,7 +46,9 @@ class Short_Term_Wave_Conditions(object):
         a_gamma = 1 - 0.287 * np.log(self._gamma)
 
         def spec_pm(w):
-            return (5 / 16) * (self._hs ** 2) * (wp ** 4) * (w ** (-5)) * np.exp(-(5 / 4) * ((w / wp) ** (-4)))
+            v1=(5 / 16) * (self._hs ** 2) * (wp ** 4) * (w ** (-5))
+            v2= np.exp(-(5 / 4) * ((w / wp) ** (-4)))
+            return v1 * v2
 
         def spec_j(w):
             def sig(w):
@@ -54,7 +56,9 @@ class Short_Term_Wave_Conditions(object):
 
             sig_ab = np.array(list(map(sig, w)))
             pm = spec_pm(w)
-            return a_gamma * pm * self._gamma ** np.exp(-0.5 * ((w - wp) / sig_ab * wp))
+
+            v3 = np.exp(-0.5 * np.square((w - wp) / (sig_ab * wp)))
+            return a_gamma * pm * np.power(self._gamma, v3)
 
         if self._gamma == 1:
             return spec_pm(w)

@@ -398,7 +398,7 @@ class ResponseModel(object):
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._viscous_damper_centers = c
         c_4 = np.append(c, np.ones((c.shape[0], 1)), 1)
-        amp = self._stwc.hs / 1
+        amp = self._stwc.hs / 2 # Damping target
         wp = self._stwc.wp
 
         ndof = 6

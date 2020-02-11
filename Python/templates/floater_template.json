@@ -1,15 +1,7 @@
 {
     "Ballast density": 1025,
-    "Ballast filling ratio": [
-        0.0,
-        [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        ]
-    ],
-    "Central column diameter": 7,
+    "Ballast filling ratio": 0.0,
+    "Central column diameter": 8.4,
     "Central column thickness": 0.025,
     "Correct z pos of lower faces": true,
     "Draught": 0,

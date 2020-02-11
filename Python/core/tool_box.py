@@ -120,24 +120,6 @@ class NumericStringParser(object):
         val = self.evaluateStack(self.exprStack[:])
         return val
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class TotalMassMatrixClass(object):
     # TODO: Define parts in global instead of local coordinate system. Set CoG instead of reduction point.
     # Both reduction point and CoG relative to waterline.

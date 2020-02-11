@@ -168,11 +168,10 @@ class FloaterClass(AssemblyClass, object):
         self._w_uf = self._dia_rc
         print('Width of upper flange {:1.2f}'.format(self._w_uf))
 
-        self._l_uf = (1 + self._gap) * self._dia_rc * self._nc
+        self._l_uf = (1 + self._gap) * self._dia_rc * self._nc + 0.5 * self._dia_rc
         print('Length of upper flange {:1.2f}'.format(self._l_uf))
         self._l_lf = self._l_uf + floater_data.l_lf_overlength
         print('Length of lower flange {:1.2f}'.format(self._l_lf))
-
 
         self._draught = settings.draught
 
@@ -192,8 +191,8 @@ class FloaterClass(AssemblyClass, object):
         dtheta = 2 * pi / self._nr
         theta = [i * dtheta for i in range(self._nr)]
         zr = -(self._hgt / 2 + self._t_lf)
-        hf_hc = self._ballast_filling[0]
-        zhc_bal = -(hf_hc / 2 + self._t_lf)
+        hf_hc = self._ballast_filling
+        zhc_bal = -1*(hf_hc * self._hgt / 2 + self._t_lf)
 
         def func_rpx(i):
             dx = - da * self._nc / self._n_strips
@@ -292,11 +291,11 @@ class FloaterClass(AssemblyClass, object):
 
             # Radial columns
             for ic in range(self._nc):
-                hf_rc = self._ballast_filling[1][ic]
+                hf_rc = self._ballast_filling
 
                 xr = -(ic + 1) * da
                 yr = 0
-                zrc_bal = -(hf_rc / 2 + self._t_lf)
+                zrc_bal = -(hf_rc * self._hgt / 2 + self._t_lf)
 
                 self.parts_list.append(RadialColumnClass(type='Radial column cylinder',
                                                          irow=ir,
@@ -524,4 +523,3 @@ class FloaterDataClass():
         self.t_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Thickness']
         self.h_ufst = fdi['Radial']['Flange']['Upper']['Stiffener']['Longitudinal']['Height']
         self.l_lf_overlength = fdi['Radial']['Flange']['Lower']['Overlength']
-
