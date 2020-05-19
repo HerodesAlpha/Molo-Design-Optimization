@@ -20,17 +20,17 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "8"
+                "value": "8.0"
             },
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "3"
+                "value": "(28.8-8)/8"
             },
             "height_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "21"
+                "value": "27"
             },
             "max_wave_directions_input": {
                 "type": "numeric",
@@ -50,7 +50,7 @@
             "min_wave_frequencies_input": {
                 "type": "numeric",
                 "unit": "rad/s",
-                "value": "2 * pi / 36"
+                "value": "2 * pi / 34"
             },
             "ncol_input": {
                 "type": "numeric",
@@ -60,7 +60,7 @@
             "num_wave_directions_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "1"
+                "value": "3"
             },
             "num_wave_frequencies_input": {
                 "type": "numeric",
@@ -77,7 +77,7 @@
             },
             "plot_pressure_ifreq_input": {
                 "type": "numeric",
-                "value": "30"
+                "value": "0"
             },
             "plot_pressure_index_input": {
                 "type": "numeric",
@@ -85,11 +85,11 @@
             },
             "plot_pressure_type_input": {
                 "type": "string",
-                "value": "Radiation"
+                "value": "Froude-Krylof"
             },
             "wtg_label_input": {
                 "type": "string",
-                "value": "Haliade X"
+                "value": "DTU 10.0"
             }
         }
     }

@@ -110,7 +110,7 @@ class Application():
         self.cb = self.builder.get_object('plot_pressure_type_input')
         self.cb.current(0)
 
-        self.rao_x_tics_is_freq = True
+        self.rao_x_tics_is_freq = False
 
         self.stability_movie_chkbtn_var=self.builder.tkvariables.__getitem__('stability_movie_chkbtn_var')
 
@@ -614,7 +614,7 @@ class Application():
 
                 else:
                     abs_val_rao = np.abs(r[:, ibeta, d[key]])
-                    lns2 = ax2.plot(x_tics, abs_val_rao, '-r', label=key)
+                    lns2 = ax2.plot(x_tics, abs_val_rao* 180 / np.pi, '-r', label=key)
 
                     phase_val_rao = np.angle(r[:, ibeta, d[key]])
                     print('{:20} {:6.3f} {: 7.4f} ({: 5.1f} deg)'.format(key, abs_val_rao[ifreq_print],

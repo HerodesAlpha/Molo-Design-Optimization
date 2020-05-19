@@ -1,4 +1,22 @@
 {
+    "DTU 10.0": {
+        "Hub height": 108,
+        "Ixx": 96675697,
+        "Ixy": 0,
+        "Ixz": 0,
+        "Iyy": 1167085399,
+        "Iyz": 0,
+        "Izz": 1167085399,
+        "Mass": 593272,
+        "Rotor diameter": 178.3,
+        "Tower": {
+            "Diameter": 6.9,
+            "Height": 105.6,
+            "Thickness": 0.033,
+            "Type": "Default"
+        },
+        "Type": "Default"
+    },
     "Generic 20.0": {
         "Hub height": 170,
         "Ixx": 41250000,
