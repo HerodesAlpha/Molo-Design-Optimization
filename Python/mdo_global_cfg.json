@@ -7,11 +7,11 @@
             },
             "calc_response_area_input": {
                 "type": "numeric",
-                "value": "1"
+                "value": "29"
             },
             "calc_response_ibeta_input": {
                 "type": "numeric",
-                "value": "0"
+                "value": "2"
             },
             "calc_response_yr_input": {
                 "type": "numeric",

@@ -3,11 +3,11 @@
         "object": {
             "calc_response_area_input": {
                 "type": "numeric",
-                "value": "1"
+                "value": "29"
             },
             "calc_response_ibeta_input": {
                 "type": "numeric",
-                "value": "0"
+                "value": "2"
             },
             "calc_response_yr_input": {
                 "type": "numeric",
@@ -99,6 +99,11 @@
             "plot_rao_ifreq_input": {
                 "type": "numeric",
                 "value": "0"
+            },
+            "target_draught_input": {
+                "type": "numeric",
+                "unit": "m",
+                "value": "14.5"
             },
             "upper_flange_thickness_input": {
                 "type": "numeric",

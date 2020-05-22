@@ -153,6 +153,15 @@ class Parameter_Space():
         self._job_data['floater']['Radial']['Flange']['Upper']['eq_thick'] = val
 
 
+    @property
+    def target_draught(self):
+        return self._job_data['floater']['Target draught']
+
+    @target_draught.setter
+    def target_draught(self, val):
+        self._job_data['floater']['Target draught'] = val
+
+
 
 
 class Candidate():

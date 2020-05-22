@@ -88,18 +88,19 @@ def init_models(settings):  #
     nr = 3
     nc = floater_data.nc
     a_wp = np.pi * (d_hc ** 2 + nr * nc * d_rc ** 2) / 4
-    floater_hgt = floater_data.hgt
-    m_ball = (floater_data.hgt / 2 - hs_floater.hs_data['draught']) * a_wp * floater_data.rho_bal
 
-    fr = (m_ball / (a_wp * floater_data.rho_bal)) / floater_hgt
+    if settings.parameter_space.target_draught:
+        target_draught= settings.parameter_space.target_draught
+    else:
+        target_draught= floater_data.hgt / 2
+
+    m_ball = (target_draught - hs_floater.hs_data['draught']) * a_wp * floater_data.rho_bal
+
+    fr = (m_ball / (a_wp * floater_data.rho_bal)) / floater_data.hgt
     print(
-        '\nRequired ballast to {:1.2f} m is {:1.1f} ton\nFilling ratio is {:1.2f}'.format(floater_hgt / 2, m_ball / 1000,
+        '\nRequired ballast to {:1.2f} m is {:1.1f} ton\nFilling ratio is {:1.2f}'.format(target_draught, m_ball / 1000,
                                                                                          fr))
     settings.job_data['floater']['Ballast filling ratio'] = fr
-
-
-
-
 
     print("\nRecreate mass model with target ballast")
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)

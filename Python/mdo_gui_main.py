@@ -303,6 +303,7 @@ class Application():
         p.gap = self.get_numeric('gap_input')
         print('Gap factor: {:6.3f}'.format(p.gap))
 
+        p.target_draught = self.get_numeric('target_draught_input')
 
 
         p.upper_flange_thickness = self.get_numeric('upper_flange_thickness_input')
@@ -455,8 +456,10 @@ class Application():
             tc.loads.beta)
         eta = np.exp(utility.II * k_wave[:,nax] * w_bar[nax,:])
 
-        print('\n {:^6s} {:^6s} {:^6s}  {:^6s}  {:^6s}  {:^6s}'.format('Hs', 'Tp', 'Gamma', force_label[2],
-                                                                       force_label[4], 'AG'))
+        print('\n {:^6s} {:^6s} {:^6s}'.format('Hs', 'Tp', 'Gamma'), end = '')
+        for x in force_label:
+            print('  {:^10s}'.format(x), end = '')
+        print('  {:^4s}'.format('AG'))
         for stwc in tc.contourline:
             tc.init_response(short_term_wave_condition=stwc)
 
@@ -464,18 +467,19 @@ class Application():
             f_sec1 = tc.response.assemble_forces(imass, ipanel, istrip, moment_ref_point=[0, 0, 0])
             del imass, ipanel
 
-            fz = f_sec1['Dynamic']['SUM'][:, ibeta, 2] / 1000000
-            my = f_sec1['Dynamic']['SUM'][:, ibeta, 4] / 1000000
-
-            fz_elm = stwc.expected_largest_maximum(fz, tc.loads.w)
-            my_elm = stwc.expected_largest_maximum(my, tc.loads.w)
+            f_elm=[]
+            for i in range(6):
+                f=f_sec1['Dynamic']['SUM'][:, ibeta, i] / 1000000
+                f_elm.append(stwc.expected_largest_maximum(f, tc.loads.w))
 
             p1_rao = tc.response.point_rao(c1)[:, ibeta, 0, 2].flatten()
             ag_rao = eta[:,ibeta] + p1_rao
             ag1 = stwc.expected_largest_maximum(ag_rao, tc.loads.w)
 
-            print(' {:6.1f} {:6.1f} {:6.1f}  {:6.2f}  {:6.1f}  {:6.1f} '.format(stwc.hs, stwc.tp, stwc.gamma, fz_elm,
-                                                                                my_elm, ag1))
+            print(' {:6.1f} {:6.1f} {:6.1f}'.format(stwc.hs, stwc.tp, stwc.gamma), end='')
+            for x in f_elm:
+                print('  {:10.1f}'.format(x), end='')
+            print('  {:4.1f}'.format(ag1))
 
     def plot_pressure(self):
         self.get_output('plot_text')
