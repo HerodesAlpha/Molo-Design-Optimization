@@ -430,14 +430,16 @@ class Application():
         n_col_radial = tc.settings.floater_data['Radial']['Number of columns']
         gap = tc.settings.floater_data['Gap factor']
         height = tc.settings.floater_data['Radial']['Heigth']
+
         draught = tc.hs_floater.hs_data['draught']
 
         # Get section forces
         sp_x = d_col_central * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         sp_z = height / 2 - draught
-        # sp_x = -100
+        sp_x = 30
         sp_z = 0
         sp1 = [sp_x, 0, sp_z]  # Used for moment reference
+
         sn1 = [1, 0, 0]
 
         radial_extreme = d_col_central * (0.5) + (1 + gap) * n_col_radial * d_col_radial
@@ -473,7 +475,7 @@ class Application():
                 f_elm.append(stwc.expected_largest_maximum(f, tc.loads.w))
 
             p1_rao = tc.response.point_rao(c1)[:, ibeta, 0, 2].flatten()
-            ag_rao = eta[:,ibeta] + p1_rao
+            ag_rao = p1_rao - eta[:,ibeta]
             ag1 = stwc.expected_largest_maximum(ag_rao, tc.loads.w)
 
             print(' {:6.1f} {:6.1f} {:6.1f}'.format(stwc.hs, stwc.tp, stwc.gamma), end='')

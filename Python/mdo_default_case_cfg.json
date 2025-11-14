@@ -3,7 +3,7 @@
         "object": {
             "calc_response_area_input": {
                 "type": "numeric",
-                "value": "29"
+                "value": "17"
             },
             "calc_response_ibeta_input": {
                 "type": "numeric",
@@ -16,7 +16,7 @@
             "column_diameter_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "8.0"
+                "value": "10.5"
             },
             "column_thickness_input": {
                 "type": "numeric",
@@ -26,12 +26,12 @@
             "gap_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "(28.8-8)/8"
+                "value": "(29-10.5)/10.5"
             },
             "height_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "27"
+                "value": "22"
             },
             "lower_flange_overlength_input": {
                 "type": "numeric",
@@ -39,7 +39,7 @@
             },
             "lower_flange_overwidth_input": {
                 "type": "numeric",
-                "value": "2"
+                "value": "1.5"
             },
             "lower_flange_thickness_input": {
                 "type": "numeric",
@@ -103,7 +103,7 @@
             "target_draught_input": {
                 "type": "numeric",
                 "unit": "m",
-                "value": "14.5"
+                "value": "12"
             },
             "upper_flange_thickness_input": {
                 "type": "numeric",
