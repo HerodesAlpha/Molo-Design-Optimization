@@ -1,0 +1,34 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\COMPUTE_MEAN_DRIFT_FORCES_FIN.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "compute_mean_drift_forces_fin.mod",
+					"is-interface" : true,
+					"logical-name" : "compute_mean_drift_forces_fin.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "com_var.mod"
+				},
+				{
+					"logical-name" : "common_type.mod"
+				},
+				{
+					"logical-name" : "kochin.mod"
+				},
+				{
+					"logical-name" : "utility.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

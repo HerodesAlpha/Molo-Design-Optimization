@@ -1,0 +1,25 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\logging\\\\flogging.F90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "flogging.mod",
+					"is-interface" : true,
+					"logical-name" : "flogging.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "vt100.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

@@ -10,7 +10,7 @@ from core import nemoh
 import core.tool_box as tb
 from core.common import PhysicalQuantities
 from core.meshmagick.mesh import Mesh
-from pyNemoh.structure import BaseStructure
+from pyNemoh_root.pyNemoh.structure import BaseStructure
 import warnings
 
 
@@ -123,6 +123,8 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
 
                 # sys.stdout.write("\t\tFroude-Krylof pressure\n")
                 # z coordinate of lower face of flange is artificially low to avoid num. instab. Dont use for FK
+                if h5_bs.H5_RESULTS_FK_PRESSURE_RAW not in hdf5_db:
+                    raise KeyError(f"Missing HDF5 key '{h5_bs.H5_RESULTS_FK_PRESSURE_RAW}'. The solver may have failed before writing Froude-Krylof pressure data.")
                 self._pressure['Froude-Krylof'] = hdf5_db[h5_bs.H5_RESULTS_FK_PRESSURE_RAW][:]
 
                 # sys.stdout.write("\t\tFroude-Krylof force\n")
@@ -130,6 +132,8 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                                                                                                        np.newaxis,
                                                                                                        np.newaxis, :, :]
 
+                if h5_bs.H5_RESULTS_PRESSURE not in hdf5_db:
+                    raise KeyError(f"Missing HDF5 key '{h5_bs.H5_RESULTS_PRESSURE}'. The solver may have failed before writing pressure data. Check the solver output for errors.")
                 nemoh_pressure = hdf5_db[h5_bs.H5_RESULTS_PRESSURE][:]
 
                 # sys.stdout.write("\t\tDiffraction pressure\n")
@@ -190,8 +194,8 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
         else:
             p_cmplx = p
         npanels = self.pd.ppanels.shape[0]
-        f_normal = np.zeros((npanels), dtype=np.complex)
-        f = np.zeros((npanels, 3), dtype=np.complex)
+        f_normal = np.zeros((npanels), dtype=np.complex128)
+        f = np.zeros((npanels, 3), dtype=np.complex128)
         for i, panel in enumerate(self.pd.ppanels):
             f_normal[i] = p_cmplx[i] * self.pd.ppanel_areas[i]
             for j in range(3):

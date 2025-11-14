@@ -46,17 +46,17 @@ class RigidBodyInertia(object):
         self._mass = float(mass)
 
         assert len(cog) == 3
-        self._cog = np.asarray(cog, dtype=np.float)
+        self._cog = np.asarray(cog, dtype=np.float64)
 
         if point is None:
             self._point = self._cog
         else:
             assert len(point) == 3
-            self._point = np.asarray(point, dtype=np.float)
+            self._point = np.asarray(point, dtype=np.float64)
 
         self._3d_rotational_inertia = np.array([[float(xx), -float(xy), -float(xz)],
                                                 [-float(xy), float(yy), -float(yz)],
-                                                [-float(xz), -float(yz), float(zz)]], dtype=np.float)
+                                                [-float(xz), -float(yz), float(zz)]], dtype=np.float64)
 
     @property
     def mass(self):
@@ -92,7 +92,7 @@ class RigidBodyInertia(object):
         """Set the reduction point"""
         mat_at_cog = self.at_cog.inertia_matrix_local
         assert len(point) == 3
-        self._point = np.asarray(point, dtype=np.float)
+        self._point = np.asarray(point, dtype=np.float64)
         print('\n3d_rotational_inertia')
         print(self._3d_rotational_inertia)
         self._3d_rotational_inertia = mat_at_cog + self._huygens_transport()
@@ -618,7 +618,7 @@ class RotationalInertia3D(np.ndarray):
     __array_priority__ = 15
 
     def __new__(cls, xx, xy, yy, xz, yz, zz, point):
-        lower_triangular = np.array([xx, xy, yy, xz, yz, zz], dtype=np.float)
+        lower_triangular = np.array([xx, xy, yy, xz, yz, zz], dtype=np.float64)
         obj = lower_triangular.view(cls)
 
         return obj
@@ -626,7 +626,7 @@ class RotationalInertia3D(np.ndarray):
     @property
     def array(self):
         print("generating full array")
-        array = np.asarray(self, dtype=np.float)[[0, 1, 3, 1, 2, 4, 3, 4, 5]]
+        array = np.asarray(self, dtype=np.float64)[[0, 1, 3, 1, 2, 4, 3, 4, 5]]
         array[[1, 2, 3, 5, 6, 7]] *= -1
         return array.reshape((3, 3))
 
@@ -698,7 +698,7 @@ class AngularVelocityVector(np.ndarray):
 
     def __new__(cls, array):
         assert len(array) == 3
-        return np.asarray(array, dtype=np.float).view(cls)
+        return np.asarray(array, dtype=np.float64).view(cls)
 
 
 if __name__ == '__main__':

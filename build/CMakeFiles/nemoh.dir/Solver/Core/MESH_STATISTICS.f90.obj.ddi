@@ -1,0 +1,25 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\MESH_STATISTICS.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "mesh_statistics.mod",
+					"is-interface" : true,
+					"logical-name" : "mesh_statistics.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "hydro_netting.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

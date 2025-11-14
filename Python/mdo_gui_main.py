@@ -1,4 +1,5 @@
 import math
+import sys
 from tkinter import *
 from tkinter import filedialog
 from pathlib import Path
@@ -57,7 +58,9 @@ class Application():
         b.add_resource_path(os.path.join(DATA_DIR, 'imgs'))
 
         self.mainwindow = b.get_object('mainwindow')
-        self.mainwindow.iconbitmap('.\imgs\molo_256.ico')
+        icon_path = os.path.join(DATA_DIR, 'imgs', 'molo_256.ico')
+        if os.path.exists(icon_path):
+            self.mainwindow.iconbitmap(icon_path)
 
         self.mainwindow.protocol("WM_DELETE_WINDOW", self.quit)
 
@@ -72,10 +75,14 @@ class Application():
         self.pkl_path = None
         self.fio = None
 
-        self.nautic_zones_gif = PhotoImage(file=r".\imgs\nautic_zones.gif")
+        nautic_zones_path = os.path.join(DATA_DIR, 'imgs', 'nautic_zones.gif')
+        if os.path.exists(nautic_zones_path):
+            self.nautic_zones_gif = PhotoImage(file=nautic_zones_path)
+        else:
+            self.nautic_zones_gif = None
 
 
-        self.template_dir = Path(os.getcwd()).joinpath('templates')
+        self.template_dir = Path(DATA_DIR).joinpath('templates')
 
         with open(self.template_dir.joinpath('wtg_template.json'), 'r') as f:
             self._wtg_template = json.loads(f.read())
@@ -126,7 +133,7 @@ class Application():
         gf = self.get_numeric('gap_input')
 
         self.fio = cc.FileIOClass(analyses_root_input, park_label_input, wtg_label_input, case_label_type, nrc,
-                                  rcd, gf, rh, templates_dir=None)
+                                  rcd, gf, rh, templates_dir=self.template_dir)
 
     def get_output(self, text_box):
         self.text_box = self.builder.get_object(text_box)
@@ -151,7 +158,8 @@ class Application():
         if self.nautic_zones_dialog is None:
             dialog = self.builder.get_object('dlg_nautic_zones', self.mainwindow)
             canvas = self.builder.get_object('dlg_nautic_zones_canvas')
-            canvas.create_image(0, 0, anchor=NW, image=self.nautic_zones_gif)
+            if self.nautic_zones_gif:
+                canvas.create_image(0, 0, anchor=NW, image=self.nautic_zones_gif)
 
             self.nautic_zones_dialog = dialog
 

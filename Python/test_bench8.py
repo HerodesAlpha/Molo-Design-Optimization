@@ -16,7 +16,7 @@ from core import nemoh
 from core import stability
 from nemoh_frontend import nemoh_frontend as nf
 from core.common import SettingsClass
-from pyNemoh.structure import BaseStructure
+from pyNemoh_root.pyNemoh.structure import BaseStructure
 from core.loads import Sea_and_Inertia_Loads
 from core.meshmagick.mesh import Mesh
 import core.meshmagick.hydrostatics as hs

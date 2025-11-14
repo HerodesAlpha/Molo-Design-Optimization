@@ -1,0 +1,20 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Mesh\\\\hydre.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "hydro_netting.mod",
+					"is-interface" : true,
+					"logical-name" : "hydro_netting.mod"
+				}
+			],
+			"requires" : []
+		}
+	],
+	"version" : 0
+}

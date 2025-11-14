@@ -562,7 +562,7 @@ def run_thread(func, args, log_path):
                 with open(log_path, 'a') as log_file:
                     log_file.write(str(output))
 
-        logs_path = os.path.dirname(USER_DATA_DIRECTORY) + "\logs\logs.log"
+        logs_path = os.path.dirname(USER_DATA_DIRECTORY) + r"\logs\logs.log"
         return {"exitcode": p.exitcode, "log": "Logs for  %s is at : %s \n \n" % (func.__module__, logs_path)}
 
     with CaptureOutput() as capturer:

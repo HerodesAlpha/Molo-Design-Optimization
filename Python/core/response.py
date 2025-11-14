@@ -427,14 +427,14 @@ class ResponseModel(object):
             x[:, :, 0:3] = (pos[:, :, 0:3] - c[nax, :, :]) * amp  # Subtract mean position and multiply with wave amp
 
 
-            f_d_local = 8 / (3 * np.pi) * (alphas * (wp * x) ** 2) * np.complex(0, 1)  # Linearized damping force
+            f_d_local = 8 / (3 * np.pi) * (alphas * (wp * x) ** 2) * complex(0, 1)  # Linearized damping force
 
             m_d_global = np.cross(c[nax, :, :], f_d_local[:, :, 0:3])
             f_d_global = np.concatenate((f_d_local[:,:,:3], m_d_global), axis=2)
 
             f_d_global_sum = np.sum(f_d_global, axis=1)
 
-            vel = (rao_wp * amp * wp * np.complex(0, 1))
+            vel = (rao_wp * amp * wp * complex(0, 1))
 
             c_visc_1d = f_d_global_sum / vel
 

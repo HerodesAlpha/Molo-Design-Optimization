@@ -1,7 +1,7 @@
 # CMake project file for NEMOH
 
-cmake_minimum_required (VERSION 2.8)
-project (NEMOH Fortran)
+cmake_minimum_required (VERSION 3.10)
+project (NEMOH_Fortran LANGUAGES Fortran)
 enable_language (Fortran)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -82,6 +82,10 @@ add_library(nemoh ${NEMOH_LIB_TYPE} "Solver/NEMOH.f90" "Solver/Core/ALLOCATE_DAT
 "Solver/Core/GREEN_FUNCTION.f90" "Solver/Core/SOLVE_BEM_HIGH.f90" "Solver/Core/SOLVE_BEM_DIPOLES_THIN.f90" "Solver/Core/MESH_STATISTICS.f90"
 "Mesh/hydre.f90" "Solver/Core/SOLVE_BEM_IRREGULAR.f90"
 "Solver/logging/flogging.F90" "Solver/logging/vt100.F90" "Solver/logging/logging.h")
+
+# Add include directory for preprocessor headers (for cpp includes like logging.h)
+target_compile_options(nemoh PRIVATE "-I${CMAKE_CURRENT_SOURCE_DIR}/Solver/logging")
+
 #add_executable(preProcessor "preProcessor/Main.f90" "commonFiles/Environment.f90" "commonFiles/Identification.f90" "preProcessor/Mesh.f90" "preProcessor/BodyConditions.f90" "preProcessor/Integration.f90" )
 
 #add_executable(postProcessor "postProcessor/Main.f90" "commonFiles/Identification.f90" "commonFiles/Environment.f90" "commonFiles/Results.f90" "postProcessor/IRF.f90" "postProcessor/Plot_WaveElevation.f90" "postProcessor/Compute_RAOs.f90" )
@@ -93,13 +97,22 @@ add_library(nemoh ${NEMOH_LIB_TYPE} "Solver/NEMOH.f90" "Solver/Core/ALLOCATE_DAT
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
 
-	SET_TARGET_PROPERTIES(nemoh PROPERTIES COMPILE_FLAGS "-fopenmp" LINK_FLAGS "-fopenmp")
-	SET_TARGET_PROPERTIES(nemoh PROPERTIES COMPILE_FLAGS "-fopenmp -lblas -llapack")
+	SET_TARGET_PROPERTIES(nemoh PROPERTIES COMPILE_FLAGS "-fopenmp")
 	#SET_TARGET_PROPERTIES(nemoh PROPERTIES LINK_FLAGS "-fopenmp -lblas -llapack -Wl,--output-def,nemoh.def,--out-implib,nemoh.a")
-	SET_TARGET_PROPERTIES(nemoh PROPERTIES LINK_FLAGS "-static-libgcc -static-libstdc++ -fopenmp -lblas -llapack -Wl,--output-def,libnemoh.def,--out-implib,libnemoh.a") # Add static
+	SET_TARGET_PROPERTIES(nemoh PROPERTIES LINK_FLAGS "-static-libgcc -static-libstdc++ -fopenmp -Wl,--output-def,libnemoh.def,--out-implib,libnemoh.a") # Add static
 
 	
-	target_link_libraries(nemoh ${BLAS_LIBRARIES})
-	target_link_libraries(nemoh ${LAPACK_LIBRARIES})
+	if(UNIX)
+		target_link_libraries(nemoh ${BLAS_LIBRARIES})
+		target_link_libraries(nemoh ${LAPACK_LIBRARIES})
+	elseif(WIN32)
+		# On Windows with MinGW, link against OpenBLAS
+		find_library(OPENBLAS_LIB openblas PATHS "C:/msys64/ucrt64/lib" NO_DEFAULT_PATH)
+		if(OPENBLAS_LIB)
+			target_link_libraries(nemoh ${OPENBLAS_LIB})
+		else()
+			target_link_libraries(nemoh openblas)
+		endif()
+	endif()
 	target_link_libraries(nemoh ${OpenMP_LIBRARIES})
 endif()

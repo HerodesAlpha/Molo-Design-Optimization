@@ -1,0 +1,25 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\ELEMENTARY_FNS.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "elementary_fns.mod",
+					"is-interface" : true,
+					"logical-name" : "elementary_fns.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "common_type.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

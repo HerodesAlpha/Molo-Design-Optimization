@@ -48,8 +48,8 @@ class Force(object):
         assert len(value) == 3
         assert mode in ('relative', 'absolute')
 
-        self.point = np.asarray(point, dtype=np.float)
-        self.value = np.asarray(value, dtype=np.float)
+        self.point = np.asarray(point, dtype=np.float64)
+        self.value = np.asarray(value, dtype=np.float64)
         self.name = str(name)
         self.mode = mode
 
@@ -57,7 +57,7 @@ class Force(object):
         str_repr = "Force: %s\n\tPoint: %s\n\tValue: %s\n\tMode: %s" % (self.name, self.point, self.value, self.mode)
         return str_repr
 
-    def update(self, dz=0., rot=np.eye(3, dtype=np.float)):
+    def update(self, dz=0., rot=np.eye(3, dtype=np.float64)):
         """Updates the vertical position and orientation of the force.
         
         Parameters
@@ -101,7 +101,7 @@ class Force(object):
         fz = self.value[2]
         moment = np.cross(self.point, self.value)
         mx, my = moment[:2]
-        return np.array([fz, mx, my], dtype=np.float)
+        return np.array([fz, mx, my], dtype=np.float64)
 
     def reset(self):  # TODO: a appeler depuis le reset de Hydrostatics
         raise NotImplementedError
@@ -146,7 +146,7 @@ class Hydrostatics(object):
         self.backup['init_mesh'] = working_mesh.copy()
         self.mesh = working_mesh.copy()
 
-        cog = np.array(cog, dtype=np.float)
+        cog = np.array(cog, dtype=np.float64)
         assert cog.shape[0] == 3
         self.backup['gravity_center'] = cog.copy()
         self._gravity_center = cog.copy()
@@ -178,7 +178,7 @@ class Hydrostatics(object):
 
         self.animate = animate
 
-        self._rotation = np.eye(3, dtype=np.float)
+        self._rotation = np.eye(3, dtype=np.float64)
 
         self.additional_forces = []
 
@@ -262,7 +262,7 @@ class Hydrostatics(object):
     @gravity_center.setter
     def gravity_center(self, value):
         """Set the gravity center position"""
-        value = np.asarray(value, dtype=np.float)
+        value = np.asarray(value, dtype=np.float64)
         self.backup['gravity_center'] = value
         assert value.shape[0] == 3
         self._gravity_center = value
@@ -349,7 +349,7 @@ class Hydrostatics(object):
 
         self._update_hydrostatic_properties()
 
-        self._rotation = np.eye(3, dtype=np.float)
+        self._rotation = np.eye(3, dtype=np.float64)
 
     def is_stable_in_roll(self):
         """Returns whether the mesh is stable in roll (GMx positive)
@@ -667,7 +667,7 @@ class Hydrostatics(object):
         # Assembling stiffness matrix
         stiffness_matrix = np.array([[s33, s34, s35],
                                      [s34, s44, s45],
-                                     [s35, s45, s55]], dtype=np.float)
+                                     [s35, s45, s55]], dtype=np.float64)
 
         # Zeroing tiny coefficients
         stiffness_matrix[np.fabs(stiffness_matrix) < eps] = 0.
@@ -683,8 +683,8 @@ class Hydrostatics(object):
         self.hs_data['wet_surface_area'] = wet_surface_area
         self.hs_data['disp_volume'] = disp_volume
         self.hs_data['disp_mass'] = self._rho_water * disp_volume
-        self.hs_data['buoy_center'] = np.array([xb, yb, zb], dtype=np.float)
-        self.hs_data['flotation_center'] = np.array([x_f, y_f, 0.], dtype=np.float)
+        self.hs_data['buoy_center'] = np.array([xb, yb, zb], dtype=np.float64)
+        self.hs_data['flotation_center'] = np.array([x_f, y_f, 0.], dtype=np.float64)
         self.hs_data['waterplane_area'] = waterplane_area
         self.hs_data['transversal_metacentric_radius'] = transversal_metacentric_radius
         self.hs_data['longitudinal_metacentric_radius'] = longitudinal_metacentric_radius

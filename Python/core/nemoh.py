@@ -441,7 +441,7 @@ def get_fk_pressure(fio, ndir, nomega, npanels):
 
 def get_poten_pressure(fio, npoints, ppanels, problem_number):
     npanels = ppanels.shape[0]
-    pressure_cmplx_panels = np.zeros(npanels, dtype=np.complex)
+    pressure_cmplx_panels = np.zeros(npanels, dtype=np.complex128)
     pathFile = fio.nemoh_results.joinpath('pressure.{:5d}.dat'.format(problem_number))
     with open(pathFile, 'r') as f:
         lines = f.readlines()
@@ -497,8 +497,8 @@ def mesh(fio, hs_floater, sym=None):
 
 def p2f(p_cmplx, pd):
     npanels = pd.ppanels.shape[0]
-    f_normal = np.zeros((npanels), dtype=np.complex)
-    f = np.zeros((npanels, 3), dtype=np.complex)
+    f_normal = np.zeros((npanels), dtype=np.complex128)
+    f = np.zeros((npanels, 3), dtype=np.complex128)
     for i, panel in enumerate(pd.ppanels):
         f_normal[i] = p_cmplx[i] * pd.ppanel_areas[i]
         for j in range(3):

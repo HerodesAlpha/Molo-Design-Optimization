@@ -1,0 +1,20 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Release",
+	"cxx-modules" : {},
+	"dir-cur-bld" : "D:/dev/MOLO_Design_Optimization/build",
+	"dir-cur-src" : "D:/dev/MOLO_Design_Optimization/Fortran/Source/fNemoh",
+	"dir-top-bld" : "D:/dev/MOLO_Design_Optimization/build",
+	"dir-top-src" : "D:/dev/MOLO_Design_Optimization/Fortran/Source/fNemoh",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : [],
+	"language" : "Fortran",
+	"linked-target-dirs" : [],
+	"module-dir" : "D:/dev/MOLO_Design_Optimization/build",
+	"submodule-ext" : ".smod",
+	"submodule-sep" : "@"
+}

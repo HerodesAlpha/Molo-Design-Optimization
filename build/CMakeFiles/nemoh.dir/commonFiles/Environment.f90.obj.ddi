@@ -1,0 +1,20 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\commonFiles\\\\Environment.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "menvironment.mod",
+					"is-interface" : true,
+					"logical-name" : "menvironment.mod"
+				}
+			],
+			"requires" : []
+		}
+	],
+	"version" : 0
+}

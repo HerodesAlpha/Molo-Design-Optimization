@@ -47,7 +47,6 @@ __version__ = "2.0"
 
 
 cdef extern:
-
     void compute_nemoh(float* rho, float * g, float * depth, float* xeff, float * yeff, float * zeff,
                         int* indiq_solver, int* max_iterations, int* restart_param, float* tol_gmres,
                         int** mesh_P, float** mesh_X, int* mesh_cPanel, float **mesh_XM,

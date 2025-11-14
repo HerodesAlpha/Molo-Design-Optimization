@@ -4,8 +4,8 @@ import os
 import glob
 import shutil
 
-from distutils.core import setup
-from distutils.extension import Extension
+from setuptools import setup
+from setuptools.extension import Extension
 from Cython.Build import cythonize
 import numpy as np
 
@@ -43,10 +43,15 @@ if "cleanall" in args:
 
 
 
-ext_modules = [Extension(language='c++',
+# Get the path to the build directory where libnemoh.dll is located
+build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'build'))
+pyNemoh_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'pyNemoh'))
+
+ext_modules = [Extension(language='c',
                          name='pyNemoh.solver_fortran',
                          sources=['pyNemoh/solver_fortran.pyx'],
                          libraries=['libnemoh'],
+                         library_dirs=[build_dir, pyNemoh_dir],
                          include_dirs=[np.get_include()]
                          ),
                ]
@@ -60,7 +65,7 @@ setup(
     license='Apache License 2.0',
     author='Eivind Sonju',
     author_email='es@verbun.com',
-    data_files=[('Lib\site-packages\pyNemoh', ['pyNemoh\libnemoh.dll','pyNemoh\libgfortran-3.dll'])],
+    data_files=[(r'Lib\site-packages\pyNemoh', [r'pyNemoh\libnemoh.dll', r'pyNemoh\libgfortran-3.dll'])],
     #zip_safe=False,
     ext_modules=cythonize(ext_modules),
 )

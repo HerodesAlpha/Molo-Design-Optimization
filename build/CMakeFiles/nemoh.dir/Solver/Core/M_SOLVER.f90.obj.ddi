@@ -1,0 +1,20 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\M_SOLVER.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "m_solver.mod",
+					"is-interface" : true,
+					"logical-name" : "m_solver.mod"
+				}
+			],
+			"requires" : []
+		}
+	],
+	"version" : 0
+}

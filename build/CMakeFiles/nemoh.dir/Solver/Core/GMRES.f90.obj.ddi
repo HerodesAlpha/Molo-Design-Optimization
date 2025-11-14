@@ -1,0 +1,20 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\GMRES.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "gmres.mod",
+					"is-interface" : true,
+					"logical-name" : "gmres.mod"
+				}
+			],
+			"requires" : []
+		}
+	],
+	"version" : 0
+}

@@ -152,14 +152,14 @@ class NemohOutput(object):
             cal = fid.readlines()
 
         try:
-            np.float(cal[-1].split()[0])
+            float(cal[-1].split()[0])
         except:
             cal.pop()
 
         self.cal.raw = cal
-        self.cal.rho    = np.float(cal[1].split()[0])
-        self.cal.g      = np.float(cal[2].split()[0])
-        self.cal.water_depth = np.float(cal[3].split()[0])
+        self.cal.rho    = float(cal[1].split()[0])
+        self.cal.g      = float(cal[2].split()[0])
+        self.cal.water_depth = float(cal[3].split()[0])
         if self.cal.water_depth == 0:
             self.cal.water_depth = 'infinite'
 
@@ -168,9 +168,9 @@ class NemohOutput(object):
 
         # Read wave directions
         temp = cal[-6]
-        self.cal.wave_dir_n = np.float(temp.split()[0])
-        self.cal.wave_dir_start = np.float(temp.split()[1])
-        self.cal.wave_dir_end = np.float(temp.split()[2])
+        self.cal.wave_dir_n = float(temp.split()[0])
+        self.cal.wave_dir_start = float(temp.split()[1])
+        self.cal.wave_dir_end = float(temp.split()[2])
         self.cal.wave_dir = np.linspace(self.cal.wave_dir_start,self.cal.wave_dir_end,self.cal.wave_dir_n)
 
         # Read frequencies
@@ -277,12 +277,12 @@ class NemohOutput(object):
 
             hydrostatics = fid.readlines()
 
-        self.body[body_num].disp_vol = np.float(hydrostatics[3].split()[-1])
-        self.body[body_num].wp_area = np.float(hydrostatics[4].split()[-1])
+        self.body[body_num].disp_vol = float(hydrostatics[3].split()[-1])
+        self.body[body_num].wp_area = float(hydrostatics[4].split()[-1])
 
-        xf = np.float(hydrostatics[0].split()[2])
-        yf = np.float(hydrostatics[1].split()[2])
-        zf = np.float(hydrostatics[2].split()[2])
+        xf = float(hydrostatics[0].split()[2])
+        yf = float(hydrostatics[1].split()[2])
+        zf = float(hydrostatics[2].split()[2])
 
         self.body[body_num].cb  = np.array([xf, yf, zf])
 

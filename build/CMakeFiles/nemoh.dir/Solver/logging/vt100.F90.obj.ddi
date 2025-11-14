@@ -1,0 +1,20 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\logging\\\\vt100.F90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "vt100.mod",
+					"is-interface" : true,
+					"logical-name" : "vt100.mod"
+				}
+			],
+			"requires" : []
+		}
+	],
+	"version" : 0
+}

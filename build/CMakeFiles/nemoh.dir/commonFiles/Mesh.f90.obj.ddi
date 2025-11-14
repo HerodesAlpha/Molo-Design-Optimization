@@ -1,0 +1,25 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\commonFiles\\\\Mesh.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "mmesh.mod",
+					"is-interface" : true,
+					"logical-name" : "mmesh.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "midentification.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

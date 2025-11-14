@@ -137,7 +137,7 @@ class TotalMassMatrixClass(object):
     @cog.setter
     def cog(self, point):
         """The position of the center of gravity"""
-        self._cog = np.asarray(point, dtype=np.float)
+        self._cog = np.asarray(point, dtype=np.float64)
 
     @property
     def mass(self):
@@ -234,7 +234,7 @@ class TotalMassMatrixClass(object):
     def reduction_point(self, point):
         """Set the reduction point"""
         assert len(point) == 3
-        self._point = np.asarray(point, dtype=np.float)
+        self._point = np.asarray(point, dtype=np.float64)
         # self.update_mass_matrix_global()
 
 
@@ -372,6 +372,8 @@ def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
     with open(gmsh_geo_file, 'w') as file:
         file.write(filedata)
     print('{}'.format(gmsh_geo_file))
+    if not fio.gmsh_exe:
+        raise FileNotFoundError("Gmsh executable not found. Please install Gmsh or configure the path in common.py")
     try:
         a = subprocess.check_output(
                 [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
@@ -439,6 +441,17 @@ def msh_file(settings, mesh_type=None):
 
     # Create mesh
     gmsh_msh_file = settings.fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
+    if not settings.fio.gmsh_exe:
+        error_msg = (
+            "Gmsh executable not found. Mesh generation requires Gmsh to be installed.\n\n"
+            "Please install Gmsh:\n"
+            "1. Download from https://gmsh.info/\n"
+            "2. Or install via: winget install gmsh\n"
+            "3. Or add gmsh to your system PATH\n"
+            "4. Or set the path manually in Python/core/common.py\n\n"
+            f"Mesh file needed: {gmsh_msh_file}"
+        )
+        raise FileNotFoundError(error_msg)
     a = ''
     try:
         a = subprocess.check_output(
@@ -708,9 +721,9 @@ def huygens_transport(vec):
     # print('x={} y={} z={}'.format(x,y,z))
     A = np.asarray([[0, -z, y],
                     [z, 0, -x],
-                    [-y, x, 0]], dtype=np.float)
+                    [-y, x, 0]], dtype=np.float64)
     AT = np.transpose(A)
-    m = np.zeros((6, 6), dtype=np.float)
+    m = np.zeros((6, 6), dtype=np.float64)
     m[3:, :3] = A
     m[:3, 3:] = AT
     m[3:, 3:] = np.matmul(A, AT)
@@ -723,7 +736,7 @@ def rigid_body_motion(vec):
     z = vec[2]
     A = np.asarray([[0, z, -y],
                     [-z, 0, x],
-                    [y, -x, 0]], dtype=np.float)
+                    [y, -x, 0]], dtype=np.float64)
     AT = np.transpose(A)
     m = np.diag([1] * 6)
     m[3:, :3] = A

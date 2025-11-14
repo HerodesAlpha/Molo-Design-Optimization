@@ -1,0 +1,58 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\NEMOH.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "nemoh.mod",
+					"is-interface" : true,
+					"logical-name" : "nemoh.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "com_var.mod"
+				},
+				{
+					"logical-name" : "elementary_fns.mod"
+				},
+				{
+					"logical-name" : "flogging.mod"
+				},
+				{
+					"logical-name" : "initialization.mod"
+				},
+				{
+					"logical-name" : "iso_c_binding.mod"
+				},
+				{
+					"logical-name" : "mbodyconditions.mod"
+				},
+				{
+					"logical-name" : "mesh_statistics.mod"
+				},
+				{
+					"logical-name" : "midentification.mod"
+				},
+				{
+					"logical-name" : "mmesh.mod"
+				},
+				{
+					"logical-name" : "omp_lib.mod"
+				},
+				{
+					"logical-name" : "output.mod"
+				},
+				{
+					"logical-name" : "solve_bem.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

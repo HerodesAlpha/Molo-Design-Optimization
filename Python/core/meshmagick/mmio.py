@@ -100,7 +100,7 @@ def load_RAD(filename):
     elem_section = pattern_elem_section.search(data).group(1)
     for elem in pattern_elem_line.findall(elem_section):
         faces.append(list(map(int, elem.strip().split()[3:])))
-    faces = np.asarray(faces, dtype=np.int) - 1
+    faces = np.asarray(faces, dtype=np.int32) - 1
 
     return vertices, faces
 
@@ -150,7 +150,7 @@ def load_HST(filename):
         for node in pattern_node_line.findall(node_section):
             vertices_tmp.append(list(map(float, node.split()[1:])))
         nv_tmp = len(vertices_tmp)
-        vertices_tmp = np.asarray(vertices_tmp, dtype=np.float)
+        vertices_tmp = np.asarray(vertices_tmp, dtype=np.float64)
         if nv == 0:
             vertices = vertices_tmp.copy()
             nv = nv_tmp
@@ -165,7 +165,7 @@ def load_HST(filename):
         for elem in pattern_elem_line.findall(elem_section):
             faces_tmp.append(list(map(int, elem.split())))
         nf_tmp = len(faces_tmp)
-        faces_tmp = np.asarray(faces_tmp, dtype=np.int)
+        faces_tmp = np.asarray(faces_tmp, dtype=np.int32)
         if nf == 0:
             faces = faces_tmp.copy()
             nf = nf_tmp
@@ -286,7 +286,7 @@ def load_INP(filename):
         # Detecting renumberings to do
         real_idx = 0
         # renumberings = []
-        id_new = - np.ones(max(idx_array) + 1, dtype=np.int)
+        id_new = - np.ones(max(idx_array) + 1, dtype=np.int32)
         # FIXME: cette partie est tres buggee !!!
         for i, idx in enumerate(idx_array):
             id_new[idx] = i + 1
@@ -313,7 +313,7 @@ def load_INP(filename):
     for field in layout:
         file = field['INPUT']
         if field['type'] == 'NODE':
-            nodes = np.asarray(mesh_files[file]['NODE_SECTION'], dtype=np.float)
+            nodes = np.asarray(mesh_files[file]['NODE_SECTION'], dtype=np.float64)
             # Translation of nodes according to frame option id any
             nodes += frames[field['FRAME']]  # TODO: s'assurer que frame est une options obligatoire...
 
@@ -332,7 +332,7 @@ def load_INP(filename):
                 increment = True
         else:  # this is an ELEMENT section
             elem_section = np.asarray(mesh_files[file]['ELEM_SECTIONS'][mesh_files[file]['nb_elem_sections_used']],
-                                      dtype=np.int)
+                                      dtype=np.int32)
 
             mesh_files[file]['nb_elem_sections_used'] += 1
             if mesh_files[file]['nb_elem_sections_used'] == mesh_files[file]['nb_elem_sections']:
@@ -392,8 +392,8 @@ def load_TEC(filename):
     nv = int(nv)
     nf = int(nf)
 
-    vertices = np.asarray(list(map(float, vertices.split())), dtype=np.float).reshape((nv, -1))[:, :3]
-    faces = np.asarray(list(map(int, faces.split())), dtype=np.int).reshape((nf, 4)) - 1
+    vertices = np.asarray(list(map(float, vertices.split())), dtype=np.float64).reshape((nv, -1))[:, :3]
+    faces = np.asarray(list(map(int, faces.split())), dtype=np.int32).reshape((nf, 4)) - 1
 
     return vertices, faces
 
@@ -510,12 +510,12 @@ def _dump_vtk(vtk_mesh):
     """
 
     nv = vtk_mesh.GetNumberOfPoints()
-    vertices = np.zeros((nv, 3), dtype=np.float)
+    vertices = np.zeros((nv, 3), dtype=np.float64)
     for k in range(nv):
         vertices[k] = np.array(vtk_mesh.GetPoint(k))
 
     nf = vtk_mesh.GetNumberOfCells()
-    faces = np.zeros((nf, 4), dtype=np.int)
+    faces = np.zeros((nf, 4), dtype=np.int32)
     for k in range(nf):
         cell = vtk_mesh.GetCell(k)
         nv_facet = cell.GetNumberOfPoints()
@@ -561,11 +561,11 @@ def load_STL(filename):
     data = reader.GetOutputDataObject(0)
 
     nv = data.GetNumberOfPoints()
-    vertices = np.zeros((nv, 3), dtype=np.float)
+    vertices = np.zeros((nv, 3), dtype=np.float64)
     for k in range(nv):
         vertices[k] = np.array(data.GetPoint(k))
     nf = data.GetNumberOfCells()
-    faces = np.zeros((nf, 4), dtype=np.int)
+    faces = np.zeros((nf, 4), dtype=np.int32)
     for k in range(nf):
         cell = data.GetCell(k)
         if cell is not None:
@@ -633,12 +633,12 @@ def load_NAT(filename):
     vertices = []
     for i in range(nv):
         vertices.append(list(map(float, ifile.readline().split())))
-    vertices = np.array(vertices, dtype=np.float)
+    vertices = np.array(vertices, dtype=np.float64)
 
     faces = []
     for i in range(nf):
         faces.append(list(map(int, ifile.readline().split())))
-    faces = np.array(faces, dtype=np.int)
+    faces = np.array(faces, dtype=np.int32)
 
     ifile.close()
     return vertices, faces - 1
@@ -683,8 +683,8 @@ def load_GDF(filename):
     line = ifile.readline().split()
     nf = int(line[0])
 
-    vertices = np.zeros((4 * nf, 3), dtype=np.float)
-    faces = np.zeros((nf, 4), dtype=np.int)
+    vertices = np.zeros((4 * nf, 3), dtype=np.float64)
+    faces = np.zeros((nf, 4), dtype=np.int32)
 
     iv = -1
     for icell in range(nf):
@@ -732,7 +732,7 @@ def load_MAR(filename):
             break
         vertices.append(list(map(float, line[1:])))
 
-    vertices = np.array(vertices, dtype=np.float)
+    vertices = np.array(vertices, dtype=np.float64)
     faces = []
     while 1:
         line = ifile.readline()
@@ -741,7 +741,7 @@ def load_MAR(filename):
             break
         faces.append(list(map(int, line)))
 
-    faces = np.array(faces, dtype=np.int)
+    faces = np.array(faces, dtype=np.int32)
 
     ifile.close()
 
@@ -778,7 +778,7 @@ def load_MSH(filename):
     nb_nodes, nodes_data = re.search(r'\$Nodes\n(\d+)\n(.+)\$EndNodes', data, re.DOTALL).groups()
     nb_elts, elts_data = re.search(r'\$Elements\n(\d+)\n(.+)\$EndElements', data, re.DOTALL).groups()
 
-    vertices = np.asarray(list(map(float, nodes_data.split())), dtype=np.float).reshape((-1, 4))[:, 1:]
+    vertices = np.asarray(list(map(float, nodes_data.split())), dtype=np.float64).reshape((-1, 4))[:, 1:]
     vertices = np.ascontiguousarray(vertices)
     faces = []
 
@@ -794,7 +794,7 @@ def load_MSH(filename):
         quadrangle = quad_elt[-4:]
         faces.append(quadrangle)
 
-    faces = np.asarray(faces, dtype=np.int) - 1
+    faces = np.asarray(faces, dtype=np.int32) - 1
 
     return vertices, faces
 
@@ -848,13 +848,13 @@ def load_MED(filename):
     file.close()
 
     if nb_triangles == 0:
-        triangles = np.zeros((0, 4), dtype=np.int)
+        triangles = np.zeros((0, 4), dtype=np.int32)
     else:
         triangles = np.column_stack((triangles, triangles[:, 0]))
     if nb_quadrangles == 0:
-        quadrangles = np.zeros((0, 4), dtype=np.int)
+        quadrangles = np.zeros((0, 4), dtype=np.int32)
 
-    faces = np.zeros((nb_triangles + nb_quadrangles, 4), dtype=np.int)
+    faces = np.zeros((nb_triangles + nb_quadrangles, 4), dtype=np.int32)
     faces[:nb_triangles] = triangles
     # faces[:nb_triangles, -1] = triangles[:, 0]
     faces[nb_triangles:] = quadrangles
@@ -932,12 +932,12 @@ def load_NEM(filename):
     vertices = []
     for ivertex in range(nv):
         vertices.append(list(map(float, ifile.readline().split())))
-    vertices = np.asarray(vertices, dtype=np.float)
+    vertices = np.asarray(vertices, dtype=np.float64)
 
     faces = []
     for iface in range(nf):
         faces.append(list(map(int, ifile.readline().split())))
-    faces = np.asarray(faces, dtype=np.int)
+    faces = np.asarray(faces, dtype=np.int32)
     faces -= 1
 
     return vertices, faces

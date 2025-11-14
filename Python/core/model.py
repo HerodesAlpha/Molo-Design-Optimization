@@ -85,7 +85,7 @@ class ModelClass(object):
             s = ''
             for i in range(6):
                 for j in range(6):
-                    s = s + '{: 10.3g}'.format(np.round_(m[i, j], decimals=0))
+                    s = s + '{: 10.3g}'.format(np.round(m[i, j], decimals=0))
                 s = s + '\n'
             s = s + '\n'
             print(s)

@@ -7,18 +7,19 @@ __version__ = "2.0"
 import json
 import copy
 import collections
+from collections.abc import Mapping
 import sys
 import numpy as np
-from pyNemoh.models import MeshFormat
-from pyNemoh import utility
+from pyNemoh_root.pyNemoh.models import MeshFormat
+from pyNemoh_root.pyNemoh import utility
 from logutils.queue import QueueListener
 import multiprocessing
 import logging
 import nemoh_frontend.services as services
 import os
 import jmespath as jp
-from pyNemoh.structure import JSON_STRUCTURE
-from pyNemoh import pynemoh_settings
+from pyNemoh_root.pyNemoh.structure import JSON_STRUCTURE
+from pyNemoh_root.pyNemoh import pynemoh_settings
 import subprocess
 import nemoh_frontend.settings as openwarp_settings
 
@@ -41,10 +42,10 @@ def merge_config(d, u):
     """
     # if u is a dict and empty we don't update d which is the truth
     for k, v in list(u.items()):
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, Mapping):
             s = d.get(k, {})
             # this means that if there is mismatch we don't do anything which is correct here
-            if isinstance(s, collections.Mapping):
+            if isinstance(s, Mapping):
                 r = merge_config(d.get(k, {}), v)
                 d[k] = r
         else:
@@ -75,7 +76,7 @@ def convert_dict_values(d):
             value = int(value)
         if isinstance(value, (list, tuple)):
             d[key] = [str(i) for i in value]
-        elif not isinstance(value, collections.Mapping):
+        elif not isinstance(value, Mapping):
             d[key] = str(value)
 
     return d

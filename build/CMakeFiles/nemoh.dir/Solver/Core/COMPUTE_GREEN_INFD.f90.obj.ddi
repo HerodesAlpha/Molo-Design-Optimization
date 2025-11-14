@@ -1,0 +1,31 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\COMPUTE_GREEN_INFD.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "compute_green_infd.mod",
+					"is-interface" : true,
+					"logical-name" : "compute_green_infd.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "com_var.mod"
+				},
+				{
+					"logical-name" : "common_type.mod"
+				},
+				{
+					"logical-name" : "elementary_fns.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

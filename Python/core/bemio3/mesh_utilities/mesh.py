@@ -1057,7 +1057,7 @@ def _read_gdf(file_name):
     mesh_data.isy = float(lines[2].split()[1])
     mesh_data.num_faces = int(lines[3].split()[0])
     mesh_data.num_points = mesh_data.num_faces * 4
-    mesh_data.points = np.array([temp.split() for temp in lines[4:]]).astype(np.float)
+    mesh_data.points = np.array([temp.split() for temp in lines[4:]]).astype(np.float64)
 
     mesh_data.pointsString = [str(temp).replace(","      ,'').replace('\r','') for temp in lines[4:]] # Output string for Nemoh mesh fil
 

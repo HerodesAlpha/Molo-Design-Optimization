@@ -1,0 +1,125 @@
+ninja_dyndep_version = 1.0
+build CMakeFiles//nemoh.dir//Solver//NEMOH.f90.obj | nemoh.mod: dyndep | com_var.mod elementary_fns.mod flogging.mod initialization.mod mbodyconditions.mod mesh_statistics.mod midentification.mod mmesh.mod output.mod solve_bem.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//ALLOCATE_DATA.f90.obj: dyndep | com_var.mod
+
+build CMakeFiles//nemoh.dir//Solver//Core//Bodyconditions.f90.obj | mbodyconditions.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_GREEN_FD.f90.obj | compute_green_fd.mod: dyndep | com_var.mod common_type.mod elementary_fns.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_GREEN_FREESURFACE.f90.obj | compute_green_freesurface.mod: dyndep | com_var.mod common_type.mod elementary_fns.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_GREEN_INFD.f90.obj | compute_green_infd.mod: dyndep | com_var.mod common_type.mod elementary_fns.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_KOCHIN.f90.obj | kochin.mod: dyndep | com_var.mod common_type.mod elementary_fns.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_POTENTIAL_DOMAIN.f90.obj | potential_domain.mod: dyndep | com_var.mod common_type.mod compute_green_freesurface.mod elementary_fns.mod midentification.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COM_VAR.f90.obj | com_var.mod: dyndep | common_type.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//DEALLOCATE_DATA.f90.obj: dyndep | com_var.mod
+
+build CMakeFiles//nemoh.dir//Solver//Core//ELEMENTARY_FNS.f90.obj | elementary_fns.mod: dyndep | common_type.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//INITIALIZATION.f90.obj | initialization.mod: dyndep | com_var.mod midentification.mod mmesh.mod prepare_mesh.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//M_SOLVER.f90.obj | m_solver.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//OUTPUT.f90.obj | output.mod: dyndep | com_var.mod midentification.mod mmesh.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//PREPARE_MESH.f90.obj | prepare_mesh.mod: dyndep | com_var.mod mmesh.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM.f90.obj | solve_bem.mod: dyndep | com_var.mod common_type.mod compute_mean_drift_forces_fin.mod compute_mean_drift_forces_inf.mod compute_yaw_moment_fin.mod compute_yaw_moment_inf.mod kochin.mod midentification.mod mmesh.mod output.mod potential_domain.mod solve_bem_dipoles_thin.mod solve_bem_fd_direct.mod solve_bem_fd_iterative.mod solve_bem_high.mod solve_bem_infd_direct.mod solve_bem_infd_iterative.mod solve_bem_irregular.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_FD_DIRECT.f90.obj | solve_bem_fd_direct.mod: dyndep | com_var.mod common_type.mod compute_green_fd.mod elementary_fns.mod m_solver.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_INFD_DIRECT.f90.obj | solve_bem_infd_direct.mod: dyndep | com_var.mod common_type.mod compute_green_infd.mod compute_influence_ode.mod elementary_fns.mod m_solver.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//GMRES.f90.obj | gmres.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_INFD_ITERATIVE.f90.obj | solve_bem_infd_iterative.mod: dyndep | com_var.mod common_type.mod compute_green_infd.mod compute_influence_ode.mod elementary_fns.mod gmres.mod m_solver.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_FD_ITERATIVE.f90.obj | solve_bem_fd_iterative.mod: dyndep | com_var.mod common_type.mod compute_green_fd.mod elementary_fns.mod gmres.mod m_solver.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//commonFiles//Environment.f90.obj | menvironment.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//commonFiles//Identification.f90.obj | midentification.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//commonFiles//Results.f90.obj | mresults.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//commonFiles//Mesh.f90.obj | mmesh.mod: dyndep | midentification.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//UTILITY.f90.obj | utility.mod: dyndep | com_var.mod common_type.mod compute_green_fd.mod compute_green_infd.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_MEAN_DRIFT_FORCES_FIN.f90.obj | compute_mean_drift_forces_fin.mod: dyndep | com_var.mod common_type.mod kochin.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_MEAN_DRIFT_FORCES_INF.f90.obj | compute_mean_drift_forces_inf.mod: dyndep | com_var.mod common_type.mod kochin.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_YAW_MOMENT_FIN.f90.obj | compute_yaw_moment_fin.mod: dyndep | com_var.mod common_type.mod kochin.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_YAW_MOMENT_INF.f90.obj | compute_yaw_moment_inf.mod: dyndep | com_var.mod common_type.mod kochin.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMMON_TYPE.f90.obj | common_type.mod: dyndep | mmesh.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//ODE.f90.obj | ode.mod: dyndep | common_type.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//COMPUTE_INFLUENCE_ODE.f90.obj | compute_influence_ode.mod: dyndep | com_var.mod common_type.mod ode.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//Gaussm3.f90.obj | gaussm3.mod: dyndep | common_type.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//GREEN_FUNCTION.f90.obj | green_function.mod: dyndep | com_var.mod common_type.mod elementary_fns.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_HIGH.f90.obj | solve_bem_high.mod: dyndep | com_var.mod common_type.mod elementary_fns.mod gaussm3.mod green_function.mod m_solver.mod output.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_DIPOLES_THIN.f90.obj | solve_bem_dipoles_thin.mod: dyndep | com_var.mod common_type.mod compute_green_fd.mod compute_green_freesurface.mod compute_green_infd.mod output.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//MESH_STATISTICS.f90.obj | mesh_statistics.mod: dyndep | hydro_netting.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Mesh//hydre.f90.obj | hydro_netting.mod: dyndep
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//Core//SOLVE_BEM_IRREGULAR.f90.obj | solve_bem_irregular.mod: dyndep | com_var.mod common_type.mod compute_green_fd.mod compute_green_freesurface.mod compute_green_infd.mod output.mod utility.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//logging//flogging.F90.obj | flogging.mod: dyndep | vt100.mod
+  restat = 1
+
+build CMakeFiles//nemoh.dir//Solver//logging//vt100.F90.obj | vt100.mod: dyndep
+  restat = 1
+

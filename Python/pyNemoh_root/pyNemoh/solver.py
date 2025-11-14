@@ -63,9 +63,55 @@ from . import pynemoh_settings
 from . import utility
 
 import os
+import sys
+
+# Add DLL directories for Windows
+if sys.platform == 'win32':
+    dll_dir = os.path.dirname(__file__)
+    build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'build'))
+    msys_bin = r'C:\msys64\ucrt64\bin'
+    
+    # Use os.add_dll_directory for Python 3.8+ (more secure than PATH)
+    if hasattr(os, 'add_dll_directory'):
+        os.add_dll_directory(dll_dir)
+        if os.path.exists(build_dir):
+            os.add_dll_directory(build_dir)
+        if os.path.exists(msys_bin):
+            os.add_dll_directory(msys_bin)
+    else:
+        # Fallback for older Python versions
+        os.environ["PATH"] = os.pathsep.join([dll_dir, build_dir, msys_bin, os.environ.get("PATH", "")])
 
 os.environ["PATH"] += os.pathsep + os.path.dirname(__file__)
-import pyNemoh.solver_fortran as solver_fortran
+# Try to import solver_fortran - may fail if not compiled for current Python version
+try:
+    # First try regular import (works if compiled for current Python version)
+    from . import solver_fortran
+except (ImportError, OSError):
+    # Fallback: try loading specific version files
+    try:
+        import importlib.util
+        import sys
+        # Try current Python version first
+        py_version = f"{sys.version_info.major}{sys.version_info.minor}"
+        solver_fortran_path = os.path.join(os.path.dirname(__file__), f'solver_fortran.cp{py_version}-win_amd64.pyd')
+        if not os.path.exists(solver_fortran_path):
+            # Try Python 3.7 version
+            solver_fortran_path = os.path.join(os.path.dirname(__file__), 'solver_fortran.cp37-win_amd64.pyd')
+        if not os.path.exists(solver_fortran_path):
+            # Try Python 3.6 version
+            solver_fortran_path = os.path.join(os.path.dirname(__file__), 'solver_fortran.cp36-win_amd64.pyd')
+        if os.path.exists(solver_fortran_path):
+            spec = importlib.util.spec_from_file_location("solver_fortran", solver_fortran_path)
+            solver_fortran = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(solver_fortran)
+        else:
+            raise ImportError("No solver_fortran.pyd found for any Python version")
+    except (ImportError, OSError) as e:
+        # solver_fortran may not be available (needs to be compiled for current Python version)
+        solver_fortran = None
+        import warnings
+        warnings.warn(f"Could not import solver_fortran: {e}. Some functionality may be limited.")
 
 # The HDF5 structure
 structure = H5_STRUCTURE()
@@ -119,7 +165,7 @@ def init_data():
         "mesh_xm": np.ones((3, n_panels), order="F"),
         "mesh_n": np.ones((3, n_panels), order="F"),
         "mesh_a": np.ones((n_panels, ), order="F"),
-        "bc_normal_velocity": np.ones((nbc_panels, n_problems), np.complex, order="F"),
+        "bc_normal_velocity": np.ones((nbc_panels, n_problems), dtype=np.complex128, order="F"),
         "bc_omega": np.ones((n_problems, )),
         "bc_switch_potential": np.ones((n_problems, ), np.intc, order="F"),
         "bc_switch_freesurface": np.ones((n_problems, ), np.intc, order="F"),
@@ -129,9 +175,9 @@ def init_data():
         "theta": np.ones((n_theta, ), order="F"),
         "meshfs_p": np.ones((4, nfs_panels), np.intc, order="F"),
         "meshfs_x": np.ones((3, nfs_points), order="F"),
-        "out_phi": np.ones((n_problems, 1+ nfs_points), np.complex, order="F"),
-        "out_pressure": np.ones((n_problems, nbc_panels), np.complex, order="F"),
-        "out_hkochin": np.ones((n_problems, n_theta), np.complex, order="F"),
+        "out_phi": np.ones((n_problems, 1+ nfs_points), dtype=np.complex128, order="F"),
+        "out_pressure": np.ones((n_problems, nbc_panels), dtype=np.complex128, order="F"),
+        "out_hkochin": np.ones((n_problems, n_theta), dtype=np.complex128, order="F"),
         "line": np.ones((n_integration, n_problems*2), order="F"),
         "out_potential": np.zeros((n_problems, n_potentials), dtype='f', order="F"),
         "n_potentials": n_potentials,

@@ -114,7 +114,7 @@ class WamitOutput(object):
             if 'Water depth:' in line:
                 water_depth = raw[i].split()[2]
                 try:
-                    water_depth = np.float(water_depth)
+                    water_depth = float(water_depth)
                 except:
                     pass
 
@@ -163,22 +163,22 @@ class WamitOutput(object):
 
                         temp = np.zeros([6,6])
                         temp2 = raw[i+j].split()
-                        temp[2,2] = np.float(temp2[1])
-                        temp[2,3] = np.float(temp2[2])
-                        temp[2,4] = np.float(temp2[3])
+                        temp[2,2] = float(temp2[1])
+                        temp[2,3] = float(temp2[2])
+                        temp[2,4] = float(temp2[3])
                         temp[3,2] = temp[2,3]
                         temp[4,2] = temp[2,4]
 
                         temp2 = raw[i+j+1].split()
-                        temp[3,3] = np.float(temp2[1])
-                        temp[3,4] = np.float(temp2[2])
-                        temp[3,5] = np.float(temp2[3])
+                        temp[3,3] = float(temp2[1])
+                        temp[3,4] = float(temp2[2])
+                        temp[3,5] = float(temp2[3])
                         temp[4,3] = temp[3,4]
                         temp[5,3] = temp[3,5]
 
                         temp2 = raw[i+j+2].split()
-                        temp[4,4] = np.float(temp2[1])
-                        temp[4,5] = np.float(temp2[2])
+                        temp[4,4] = float(temp2[1])
+                        temp[4,5] = float(temp2[2])
                         temp[5,4] = temp[4,5]
 
                         k[bod_count] = temp

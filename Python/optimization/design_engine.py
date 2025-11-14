@@ -14,7 +14,7 @@ import core.model_set_up as msu
 from core import stability
 from nemoh_frontend import nemoh_frontend as nf
 from core.common import SettingsClass
-from pyNemoh.structure import BaseStructure
+from pyNemoh_root.pyNemoh.structure import BaseStructure
 
 from core.meshmagick.mesh import Mesh
 import core.code_check as cc
@@ -23,7 +23,7 @@ import json
 import os
 from pathlib import Path
 import h5py
-from pyNemoh.structure import BaseStructure
+from pyNemoh_root.pyNemoh.structure import BaseStructure
 from core.response import ResponseModel
 from core.loads import Sea_and_Inertia_Loads
 from multiprocessing import freeze_support

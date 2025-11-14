@@ -55,7 +55,7 @@
             "ncol_input": {
                 "type": "numeric",
                 "unit": "-",
-                "value": "2"
+                "value": "3"
             },
             "num_wave_directions_input": {
                 "type": "numeric",

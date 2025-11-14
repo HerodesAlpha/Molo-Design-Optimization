@@ -1,0 +1,31 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\OUTPUT.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "output.mod",
+					"is-interface" : true,
+					"logical-name" : "output.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "com_var.mod"
+				},
+				{
+					"logical-name" : "midentification.mod"
+				},
+				{
+					"logical-name" : "mmesh.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

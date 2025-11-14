@@ -1,0 +1,25 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\COMMON_TYPE.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "common_type.mod",
+					"is-interface" : true,
+					"logical-name" : "common_type.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "mmesh.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

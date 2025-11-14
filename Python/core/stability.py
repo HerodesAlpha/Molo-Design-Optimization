@@ -7,7 +7,7 @@ import core.meshmagick.hydrostatics as hs
 import numpy as np
 from core.meshmagick.MMviewer import MMViewer
 import vtk
-import imageio
+import imageio.v2 as imageio
 import os
 import matplotlib.pyplot as plt
 from pylatex import Section, Figure, NoEscape, NewPage
@@ -218,10 +218,10 @@ def intact_stability(settings, hs_floater):
                 ax.set_xlabel('Angle of inclination [degrees]')
                 ax.set_ylabel('Moment [MNm]')
                 ax.legend()
-                plt.grid(b=True, which='major', color='#666666', linestyle='-')
+                plt.grid(visible=True, which='major', color='#666666', linestyle='-')
                 # Show the minor grid lines with very faint and almost transparent grey lines
                 plt.minorticks_on()
-                plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+                plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
                 plot.add_plot(width=NoEscape(width))
                 plot.add_caption('Intact Stability')
                 plt.close()
@@ -239,10 +239,10 @@ def intact_stability(settings, hs_floater):
         ax.set_xlabel('Angle of inclination [degrees]')
         ax.set_ylabel('Moment [MNm]')
         ax.legend()
-        plt.grid(b=True, which='major', color='#666666', linestyle='-')
+        plt.grid(visible=True, which='major', color='#666666', linestyle='-')
         # Show the minor grid lines with very faint and almost transparent grey lines
         plt.minorticks_on()
-        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.grid(visible=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         # plot.add_plot(width=NoEscape(width))
         # plot.add_caption('Intact Stability')
         plt.show()

@@ -46,7 +46,14 @@ class FileIOClass(object):
         self.case_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
 
         if templates_dir==None:
-            self._templates_dir=Path(os.getcwd()).joinpath('templates')
+            # Try to find templates relative to the script location
+            script_dir = Path(__file__).parent.parent
+            possible_templates = script_dir.joinpath('templates')
+            if possible_templates.exists():
+                self._templates_dir = possible_templates
+            else:
+                # Fallback to current working directory
+                self._templates_dir=Path(os.getcwd()).joinpath('templates')
         else:
             self._templates_dir=templates_dir
 
@@ -80,10 +87,49 @@ class FileIOClass(object):
         self._structural_dir = self._case_dir.joinpath('structural')
 
 
-        self._gmsh_exe = r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format(
-            'es')
-        # print(self._gmsh_exe)
-        assert (Path(self._gmsh_exe).exists())
+        # Try to find gmsh executable
+        self._gmsh_exe = None
+        import shutil
+        import glob
+        
+        # Check if gmsh is in PATH
+        gmsh_in_path = shutil.which('gmsh')
+        if gmsh_in_path:
+            self._gmsh_exe = gmsh_in_path
+        
+        # Try hardcoded paths
+        if not self._gmsh_exe:
+            possible_paths = [
+                r'C:\Users\{}\OneDrive - Verbun AS\Divisions\Offshore Wind\Software\Bin\gmsh-4.2.2-Windows64\gmsh.exe'.format('es'),
+                r'C:\Program Files\gmsh\gmsh.exe',
+                r'C:\gmsh\gmsh.exe',
+            ]
+            for path in possible_paths:
+                if Path(path).exists():
+                    self._gmsh_exe = path
+                    break
+        
+        # Check WinGet installation directory
+        if not self._gmsh_exe:
+            winget_base = os.path.expanduser(r'~\AppData\Local\Microsoft\WinGet\Packages')
+            if os.path.exists(winget_base):
+                # Search for gmsh.exe in WinGet packages
+                for root, dirs, files in os.walk(winget_base):
+                    if 'gmsh.exe' in files:
+                        gmsh_path = os.path.join(root, 'gmsh.exe')
+                        if Path(gmsh_path).exists():
+                            self._gmsh_exe = gmsh_path
+                            break
+        
+        # If still not found, try to find in common locations (skip this search as it's slow)
+        # Users can install gmsh and add it to PATH, or set the path manually
+        
+        # Warn if not found, but don't fail
+        if not self._gmsh_exe or not Path(self._gmsh_exe).exists():
+            import warnings
+            warnings.warn(f"Gmsh executable not found. Some mesh generation functionality may be unavailable. "
+                         f"Please install Gmsh or set the path in common.py")
+            self._gmsh_exe = None
 
         self._freecad_path = r'C:\Program Files\FreeCAD 0.18\bin'
         # assert (Path(self._freecad_path).exists())

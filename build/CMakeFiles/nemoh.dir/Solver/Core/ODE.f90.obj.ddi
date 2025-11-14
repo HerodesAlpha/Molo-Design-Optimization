@@ -1,0 +1,25 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\ODE.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "ode.mod",
+					"is-interface" : true,
+					"logical-name" : "ode.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "common_type.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

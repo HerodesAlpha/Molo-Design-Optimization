@@ -689,28 +689,28 @@ class BaseStructure(object):
         #
 
         self.H5_SOLVER_SWITCH_ODE_INFLUENCE_ATTR = {
-            "description": np.string_("Indicate whether or not to use the ode method to compute the influence coefficients")
+            "description": np.bytes_("Indicate whether or not to use the ode method to compute the influence coefficients")
         }
         """
         Attribute for the self.H5_SOLVER_SWITCH_ODE_INFLUENCE path
         """
 
         self.H5_SOLVER_USE_DIPOLES_IMPLEMENTATION_ATTR = {
-            "description": np.string_("Whether or not to use dipoles Implementation. 1 for using it 0 for no.")
+            "description": np.bytes_("Whether or not to use dipoles Implementation. 1 for using it 0 for no.")
         }
         """
         Whether or not to use dipoles Implementation. 1 for using it 0 for no.
         """
 
         self.H5_SOLVER_REMOVE_IRREGULAR_FREQUENCIES_ATTR = {
-            "description": np.string_("Whether or not to remove irregular frequencies. 1 for using it 0 for no.")
+            "description": np.bytes_("Whether or not to remove irregular frequencies. 1 for using it 0 for no.")
         }
         """
         Whether or not to remove irregular frequencies. 1 for using it 0 for no
         """
 
         self.H5_SOLVER_IS_INTERIOR_DOMAIN_ATTR = {
-            "description": np.string_("Array indicating whether or not a panel is in the body or the interior free surface domain. 1 to indicate the interior, 0 for the body.")
+            "description": np.bytes_("Array indicating whether or not a panel is in the body or the interior free surface domain. 1 to indicate the interior, 0 for the body.")
         }
         """
         Array indicating whether or not a panel is in the body or the interior free surface domain. 1 to indicate the interior, 0 for the body.
@@ -719,7 +719,7 @@ class BaseStructure(object):
 
 
         self.H5_SOLVER_COMPUTE_YAW_MOMENT_ATTR = {
-            "description": np.string_("Whether or not to compute yaw moment. 1 for using it 0 for no.")
+            "description": np.bytes_("Whether or not to compute yaw moment. 1 for using it 0 for no.")
         }
         """
         Attribute for the self.H5_SOLVER_COMPUTE_YAW_MOMENT path
@@ -727,7 +727,7 @@ class BaseStructure(object):
 
 
         self.H5_SOLVER_COMPUTE_DRIFT_FORCES_ATTR = {
-            "description": np.string_("Whether or not to compute drift forces. 1 for using it 0 for no.")
+            "description": np.bytes_("Whether or not to compute drift forces. 1 for using it 0 for no.")
         }
         """
         Attribute for the self.H5_SOLVER_COMPUTE_DRIFT_FORCES path
@@ -735,7 +735,7 @@ class BaseStructure(object):
 
 
         self.H5_SOLVER_THIN_PANELS_ATTR = {
-            "description": np.string_("Array containing whether a given panel is a conventional or a dipole one's." + 
+            "description": np.bytes_("Array containing whether a given panel is a conventional or a dipole one's." + 
                 "1 for dipoles panel, 0 for conventional")
         }
         """
@@ -744,41 +744,41 @@ class BaseStructure(object):
         """
 
         self.H5_SOLVER_USE_HIGHER_ORDER_ATTR = {
-            "description": np.string_("Whether or not to use higher order panel method. 1 for using it 0 for no")
+            "description": np.bytes_("Whether or not to use higher order panel method. 1 for using it 0 for no")
         }
         """
         Attribute for the self.H5_SOLVER_USE_HIGHER_ORDER path
         """
 
         self.H5_SOLVER_NUM_PANEL_HIGHER_ORDER_ATTR = {
-            "description": np.string_("The number of panel per patch in the higher order method")
+            "description": np.bytes_("The number of panel per patch in the higher order method")
         }
         """
         The number of panel per patch in the higher order method
         """
 
         self.H5_SOLVER_B_SPLINE_ORDER_ATTR = {
-            "description": np.string_("The order of the B-Spline for the potential in the higher order")
+            "description": np.bytes_("The order of the B-Spline for the potential in the higher order")
         }
         """
         The order of the B-Spline for the potential in the higher order
         """
 
         self.H5_SOLVER_GREEN_TABULATION_NUMX_ATTR = {
-            "description": np.string_("Number of points in x direction of tabulated data")
+            "description": np.bytes_("Number of points in x direction of tabulated data")
         }
 
         self.H5_SOLVER_GREEN_TABULATION_NUMZ_ATTR = {
-            "description": np.string_("Number of points in z direction of tabulated data")
+            "description": np.bytes_("Number of points in z direction of tabulated data")
         }
 
         self.H5_SOLVER_GREEN_TABULATION_SIMPSON_NPOINTS_ATTR = {
-            "description": np.string_("Number of sub intervals used to approximate the green function integral using simpson rule")
+            "description": np.bytes_("Number of sub intervals used to approximate the green function integral using simpson rule")
         }
 
 
         self.H5_SOLVER_TYPE_ATTR = {
-            "description": np.string_("The solver type. (0) for Direct Gauss (1) for GMRES (2) GMRES with FMM acceleration (2 not implemented yet)")
+            "description": np.bytes_("The solver type. (0) for Direct Gauss (1) for GMRES (2) GMRES with FMM acceleration (2 not implemented yet)")
         }
         """
         The solver type attributes. (0) for Direct Gauss (1) for GMRES (2) GMRES with FMM acceleration (2 not implemented yet)
@@ -786,7 +786,7 @@ class BaseStructure(object):
         """
 
         self.H5_SOLVER_GMRES_RESTART_ATTR = {
-            "description": np.string_("The Restart parameter for GMRES.")
+            "description": np.bytes_("The Restart parameter for GMRES.")
         }
         """
         Attributes for The Restart parameter for GMRES.
@@ -794,14 +794,14 @@ class BaseStructure(object):
         """
 
         self.H5_SOLVER_GMRES_STOPPING_ATTR = {
-            "description": np.string_("Stopping criterion for GMRES")
+            "description": np.bytes_("Stopping criterion for GMRES")
         }
         """
         Attributes for the Stopping criterion for GMRES
         Previously line 4 of input.txt
         """
         self.H5_SOLVER_GMRES_MAX_ITERATIONS_ATTR = {
-            "description": np.string_("Maximum iterations for GMRES")
+            "description": np.bytes_("Maximum iterations for GMRES")
         }
         """
         Attributes for the Maximum iterations for GMRES
@@ -809,28 +809,28 @@ class BaseStructure(object):
         """
 
         self.H5_ENVIRONMENT_ATTR = {
-            "description": np.string_("Group that contains the environment of the calculations.")
+            "description": np.bytes_("Group that contains the environment of the calculations.")
         }
         """
         Attributes for the Group that contains the environment of the calculations.
         Lines 2 to 5 of previous nemoh.cal
         """
         self.H5_NUM_WAVE_FREQUENCIES_ATTR = {
-            "description": np.string_("The number of wave frequencies")
+            "description": np.bytes_("The number of wave frequencies")
         }
         """
         The number of wave frequencies
         Line 27, 1st number of previous nemoh.cal with only 1 body
         """
         self.H5_MIN_WAVE_FREQUENCIES_ATTR = {
-            "description": np.string_("The minimum wave frequency, rad/s")
+            "description": np.bytes_("The minimum wave frequency, rad/s")
         }
         """
         The minimum wave frequency, rad/s
         Line 27, 2nd number of previous nemoh.cal with only 1 body
         """
         self.H5_MAX_WAVE_FREQUENCIES_ATTR = {
-            "description": np.string_("The maximum wave frequency, rad/s")
+            "description": np.bytes_("The maximum wave frequency, rad/s")
         }
 
 
@@ -840,21 +840,21 @@ class BaseStructure(object):
         """
 
         self.H5_NUM_WAVE_DIRECTIONS_ATTR = {
-            "description": np.string_("The number of wave directions")
+            "description": np.bytes_("The number of wave directions")
         }
         """
         The number of wave directions
         Line 28, 1st number of previous nemoh.cal with only 1 body
         """
         self.H5_MIN_WAVE_DIRECTIONS_ATTR = {
-            "description": np.string_("The minimum wave direction, degree")
+            "description": np.bytes_("The minimum wave direction, degree")
         }
         """
         The minimum wave direction, degree
         Line 28, 2nd number of previous nemoh.cal with only 1 body
         """
         self.H5_MAX_WAVE_DIRECTIONS_ATTR = {
-            "description": np.string_("The maximum wave direction, degree")
+            "description": np.bytes_("The maximum wave direction, degree")
         }
         """
         The maximum wave direction, degree
@@ -862,7 +862,7 @@ class BaseStructure(object):
         """
 
         self.H5_SHOW_PRESSURE_ATTR = {
-            "description": np.string_("Flag controlling whether or not to show pressure")
+            "description": np.bytes_("Flag controlling whether or not to show pressure")
         }
         """
         Flag controlling whether or not to show pressure
@@ -870,21 +870,21 @@ class BaseStructure(object):
         """
 
         self.H5_KOCHIN_NUMBER_ATTR = {
-            "description": np.string_("Kochin, Number of directions of calculation (0 for no calculations)")
+            "description": np.bytes_("Kochin, Number of directions of calculation (0 for no calculations)")
         }
         """
         Kochin, Number of directions of calculation (0 for no calculations)
         Line 32, 1st number of previous nemoh.cal with only 1 body
         """
         self.H5_KOCHIN_MIN_ATTR = {
-            "description": np.string_("Kochin, Minimum directions of calculation")
+            "description": np.bytes_("Kochin, Minimum directions of calculation")
         }
         """
         Kochin, Minimum directions of calculation
         Line 32, 2nd number of previous nemoh.cal with only 1 body
         """
         self.H5_KOCHIN_MAX_ATTR = {
-            "description": np.string_("Kochin, Maximum directions of calculation")
+            "description": np.bytes_("Kochin, Maximum directions of calculation")
         }
         """
         Kochin, Maximum directions of calculation
@@ -892,28 +892,28 @@ class BaseStructure(object):
         """
 
         self.H5_FREE_SURFACE_POINTS_X_ATTR = {
-            "description": np.string_("The free surface elevation, Number of points in x direction (0 for no calcutions)")
+            "description": np.bytes_("The free surface elevation, Number of points in x direction (0 for no calcutions)")
         }
         """
         Free surface elevation, Number of points in x direction (0 for no calcutions)
         Line 33, 1st number of previous nemoh.cal with only 1 body
         """
         self.H5_FREE_SURFACE_POINTS_Y_ATTR = {
-            "description": np.string_("The free surface elevation, Number of points in y direction (0 for no calcutions)")
+            "description": np.bytes_("The free surface elevation, Number of points in y direction (0 for no calcutions)")
         }
         """
         Free surface elevation, Number of points in y direction (0 for no calcutions)
         Line 33, 2nd number of previous nemoh.cal with only 1 body
         """
         self.H5_FREE_SURFACE_DIMENSION_X_ATTR = {
-            "description": np.string_("The free surface elevation, dimensions of domain in x direction")
+            "description": np.bytes_("The free surface elevation, dimensions of domain in x direction")
         }
         """
         Free surface elevation, dimensions of domain in x direction
         Line 33, 3rd number of previous nemoh.cal with only 1 body
         """
         self.H5_FREE_SURFACE_DIMENSION_Y_ATTR = {
-            "description": np.string_("The free surface elevation, dimensions of domain in y direction")
+            "description": np.bytes_("The free surface elevation, dimensions of domain in y direction")
         }
         """
         Free surface elevation, dimensions of domain in y direction
@@ -921,21 +921,21 @@ class BaseStructure(object):
         """
 
         self.H5_ENV_VOLUME_ATTR = {
-            "description": np.string_("Fluid specific volume (KG/M**3)")
+            "description": np.bytes_("Fluid specific volume (KG/M**3)")
         }
         """
         Fluid specific volume (KG/M**3)
         Line 2 of previous nemoh.cal
         """
         self.H5_ENV_GRAVITY_ATTR = {
-            "description": np.string_("Gravity  (M/S**2)")
+            "description": np.bytes_("Gravity  (M/S**2)")
         }
         """
         Gravity  (M/S**2)
         Line 3 of previous nemoh.cal
         """
         self.H5_ENV_DEPTH_ATTR = {
-            "description": np.string_("Water depth (M)")
+            "description": np.bytes_("Water depth (M)")
         }
         """
         Water depth (M)
@@ -944,7 +944,7 @@ class BaseStructure(object):
 
 
         self.H5_ENV_WAVE_POINT_ATTR = {
-            "description": np.string_("Wave Point")
+            "description": np.bytes_("Wave Point")
         }
         """
         Wave Point
@@ -952,21 +952,21 @@ class BaseStructure(object):
         """
 
         self.H5_COMPUTE_IRF_ATTR = {
-            "description": np.string_("Flag controlling the irf computation. (0 for no calculation)")
+            "description": np.bytes_("Flag controlling the irf computation. (0 for no calculation)")
         }
         """
         Flag controlling the irf computation. (0 for no calculation)
         Line 30 1st number of previous nemoh.cal with only 1 body
         """
         self.H5_IRF_TIME_STEP_ATTR = {
-            "description": np.string_("IRF time step. (0 for no calculation)")
+            "description": np.bytes_("IRF time step. (0 for no calculation)")
         }
         """
         IRF time step. (0 for no calculation)
         Line 30 2nd number of previous nemoh.cal with only 1 body
         """
         self.H5_IRF_DURATION_ATTR = {
-            "description": np.string_("IRF duration. (0 for no calculation)")
+            "description": np.bytes_("IRF duration. (0 for no calculation)")
         }
         """
         IRF duration. (0 for no calculation)
@@ -974,7 +974,7 @@ class BaseStructure(object):
         """
 
         self.H5_BODY_MESH_ATTR = {
-            "description": np.string_("Contains the mesh array of a body.")
+            "description": np.bytes_("Contains the mesh array of a body.")
         }
         """
         Contains the mesh array of a body.
@@ -982,14 +982,14 @@ class BaseStructure(object):
         Example Cylinder.dat
         """
         self.H5_BODY_NUM_POINTS_ATTR = {
-            "description": np.string_("The number of points of a body")
+            "description": np.bytes_("The number of points of a body")
         }
         """
         The number of points of a body
         Line 10 1st number of previous nemoh.cal
         """
         self.H5_BODY_NUM_PANELS_ATTR = {
-            "description": np.string_("The number of panels of a body")
+            "description": np.bytes_("The number of panels of a body")
         }
         """
         The number of panels of a body
@@ -998,7 +998,7 @@ class BaseStructure(object):
 
 
         self.H5_BODIES_ATTR = {
-            "description": np.string_("Group to contain all the bodies")
+            "description": np.bytes_("Group to contain all the bodies")
         }
         """
         Group to contain all the bodies
@@ -1006,21 +1006,21 @@ class BaseStructure(object):
 
 
         self.H5_BODY_BASE_ATTR = {
-            "description": np.string_("The base group name to use for body inside the self.H5_BODIES group")
+            "description": np.bytes_("The base group name to use for body inside the self.H5_BODIES group")
         }
         """
         The base group name to use for body inside the self.H5_BODIES group
         """
 
         self.H5_FREEDOM_DEGREE_ATTR = {
-            "description": np.string_("Freedom degree of a body")
+            "description": np.bytes_("Freedom degree of a body")
         }
         """
         Freedom degree of a body
         """
 
         self.H5_GENERALISED_FORCES_ATTR = {
-            "description": np.string_("Generalised forces of a body")
+            "description": np.bytes_("Generalised forces of a body")
         }
         """
         Generalised forces of a body
@@ -1035,13 +1035,13 @@ class BaseStructure(object):
         #
         #
         self.H5_OUTPUT_ATTR = {
-            "description": np.string_("The hdf5 intermediate output group")
+            "description": np.bytes_("The hdf5 intermediate output group")
         }
         """
         The hdf5 intermediate output group
         """
         self.H5_MESH_ATTR = {
-            "description": np.string_("The group for mesh.")
+            "description": np.bytes_("The group for mesh.")
         }
         """
         The group for mesh.
@@ -1049,94 +1049,94 @@ class BaseStructure(object):
         """
 
         self.H5_L12_ATTR = {
-            "description": np.string_("The L12 group name")
+            "description": np.bytes_("The L12 group name")
         }
         """
         The L12 group name
         Contains values previously stored in Mesh/L12.dat
         """
         self.H5_L12_X_ATTR = {
-            "description": np.string_("Nodes coordinates")
+            "description": np.bytes_("Nodes coordinates")
         }
         """
         Nodes coordinates
         """
         self.H5_L12_P_ATTR = {
-            "description": np.string_("Connectivities of the mesh")
+            "description": np.bytes_("Connectivities of the mesh")
         }
         """
         Connectivities of the mesh
         """
         self.H5_L12_COUNT_ATTR = {
-            "description": np.string_("The parameters for the mesh like the Symmetry about the xOz plane (1 for yes) (i_sym) "
+            "description": np.bytes_("The parameters for the mesh like the Symmetry about the xOz plane (1 for yes) (i_sym) "
                                       "variable")
         }
         """
         The parameters for the mesh like the Symmetry about the xOz plane (1 for yes) (i_sym) variable
         """
         self.H5_L10_ATTR = {
-            "description": np.string_("The L10 group name")
+            "description": np.bytes_("The L10 group name")
         }
         """
         The L10 group name
         Contains values previously stored in Mesh/L10.dat
         """
         self.H5_L10_CPANEL_ATTR = {
-            "description": np.string_("To which body belongs the panel")
+            "description": np.bytes_("To which body belongs the panel")
         }
         """
         To which body belongs the panel
         """
         self.H5_L10_XM_ATTR = {
-            "description": np.string_("Centre of panels")
+            "description": np.bytes_("Centre of panels")
         }
         """
         Centre of panels
         """
         self.H5_L10_N_ATTR = {
-            "description": np.string_("Normal vectors")
+            "description": np.bytes_("Normal vectors")
         }
         """
         Normal vectors
         """
         self.H5_L10_A_ATTR = {
-            "description": np.string_("Area of panel")
+            "description": np.bytes_("Area of panel")
         }
         """
         Area of panel
         """
         self.H5_L10_COUNT_ATTR = {
-            "description": np.string_("The parameters for the mesh like the number of points, of panels")
+            "description": np.bytes_("The parameters for the mesh like the number of points, of panels")
         }
         """
         The parameters for the mesh like the number of points, of panels
         """
         self.H5_MESH_INTEGRATION_ATTR = {
-            "description": np.string_("The integration results")
+            "description": np.bytes_("The integration results")
         }
         """
         The integration results
         """
         self.H5_MESH_FREE_SURFACE_ATTR = {
-            "description": np.string_("Free surface group name")
+            "description": np.bytes_("Free surface group name")
         }
         """
         Free surface group name
         """
         self.H5_MESH_FREE_SURFACE_VECTORS_ATTR = {
-            "description": np.string_("Free surface vectors")
+            "description": np.bytes_("Free surface vectors")
         }
         """
         Free surface vectors
         """
         self.H5_MESH_FREE_SURFACE_INDEX_ATTR = {
-            "description": np.string_("Free surface indices")
+            "description": np.bytes_("Free surface indices")
         }
         """
         Free surface indices
         """
         self.H5_MESH_KOCHIN_ATTR = {
-            "description": np.string_("Kochin values")
+            "description": np.bytes_("Kochin values")
         }
         """
         Kochin values
@@ -1144,52 +1144,52 @@ class BaseStructure(object):
 
 
         self.H5_NORMAL_VELOCITY_ATTR = {
-            "description": np.string_("Group name for the normal velocity.")
+            "description": np.bytes_("Group name for the normal velocity.")
         }
         """
         Group name for the normal velocity.
         Contains values previously in NormalVelocities.dat
         """
         self.H5_NORMAL_VELOCITY_W_ATTR = {
-            "description": np.string_("The wave frequency")
+            "description": np.bytes_("The wave frequency")
         }
         """
         The wave frequency
         """
         self.H5_NORMAL_VELOCITY_BETA_ATTR = {
-            "description": np.string_("The wave directions")
+            "description": np.bytes_("The wave directions")
         }
         """
         The wave directions
         """
 
         self.H5_NORMAL_VELOCITY_BETA_RAW_ATTR = {
-            "description": np.string_("The raw wave directions")
+            "description": np.bytes_("The raw wave directions")
         }
         """
         The raw wave directions
         """
 
         self.H5_NORMAL_VELOCITY_SWITCH_POTENTIAL_ATTR = {
-            "description": np.string_("Array of flags controlling whether to show potential for each problem")
+            "description": np.bytes_("Array of flags controlling whether to show potential for each problem")
         }
         """
         Array of flags controlling whether to show potential for each problem
         """
         self.H5_NORMAL_VELOCITY_SWITCH_FREE_SURFACE_ATTR = {
-            "description": np.string_("Array of flags controlling whether to show free surface for each problem")
+            "description": np.bytes_("Array of flags controlling whether to show free surface for each problem")
         }
         """
         Array of flags controlling whether to show free surface for each problem
         """
         self.H5_NORMAL_VELOCITY_SWITCH_KOCHIN_ATTR = {
-            "description": np.string_("Array of flags controlling whether to show kochin for each problem")
+            "description": np.bytes_("Array of flags controlling whether to show kochin for each problem")
         }
         """
         Array of flags controlling whether to show kochin for each problem
         """
         self.H5_NORMAL_VELOCITY_VELOCITIES_ATTR = {
-            "description": np.string_("The velocities array")
+            "description": np.bytes_("The velocities array")
         }
         """
         The velocities array
@@ -1204,106 +1204,106 @@ class BaseStructure(object):
         #
         #
         self.H5_RESULTS_ATTR = {
-            "description": np.string_("The group containing results.")
+            "description": np.bytes_("The group containing results.")
         }
         """
         The group containing results.
         Previously values inside Results/ directory
         """
         self.H5_RESULTS_FK_FORCES_ATTR = {
-            "description": np.string_("The froude krylov forces")
+            "description": np.bytes_("The froude krylov forces")
         }
         """
         The froude krylov forces
         Mostly the value in previous results/FKForces.dat
         """
         self.H5_RESULTS_CASE_ATTR = {
-            "description": np.string_("The result case group")
+            "description": np.bytes_("The result case group")
         }
         """
         The result case group
         """
         self.H5_RESULTS_CASE_FORCE_ATTR = {
-            "description": np.string_("The case force")
+            "description": np.bytes_("The case force")
         }
         """
         The case force
         """
         self.H5_RESULTS_CASE_MOTION_ATTR = {
-            "description": np.string_("The case motion")
+            "description": np.bytes_("The case motion")
         }
         """
         The case motion
         """
 
         self.H5_RESULTS_CASE_RADIATION_ATTR = {
-            "description": np.string_("The case radiation")
+            "description": np.bytes_("The case radiation")
         }
         """
         The case motion
         """
 
         self.H5_RESULTS_CASE_BETA_ATTR = {
-            "description": np.string_("The case wave directions")
+            "description": np.bytes_("The case wave directions")
         }
 
         """
         The case wave directions
         """
         self.H5_RESULTS_CASE_W_ATTR = {
-            "description": np.string_("The case wave frequencies")
+            "description": np.bytes_("The case wave frequencies")
         }
         """
         The case wave frequencies
         """
         self.H5_RESULTS_CASE_THETA_ATTR = {
-            "description": np.string_("The case angle")
+            "description": np.bytes_("The case angle")
         }
         """
         The case angle
         """
         self.H5_RESULTS_FORCES_ATTR = {
-            "description": np.string_("The forces.")
+            "description": np.bytes_("The forces.")
         }
         """
         The forces.
         Mostly the values in the previous results/Forces.dat
         """
         self.H5_RESULTS_FK_FORCES_RAW_ATTR = {
-            "description": np.string_("The raw froude krylov forces in complex number")
+            "description": np.bytes_("The raw froude krylov forces in complex number")
         }
         """
         The raw froude krylov forces in complex number
         """
         self.H5_RESULTS_FK_PRESSURE_RAW_ATTR = {
-            "description": np.string_("The raw froude krylov pressure in complex number")
+            "description": np.bytes_("The raw froude krylov pressure in complex number")
         }
         """
         The raw froude krylov pressure in complex number
         """
         self.H5_RESULTS_KOCHIN_ATTR = {
-            "description": np.string_("The kochin number")
+            "description": np.bytes_("The kochin number")
         }
         """
         The kochin number
         Previously Kochin.*.dat
         """
         self.H5_RESULTS_FREE_SURFACE_PANEL_ATTR = {
-            "description": np.string_("The free surface panel")
+            "description": np.bytes_("The free surface panel")
         }
         """
         The free surface panel
         Previously  results/free_surface*.dat  1st part
         """
         self.H5_RESULTS_FREE_SURFACE_POINTS_ATTR = {
-            "description": np.string_("The free surface points.")
+            "description": np.bytes_("The free surface points.")
         }
         """
         The free surface points.
         Previously  results/freesurface*.dat 2nd part
         """
         self.H5_RESULTS_POTENTIAL_ATTR = {
-            "description": np.string_("The potential")
+            "description": np.bytes_("The potential")
         }
         """
         The potential
@@ -1311,14 +1311,14 @@ class BaseStructure(object):
         """
 
         self.H5_RESULTS_DRIFT_FORCES_ATTR = {
-            "description": np.string_("The mean drift forces")
+            "description": np.bytes_("The mean drift forces")
         }
         """
         The mean drift forces attributes
         """
 
         self.H5_RESULTS_YAW_MOMENT_ATTR = {
-            "description": np.string_("The mean yaw moment")
+            "description": np.bytes_("The mean yaw moment")
         }
         """
         The mean yaw moment
@@ -1326,70 +1326,70 @@ class BaseStructure(object):
 
 
         self.H5_RESULTS_ADDED_MASS_ATTR = {
-            "description": np.string_("The added mass coefficients per wave frequency")
+            "description": np.bytes_("The added mass coefficients per wave frequency")
         }
         """
         The added mass coefficients per wave frequency
         """
 
         self.H5_RESULTS_ADDED_MASS_INFINITE_ATTR = {
-            "description": np.string_("The infinite frequency added mass coefficients")
+            "description": np.bytes_("The infinite frequency added mass coefficients")
         }
         """
         The infinite frequency added mass coefficients
         """
 
         self.H5_RESULTS_ADDED_MASS_ZERO_ATTR = {
-            "description": np.string_("The zero frequency added mass coefficients")
+            "description": np.bytes_("The zero frequency added mass coefficients")
         }
         """
         The zero frequency added mass coefficients
         """
 
         self.H5_RESULTS_RADIATION_DAMPING_ATTR = {
-            "description": np.string_("The radiation damping coefficients")
+            "description": np.bytes_("The radiation damping coefficients")
         }
         """
         The radiation damping coefficients
         """
 
         self.H5_RESULTS_EXCITATION_FORCES_ATTR = {
-            "description": np.string_("The excitation forces coefficients")
+            "description": np.bytes_("The excitation forces coefficients")
         }
         """
         The excitation forces coefficients
         """
 
         self.H5_RESULTS_VOLUME_DISPLACEMENT_ATTR = {
-            "description": np.string_("The volume displacement per body")
+            "description": np.bytes_("The volume displacement per body")
         }
         """
         The volume displacement per body
         """
 
         self.H5_RESULTS_CENTER_BUOYANCY_ATTR = {
-            "description": np.string_("The center of buoyancy per body")
+            "description": np.bytes_("The center of buoyancy per body")
         }
         """
         The center of buoyancy per body
         """
 
         self.H5_RESULTS_WATER_PLANE_AREA_ATTR = {
-            "description": np.string_("The water plane area per body")
+            "description": np.bytes_("The water plane area per body")
         }
         """
         The water plane area per body
         """
 
         self.H5_RESULTS_STIFNESS_ATTR = {
-            "description": np.string_("The hydrostatic stifness matrix per body")
+            "description": np.bytes_("The hydrostatic stifness matrix per body")
         }
         """
         The hydrostatic stifness matrix per body
         """
 
         self.H5_RESULTS_PRESSURE_ATTR = {
-            "description": np.string_("The dynamic pressure per panel per problem")
+            "description": np.bytes_("The dynamic pressure per panel per problem")
         }
         """
         The dynamic pressure per panel per problem

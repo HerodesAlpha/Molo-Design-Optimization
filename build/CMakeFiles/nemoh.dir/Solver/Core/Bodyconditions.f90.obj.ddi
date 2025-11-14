@@ -1,0 +1,20 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\Bodyconditions.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "mbodyconditions.mod",
+					"is-interface" : true,
+					"logical-name" : "mbodyconditions.mod"
+				}
+			],
+			"requires" : []
+		}
+	],
+	"version" : 0
+}

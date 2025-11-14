@@ -64,7 +64,7 @@ class AqwaOutput(object):
             else:
                 first_line += 1
             if first_line == 1:
-                tmp = np.array(raw[i].split()).astype(np.float)
+                tmp = np.array(raw[i].split()).astype(np.float64)
                 num_bodies = int(tmp[0])
                 num_wave_directions = int(tmp[1])
                 num_frequencies = int(tmp[2])
@@ -74,10 +74,10 @@ class AqwaOutput(object):
                     if j == 0:
                         wave_directions = tmp[3:]
                     else:
-                        tmp = np.array(raw[i+j].split()).astype(np.float)
+                        tmp = np.array(raw[i+j].split()).astype(np.float64)
                         wave_directions = np.append(wave_directions,tmp)
                 for j in range(num_lines_frequencies):
-                    tmp = np.array(raw[i + num_lines_wave_directions + j].split()).astype(np.float)
+                    tmp = np.array(raw[i + num_lines_wave_directions + j].split()).astype(np.float64)
                     if j == 0:
                         frequencies = tmp
                     else:
@@ -85,7 +85,7 @@ class AqwaOutput(object):
 
 
             if 'GENERAL' in line:
-                tmp = np.array(raw[i+1].split()).astype(np.float)
+                tmp = np.array(raw[i+1].split()).astype(np.float64)
                 water_depth = tmp[0]
                 density = tmp[1]
                 gravity = tmp[2]
@@ -94,14 +94,14 @@ class AqwaOutput(object):
             if 'DRAFT' in line:
                 draft = {}
                 for iBod in range(num_bodies):
-                    tmp = np.array(raw[i + iBod + 1].split()).astype(np.float)
+                    tmp = np.array(raw[i + iBod + 1].split()).astype(np.float64)
                     tmp2 = int(tmp[0])
                     draft[tmp2] = tmp[1]
 
             if 'COG' in line:
                 cg = {}
                 for iBod in range(num_bodies):
-                    tmp = np.array(raw[i + iBod + 1].split()).astype(np.float)
+                    tmp = np.array(raw[i + iBod + 1].split()).astype(np.float64)
                     tmp2 = int(tmp[0])
                     cg[tmp2] = tmp[1:]
 
@@ -109,7 +109,7 @@ class AqwaOutput(object):
                 mass_matrix = {}
                 for iBod in range(num_bodies):
                     for iRow in range(6):
-                        tmp = np.array(raw[i + iBod*6 + iRow + 1].split()).astype(np.float)
+                        tmp = np.array(raw[i + iBod*6 + iRow + 1].split()).astype(np.float64)
                         if iRow == 0:
                             tmp2 = int(tmp[0])
                             mass_matrix[tmp2] = tmp[1:]
@@ -120,7 +120,7 @@ class AqwaOutput(object):
                 stiffness_matrix = {}
                 for iBod in range(num_bodies):
                     for iRow in range(6):
-                        tmp = np.array(raw[i + iBod*6 + iRow + 1].split()).astype(np.float)
+                        tmp = np.array(raw[i + iBod*6 + iRow + 1].split()).astype(np.float64)
                         if iRow == 0:
                             tmp2 = int(tmp[0])
                             stiffness_matrix[tmp2] = tmp[1:]
@@ -133,13 +133,13 @@ class AqwaOutput(object):
                     for iBod2 in range(num_bodies):
                         for iFreq in range(num_frequencies):
                             for iRow in range(6):
-                                tmp = np.array(raw[i + iBod1*(num_bodies*num_frequencies*6) + iBod2*num_frequencies*6 + iFreq*6 + iRow + 1].split()).astype(np.float)
+                                tmp = np.array(raw[i + iBod1*(num_bodies*num_frequencies*6) + iBod2*num_frequencies*6 + iFreq*6 + iRow + 1].split()).astype(np.float64)
                                 if (iBod2==0) and (iFreq==0) and (iRow==0):
-                                    tmp2 = tmp[0:3].astype(np.float).astype(np.int)
+                                    tmp2 = tmp[0:3].astype(np.float64).astype(np.int32)
                                     added_mass[tmp2[0]] = np.zeros([6,6*num_bodies,num_frequencies])
                                     added_mass[tmp2[0]][iRow,iBod2*6:(iBod2+1)*6,iFreq] = tmp[3:]
                                 elif iRow == 0:
-                                    tmp2 = tmp[0:3].astype(np.float).astype(np.int)
+                                    tmp2 = tmp[0:3].astype(np.float64).astype(np.int32)
                                     added_mass[tmp2[0]][iRow,iBod2*6:(iBod2+1)*6,iFreq] = tmp[3:]
                                 else:
                                     added_mass[tmp2[0]][iRow,iBod2*6:(iBod2+1)*6,iFreq] = tmp
@@ -150,13 +150,13 @@ class AqwaOutput(object):
                     for iBod2 in range(num_bodies):
                         for iFreq in range(num_frequencies):
                             for iRow in range(6):
-                                tmp = np.array(raw[i + iBod1*(num_bodies*num_frequencies*6) + iBod2*num_frequencies*6 + iFreq*6 + iRow + 1].split()).astype(np.float)
+                                tmp = np.array(raw[i + iBod1*(num_bodies*num_frequencies*6) + iBod2*num_frequencies*6 + iFreq*6 + iRow + 1].split()).astype(np.float64)
                                 if (iBod2==0) and (iFreq==0) and (iRow==0):
-                                    tmp2 = tmp[0:3].astype(np.float).astype(np.int)
+                                    tmp2 = tmp[0:3].astype(np.float64).astype(np.int32)
                                     radiation_damping[tmp2[0]] = np.zeros([6,6*num_bodies,num_frequencies])
                                     radiation_damping[tmp2[0]][iRow,iBod2*6:(iBod2+1)*6,iFreq] = tmp[3:]
                                 elif iRow == 0:
-                                    tmp2 = tmp[0:3].astype(np.float).astype(np.int)
+                                    tmp2 = tmp[0:3].astype(np.float64).astype(np.int32)
                                     radiation_damping[tmp2[0]][iRow,iBod2*6:(iBod2+1)*6,iFreq] = tmp[3:]
                                 else:
                                     radiation_damping[tmp2[0]][iRow,iBod2*6:(iBod2+1)*6,iFreq] = tmp
@@ -164,7 +164,7 @@ class AqwaOutput(object):
             if 'FIDD' in line:
                 fidd = {}
                 for iBod in range(num_bodies):
-                    tmp = np.array(raw[i + iBod + 1].split()).astype(np.float)
+                    tmp = np.array(raw[i + iBod + 1].split()).astype(np.float64)
                     tmp2 = int(tmp[0])
                     fidd[tmp2] = tmp[1:]
 
@@ -174,9 +174,9 @@ class AqwaOutput(object):
                 for iBod in range(num_bodies):
                     for iDir in range(num_wave_directions):
                         for iFreq in range(num_frequencies):
-                            tmp1_1 = np.array(raw[i + iBod*(num_wave_directions*num_frequencies*2) + iDir*num_frequencies*2 + iFreq*2 + 1].split()).astype(np.float)
-                            tmp1_2 = np.array(raw[i + iBod*(num_wave_directions*num_frequencies*2) + iDir*num_frequencies*2 + iFreq*2 + 2].split()).astype(np.float)
-                            tmp2 = tmp1_1[0:3].astype(np.float).astype(np.int)
+                            tmp1_1 = np.array(raw[i + iBod*(num_wave_directions*num_frequencies*2) + iDir*num_frequencies*2 + iFreq*2 + 1].split()).astype(np.float64)
+                            tmp1_2 = np.array(raw[i + iBod*(num_wave_directions*num_frequencies*2) + iDir*num_frequencies*2 + iFreq*2 + 2].split()).astype(np.float64)
+                            tmp2 = tmp1_1[0:3].astype(np.float64).astype(np.int32)
                             if (iDir==0) and (iFreq==0):
                                 excitation_magnitude[tmp2[0]] = np.zeros([6,num_wave_directions,num_frequencies])
                                 excitation_phase[tmp2[0]] = np.zeros([6,num_wave_directions,num_frequencies])

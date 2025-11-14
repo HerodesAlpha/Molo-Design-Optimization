@@ -1,0 +1,31 @@
+{
+	"revision" : 0,
+	"rules" : 
+	[
+		{
+			"outputs" : [],
+			"primary-output" : "CMakeFiles\\\\nemoh.dir\\\\Solver\\\\Core\\\\GREEN_FUNCTION.f90.obj",
+			"provides" : 
+			[
+				{
+					"compiled-module-path" : "green_function.mod",
+					"is-interface" : true,
+					"logical-name" : "green_function.mod"
+				}
+			],
+			"requires" : 
+			[
+				{
+					"logical-name" : "com_var.mod"
+				},
+				{
+					"logical-name" : "common_type.mod"
+				},
+				{
+					"logical-name" : "elementary_fns.mod"
+				}
+			]
+		}
+	],
+	"version" : 0
+}

@@ -151,7 +151,7 @@ def generate_lid(V, F, max_area=None, verbose=False):
         # Testing the orientation of each polygon by computing the signed area of it
         signed_area = np.array(
             [points[j][0] * points[j + 1][1] - points[j + 1][0] * points[j][1] for j in range(n - 1)],
-            dtype=np.float).sum()
+            dtype=np.float64).sum()
         if signed_area < 0.:
             holes.append(polygon)
         else:
@@ -801,7 +801,7 @@ def main():
 
             elif len(plane) == 1:
                 if plane[0] in plane_str_list:
-                    planes[iplane].normal = np.array(plane_str_list[plane[0]], dtype=np.float)
+                    planes[iplane].normal = np.array(plane_str_list[plane[0]], dtype=np.float64)
                     planes[iplane].c = 0.
                 else:
                     raise AssertionError('%s key for plane is not known. Choices are [%s].'
