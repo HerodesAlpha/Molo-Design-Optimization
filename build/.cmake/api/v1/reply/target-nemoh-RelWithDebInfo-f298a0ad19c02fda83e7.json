@@ -2,13 +2,13 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "libnemoh.dll"
+			"path" : "RelWithDebInfo/libnemoh.dll"
 		},
 		{
-			"path" : "libnemoh.dll.a"
+			"path" : "RelWithDebInfo/libnemoh.dll.a"
 		},
 		{
-			"path" : "libnemoh.pdb"
+			"path" : "RelWithDebInfo/libnemoh.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -55,7 +55,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-W -Wall -std=f2008 -fopenmp -fmax-errors=0  -O3 -w -g  -W -Wall -std=f2008 -fopenmp   -fmax-errors=0 -w"
+					"fragment" : "-W -Wall -std=f2008 -fopenmp -fmax-errors=0  -O3 -w -g "
 				},
 				{
 					"fragment" : "-fopenmp"
@@ -117,6 +117,12 @@
 				40,
 				41
 			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
 		}
 	],
 	"id" : "nemoh::@6890427a1f51a3e7e1df",
