@@ -1,27 +1,33 @@
-# -*- coding: utf-8 -*-
+"""
+NEMOH frontend module for orchestrating NEMOH hydrodynamic analysis.
+
+This module provides the main interface for running NEMOH preprocessing,
+solving, and postprocessing workflows with configuration management.
+"""
 
 __author__ = "Eivind Sønju"
 __copyright__ = "Copyright (C) 2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
 import json
-import copy
-import collections
-from collections.abc import Mapping
-import sys
-import numpy as np
-from pyNemoh_root.pyNemoh.models import MeshFormat
-from pyNemoh_root.pyNemoh import utility
-from logutils.queue import QueueListener
-import multiprocessing
 import logging
-import nemoh_frontend.services as services
+import multiprocessing
 import os
-import jmespath as jp
-from pyNemoh_root.pyNemoh.structure import JSON_STRUCTURE
-from pyNemoh_root.pyNemoh import pynemoh_settings
 import subprocess
+import sys
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import jmespath as jp
+import numpy as np
+from logutils.queue import QueueListener
+
+import nemoh_frontend.services as services
 import nemoh_frontend.settings as openwarp_settings
+from pyNemoh_root.pyNemoh import pynemoh_settings, utility
+from pyNemoh_root.pyNemoh.models import MeshFormat
+from pyNemoh_root.pyNemoh.structure import JSON_STRUCTURE
 
 # script file
 SCRIPT = os.path.realpath(__file__)
@@ -33,12 +39,16 @@ DEFAULT_CONFIGURATION_FILE = os.path.join(os.path.dirname(SCRIPT), 'configs', 'd
 struct = JSON_STRUCTURE()
 
 
-def merge_config(d, u):
+def merge_config(d: Dict, u: Dict) -> Dict:
     """
-    This function recursively merge one dict with another
-    :param d the base dict
-    :param u the dict to update d with
-    :return the merged dict
+    Recursively merge one dict with another.
+    
+    Args:
+        d: Base dictionary to merge into
+        u: Dictionary to update d with
+        
+    Returns:
+        Merged dictionary (d is modified in place)
     """
     # if u is a dict and empty we don't update d which is the truth
     for k, v in list(u.items()):
@@ -53,22 +63,30 @@ def merge_config(d, u):
     return d
 
 
-def format_list(lst):
+def format_list(lst: Union[List, str]) -> str:
     """
-    Format a list as a string, ignore if it is string
-    :param lst the list to format
-    :return the formatted string
+    Format a list as a space-separated string, return string as-is.
+    
+    Args:
+        lst: List to format or string to return
+        
+    Returns:
+        Formatted string
     """
     if not isinstance(lst, str):
          return " ".join(str(i) for i in lst)
     return lst
 
 
-def convert_dict_values(d):
+def convert_dict_values(d: Dict) -> Dict:
     """
-    This function makes sure the top level value a dict are str
-    :param d the dict to convert
-    :return the converted dict
+    Convert top-level dictionary values to strings.
+    
+    Args:
+        d: Dictionary to convert
+        
+    Returns:
+        Dictionary with string values (modified in place)
     """
     for key, value in list(d.items()):
 

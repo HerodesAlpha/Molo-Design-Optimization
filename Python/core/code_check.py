@@ -1,19 +1,35 @@
-import numpy as np
-import core.environmental_conditions as ec
-from scipy.optimize import bisect
-from scipy.optimize import minimize
-from scipy.optimize import Bounds
-from scipy.optimize import broyden1,broyden2, newton_krylov
+"""
+Code check module for structural design verification.
 
-class BreakIt(Exception): pass
+This module provides classes for panel design checks according to
+various design codes (e.g., EN 1993, DNVGL RP-C201).
+"""
+
+import numpy as np
+from scipy.optimize import Bounds, bisect, broyden1, broyden2, minimize, newton_krylov
+from typing import List, Optional, Tuple, Union
+
+import core.environmental_conditions as ec
+
+
+class BreakIt(Exception):
+    """Custom exception for breaking out of nested loops."""
+    pass
 
 
 # Code check of t
-
 # Tripping of stiffener, use stiffened plate criteria?
 
-class Panel():
-    def __init__(self, settings):
+
+class Panel:
+    """
+    Panel class for structural design checks.
+    
+    Handles cross-section properties and utilization calculations
+    for stiffened panels according to design codes.
+    """
+    
+    def __init__(self, settings) -> None:
         self._settings = settings
         self._h = self._settings.job_data['floater']['Radial']['Heigth']
         self._d_rc = self._settings.job_data['floater']['Radial']['Column']['Diameter']
@@ -224,8 +240,8 @@ class Panel():
         #   interaction function for each combination of
         #   sigma_x and p_lat
         # -------------------------------------------------
-        int_for = np.zeros([nfreq, nwdir], dtype='complex')
-        elm_contour =np.zeros([nwdir,len(contourline)], dtype='float')
+        int_for = np.zeros([nfreq, nwdir], dtype=np.complex128)
+        elm_contour = np.zeros([nwdir, len(contourline)], dtype=np.float64)
         for iwdir in range(nwdir):
             for ifreq in range(nfreq):
 
@@ -239,8 +255,7 @@ class Panel():
                 elif bc == 'pinned':
                     cxm = q * l ** 2 / 8
                 else:
-                    print('No such boundary condition: {}'.format(bc))
-                    exit()
+                    raise ValueError(f'No such boundary condition: {bc}')
 
                 # eq. 5.155
                 m_p = sigma_y * self._z_y
@@ -251,18 +266,30 @@ class Panel():
                 p_e = sigma_e * a
                 p = sigma_x[ifreq, iwdir] * a
 
-                int_for[ifreq,iwdir] = p / p_k + cxm / ((1 - p / p_e) * m_p)
+                int_for[ifreq, iwdir] = p / p_k + cxm / ((1 - p / p_e) * m_p)
 
             # Now get expected max for each direction
-            elm_contour[iwdir,:] = np.array([stwcl.expected_largest_maximum(int_for[:,iwdir], freq) for stwcl in contourline])
+            elm_contour[iwdir, :] = np.array([
+                stwcl.expected_largest_maximum(int_for[:, iwdir], freq) for stwcl in contourline
+            ])
 
         # for item in x:
         #    print(item)
 
         return elm_contour.flatten().max()
 
-    def axial_stress(self, f, pos_y_side=None):
-        if pos_y_side == None:
+    def axial_stress(self, f: np.ndarray, pos_y_side: Optional[bool] = None) -> np.ndarray:
+        """
+        Calculate axial stress from section forces.
+        
+        Args:
+            f: Force array [nfreq, nwdir, 6] or [6]
+            pos_y_side: If True, calculate stress on positive y side
+            
+        Returns:
+            Stress array
+        """
+        if pos_y_side is None:
             pos_y_side = True
 
         # Compression is positive
@@ -350,8 +377,15 @@ class Panel():
 #         return k_yy, k_yz, k_zy, k_zz
 
 
-class DNVGL_RP_C201_Part1():  # NOT APPLICABLE, KEPT FOR FUTURE REFERENCE
-    def __init__(self, settings):
+class DNVGL_RP_C201_Part1:
+    """
+    DNVGL RP-C201 Part 1 implementation (NOT APPLICABLE, KEPT FOR FUTURE REFERENCE).
+    
+    This class contains methods for buckling strength calculations according to
+    DNVGL Recommended Practice C201.
+    """
+    
+    def __init__(self, settings) -> None:
         self._settings = settings
         self._info = dict()
         self._info['Company'] = 'Det Norske Veritas'

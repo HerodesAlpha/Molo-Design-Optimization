@@ -1,25 +1,50 @@
+"""
+Model class for managing structural models and their mass/inertia properties.
+
+This module provides classes for building hierarchical models with parts
+and calculating combined mass matrices.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-from core.tool_box import *
+from typing import List, Optional, Union
+
+import numpy as np
+
+from core.tool_box import (
+    TotalMassMatrixClass,
+    hollow_right_circular_cylinder,
+    rectangular_prism,
+    rotation_matrix,
+    transformation_matrix,
+)
 
 
-class ModelClass(object):
-    def __init__(self, type=None, red_point=None):
+class ModelClass:
+    """
+    Base class for structural models with mass and inertia properties.
+    
+    Supports hierarchical part structures and mass matrix calculations.
+    """
+    
+    def __init__(
+        self,
+        type: Optional[str] = None,
+        red_point: Optional[Union[List[float], np.ndarray]] = None
+    ) -> None:
         self._inertias = TotalMassMatrixClass()
         self.verbose = 1
         self.parts_list = []
-        if type is None:
-            self._type = ''
-        else:
-            self._type = type
-
+        self._type = type if type is not None else ''
+        
         if red_point is None:
-            self._inertias._point = np.zeros(3)
+            self._inertias._point = np.zeros(3, dtype=np.float64)
         else:
-            assert (len(red_point) == 3)
-            self._inertias._point = np.asarray(red_point)
+            if len(red_point) != 3:
+                raise ValueError(f"red_point must have length 3, got {len(red_point)}")
+            self._inertias._point = np.asarray(red_point, dtype=np.float64)
 
     # def set_reduction_point(self, vector):
     #     # Recursively update reduction point on myself and my children
@@ -27,24 +52,47 @@ class ModelClass(object):
     #     for part in self.get_all_parts():
     #         part._inertias.reduction_point = vector  # Will update global mass matrix also
 
-    def move_reduction_point(self, vector):
-        # Recursively update reduction point on myself and my children
-        assert len(vector) == 3
+    def move_reduction_point(self, vector: Union[List[float], np.ndarray]) -> None:
+        """
+        Recursively update reduction point on myself and my children.
+        
+        Args:
+            vector: Translation vector [x, y, z]
+        """
+        if len(vector) != 3:
+            raise ValueError(f"vector must have length 3, got {len(vector)}")
         for part in self.get_all_parts():
-            part._inertias.reduction_point = part._inertias._point + vector  # Will update global mass matrix also
+            part._inertias.reduction_point = part._inertias._point + vector
 
-    def get_parts_without_children(self, part_list=None):
-        # Only get mass of parts that have no part
-        if self.parts_list == []:
-            part_list.append(self)
-        if part_list == None:
+    def get_parts_without_children(self, part_list: Optional[List] = None) -> List:
+        """
+        Get all parts that have no children (leaf nodes).
+        
+        Args:
+            part_list: List to append to (created if None)
+            
+        Returns:
+            List of parts without children
+        """
+        if part_list is None:
             part_list = []
+        if not self.parts_list:
+            part_list.append(self)
         for part in self.parts_list:
             part.get_parts_without_children(part_list)
         return part_list
 
-    def get_all_parts(self, part_list=None):
-        if part_list == None:
+    def get_all_parts(self, part_list: Optional[List] = None) -> List:
+        """
+        Get all parts recursively (including self).
+        
+        Args:
+            part_list: List to append to (created if None)
+            
+        Returns:
+            List of all parts
+        """
+        if part_list is None:
             part_list = []
         part_list.append(self)
         for part in self.parts_list:
@@ -64,9 +112,11 @@ class ModelClass(object):
         return self._inertias.cog
 
     @cog.setter
-    def cog(self, val):
-        assert len(val) == 3
-        self._inertias._cog = val
+    def cog(self, val: Union[List[float], np.ndarray]) -> None:
+        """Set center of gravity."""
+        if len(val) != 3:
+            raise ValueError(f"cog must have length 3, got {len(val)}")
+        self._inertias._cog = np.asarray(val, dtype=np.float64)
 
     # def __update_reference_point__(self):
     #    self._inertias.reduction_point = self._point
@@ -75,8 +125,9 @@ class ModelClass(object):
     #     pass
     #     self._inertias._cog = self._inertias.cog - self._red_point
 
-    def print_vector_matrix_global(self):
-        if not self.verbose == 0:
+    def print_vector_matrix_global(self) -> None:
+        """Print the global vector matrix if verbose mode is enabled."""
+        if self.verbose != 0:
             print(
                 '{} {}\n\tMass = {m:6.1f} t\n\tReduction point is [{a[0]:6.2f}, {a[1]:6.2f}, {a[2]:6.2f}]\n\n\tVector matrix'.format(
                     self.__class__.__name__, self._type, m=self.inertias.mass / 1000,
@@ -188,7 +239,7 @@ class FloaterClass(AssemblyClass, object):
         da = (1 + self._gap) * self._dia_rc
         lower_flange_strip_width = self._l_lf / self._n_strips
         upper_flange_strip_width = self._l_uf / self._n_strips
-        dtheta = 2 * pi / self._nr
+        dtheta = 2 * np.pi / self._nr
         theta = [i * dtheta for i in range(self._nr)]
         zr = -(self._hgt / 2 + self._t_lf)
         hf_hc = self._ballast_filling

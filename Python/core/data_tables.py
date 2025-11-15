@@ -1,7 +1,15 @@
+"""
+Data tables module for worldwide wave distribution parameters.
+
+This module contains lookup tables for environmental parameters used
+in long-term wave condition calculations.
+"""
 
 import numpy as np
 
-world_wide_distribution_parameters =   np.asarray([[1,	2.33,	1.33,	0.974,	0.205,	0.1263,	-0.0201],
+# Worldwide distribution parameters for environmental contour generation
+# Format: [Area, alpha_s, beta_s, a1, a2, b1, b2]
+world_wide_distribution_parameters = np.asarray([[1, 2.33, 1.33, 0.974, 0.205, 0.1263, -0.0201],
                             [2,	1.96,	1.34,	0.994,	0.175,	0.1414,	-0.0238],
                             [3,	2.74,	1.35,	1.127,	0.16,	0.1255,	-0.0912],
                             [4,	2.84,	1.53,	1.125,	0.15,	0.0978,	-0.0074],

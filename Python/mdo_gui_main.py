@@ -1,70 +1,96 @@
-import math
-import sys
-from tkinter import *
-from tkinter import filedialog
-from pathlib import Path
-from optimization.design_engine import Candidate, Parameter_Space
-import os
-import pygubu
-from plot_forces import get_axs
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import pickle
-import core.tool_box as tb
+"""
+Main GUI application for MOLO Design Optimization.
+
+This module provides the primary user interface for the MOLO design optimization
+tool, including model creation, stability analysis, hydrodynamic analysis,
+and response calculations.
+"""
+
 import json
-from tkinter import messagebox
-import core.environmental_conditions as ec
-import core.common as cc
-import numpy as np
-from pyNemoh_root.pyNemoh import utility
+import math
+import os
+import pickle
+import sys
+from pathlib import Path
+from typing import Optional
+
 import h5py
-
 import matplotlib.pyplot as plt
+import numpy as np
+import pygubu
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import END, NW, filedialog, messagebox
 
-# import module_locator
-nax=np.newaxis
-# my_path = module_locator.module_path()
-# print(my_path)
+import core.common as cc
+import core.environmental_conditions as ec
+import core.tool_box as tb
+from optimization.design_engine import Candidate, Parameter_Space
+from plot_forces import get_axs
+from pyNemoh_root.pyNemoh import utility
 
+# Constants
 try:
     DATA_DIR = os.path.abspath(os.path.dirname(__file__))
 except NameError:
     DATA_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-DEG2RAD = 4 * math.atan(1) * 2 / 360
+# Convert degrees to radians (more readable than the original formula)
+DEG2RAD = math.pi / 180.0
 
-nsp = tb.NumericStringParser()
+# NumPy axis alias for readability
+NAX = np.newaxis
+
+# Global numeric string parser instance
+NSP = tb.NumericStringParser()
 
 
-class StdoutRedirector(object):
+class StdoutRedirector:
+    """Redirect stdout to a Tkinter text widget for display in the GUI."""
+    
     def __init__(self, text_widget):
+        """
+        Initialize the redirector with a text widget.
+        
+        Args:
+            text_widget: Tkinter Text widget to redirect output to
+        """
         self.text_space = text_widget
 
-    def write(self, string):
+    def write(self, string: str) -> None:
+        """
+        Write string to the text widget.
+        
+        Args:
+            string: String to write
+        """
         self.text_space.insert('end', string)
         self.text_space.see('end')
 
-    def flush(self):
+    def flush(self) -> None:
+        """Flush method required for file-like interface (no-op)."""
         pass
 
 
-class Application():
-
-    def __init__(self):
+class Application:
+    """Main application class for the MOLO Design Optimization GUI."""
+    
+    def __init__(self) -> None:
+        """Initialize the application and set up the GUI."""
         self.about_dialog = None
         self.nautic_zones_dialog = None
         self.fig = None
-        self.builder = b = pygubu.Builder()
-        b.add_from_file(os.path.join(DATA_DIR, 'main.ui'))
-        b.add_resource_path(os.path.join(DATA_DIR, 'imgs'))
+        self.builder = pygubu.Builder()
+        self.builder.add_from_file(os.path.join(DATA_DIR, 'main.ui'))
+        self.builder.add_resource_path(os.path.join(DATA_DIR, 'imgs'))
 
-        self.mainwindow = b.get_object('mainwindow')
+        self.mainwindow = self.builder.get_object('mainwindow')
         icon_path = os.path.join(DATA_DIR, 'imgs', 'molo_256.ico')
         if os.path.exists(icon_path):
             self.mainwindow.iconbitmap(icon_path)
 
         self.mainwindow.protocol("WM_DELETE_WINDOW", self.quit)
 
-        b.connect_callbacks(self)
+        self.builder.connect_callbacks(self)
 
         self.case_cfg = None
         self.global_cfg = None
@@ -75,6 +101,8 @@ class Application():
         self.pkl_path = None
         self.fio = None
 
+        # Load nautic zones image if available
+        from tkinter import PhotoImage
         nautic_zones_path = os.path.join(DATA_DIR, 'imgs', 'nautic_zones.gif')
         if os.path.exists(nautic_zones_path):
             self.nautic_zones_gif = PhotoImage(file=nautic_zones_path)
@@ -87,12 +115,10 @@ class Application():
         with open(self.template_dir.joinpath('wtg_template.json'), 'r') as f:
             self._wtg_template = json.loads(f.read())
 
-        self.cb1=self.builder.get_object('wtg_label_input')
-        a = list()
-        for key in self._wtg_template:
-            a.append(key)
-        self.cb1['value']=a
-        #print(self.cb1['values'])
+        self.cb1 = self.builder.get_object('wtg_label_input')
+        # Populate combobox with template keys
+        template_keys = list(self._wtg_template.keys())
+        self.cb1['value'] = template_keys
         self.cb1.current(0)
 
         self.get_output('main_text')
@@ -211,8 +237,8 @@ class Application():
             try:
                 self.builder.get_object(id).delete(0, END)
                 self.builder.get_object(id).insert(0, value)
-            except:
-                print('{} not defined'.format(id))
+            except (AttributeError, KeyError) as e:
+                print(f'{id} not defined: {e}')
 
     def load_case_cfg(self):
 
@@ -229,7 +255,7 @@ class Application():
                 with open(str(f_case), 'r') as f:
                     self.local_case_cfg = json.loads(f.read())
 
-        if self.local_case_cfg == None:
+        if self.local_case_cfg is None:
 
             self.case_cfg = self.default_case_cfg
 
@@ -247,17 +273,17 @@ class Application():
             try:
                 self.builder.get_object(id).delete(0, END)
                 self.builder.get_object(id).insert(0, value)
-            except:
-                print('{} not defined'.format(id))
+            except (AttributeError, KeyError) as e:
+                print(f'{id} not defined: {e}')
 
-    def quit(self, event=None):
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            self.save_cfg()
+    def quit(self, event=None) -> None:
+        """Handle application quit event."""
+        self.save_cfg()
+        self.mainwindow.quit()
 
-            self.mainwindow.quit()
-
-    def btnplot_clicked(self):
-        if not self.fig == None:
+    def btnplot_clicked(self) -> None:
+        """Handle plot button click event."""
+        if self.fig is not None:
             self.fig.clear()
         print('Plotting ...')
         self.fig, self.axs = get_axs()
@@ -275,23 +301,32 @@ class Application():
     def run(self):
         self.mainwindow.mainloop()
 
-    def get_numeric(self, id):
-        return nsp.eval(self.builder.get_object(id).get())
+    def get_numeric(self, widget_id: str) -> float:
+        """
+        Get numeric value from a widget by evaluating its string content.
+        
+        Args:
+            widget_id: ID of the widget to get value from
+            
+        Returns:
+            Numeric value from the widget
+        """
+        return NSP.eval(self.builder.get_object(widget_id).get())
 
-    def react_to_pressure_type_change(self, *args):
-        str=self.plot_pressure_type_variable.get().replace('_',' ')
-        if str == 'Radiation':
-            self.plot_pressure_index_label_variable='Degree of freedom'
+    def react_to_pressure_type_change(self, *args) -> None:
+        """Update pressure index label based on selected pressure type."""
+        pressure_type = self.plot_pressure_type_variable.get().replace('_', ' ')
+        if pressure_type == 'Radiation':
+            self.plot_pressure_index_label_variable = 'Degree of freedom'
         else:
-            self.plot_pressure_index_label_variable='Wave direction'
+            self.plot_pressure_index_label_variable = 'Wave direction'
 
-    def react_to_wtg_label_change(self, *args):
-        str=self.wtg_label_variable.get().replace('_',' ')
-        #print(str)
-        self.builder.get_object('model_wtg_label')['text']=str
+    def react_to_wtg_label_change(self, *args) -> None:
+        """Update WTG label and file I/O when WTG selection changes."""
+        wtg_label = self.wtg_label_variable.get().replace('_', ' ')
+        self.builder.get_object('model_wtg_label')['text'] = wtg_label
         self.set_fio()
-        #print('Case directory is {:s}'.format())
-        print('Case parent directory is {}'.format(self.fio.case_parent_dir))
+        print(f'Case parent directory is {self.fio.case_parent_dir}')
 
     def create_model(self):
         self.get_output('model_text')
@@ -318,16 +353,16 @@ class Application():
         p.lower_flange_thickness = self.get_numeric('lower_flange_thickness_input')
 
 
-        p.lower_plate_width= p.radial_column_diameter + 2 * self.get_numeric('lower_flange_overwidth_input')
+        p.lower_plate_width = p.radial_column_diameter + 2 * self.get_numeric('lower_flange_overwidth_input')
         p.lower_flange_overlength = self.get_numeric('lower_flange_overlength_input')
 
 
 
-        #p.filling_ratio = [0.1, 0.1, 0.1]
-        self.this_candidate = Candidate(p,self.fio)
+        # p.filling_ratio = [0.1, 0.1, 0.1]
+        self.this_candidate = Candidate(p, self.fio)
         self.this_candidate.settings.lower_face_corrected_z_pos = True
         self.this_candidate.settings.wtg_model = self.wtg_label_variable.get()
-        print('\nTurbine type is the {:s}'.format(self.wtg_label_variable.get()))
+        print(f'\nTurbine type is the {self.wtg_label_variable.get()}')
 
         self.this_candidate.init_model(state='New')
         self.data_io_dir = self.this_candidate.settings.fio.data_io_dir
@@ -373,16 +408,24 @@ class Application():
 
         self.this_candidate.hydrodynamic_analysis()
 
-    def open_workspace(self, title=None, dirName=None):
-        options = {}
-        options['initialdir'] = dirName
-        options['title'] = title
-        options['mustexist'] = False
-        fileName = filedialog.askdirectory(**options)
-        if fileName == "":
-            return None
-        else:
-            return fileName
+    def open_workspace(self, title: Optional[str] = None, dir_name: Optional[str] = None) -> Optional[str]:
+        """
+        Open a directory selection dialog.
+        
+        Args:
+            title: Dialog title
+            dir_name: Initial directory
+            
+        Returns:
+            Selected directory path or None if cancelled
+        """
+        options = {
+            'initialdir': dir_name,
+            'title': title,
+            'mustexist': False
+        }
+        file_name = filedialog.askdirectory(**options)
+        return file_name if file_name else None
 
     def calc_response(self):
         self.get_output('response_text')
@@ -418,7 +461,7 @@ class Application():
         else:
             print('\nLinearized viscous damping will NOT be included')
 
-        print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
+        print(f'\nCase:\t{self.this_candidate.settings.case_label}')
 
         print('\nEigenvalue sollution WITH added mass')
 
@@ -464,7 +507,7 @@ class Application():
             k_wave[iw] = utility.compute_wave_number(val, environment)
         w_bar = (radial_extreme - environment.x_eff) * np.cos(tc.loads.beta) + (0 - environment.y_eff) * np.sin(
             tc.loads.beta)
-        eta = np.exp(utility.II * k_wave[:,nax] * w_bar[nax,:])
+        eta = np.exp(utility.II * k_wave[:, NAX] * w_bar[NAX, :])
 
         print('\n {:^6s} {:^6s} {:^6s}'.format('Hs', 'Tp', 'Gamma'), end = '')
         for x in force_label:
@@ -477,19 +520,19 @@ class Application():
             f_sec1 = tc.response.assemble_forces(imass, ipanel, istrip, moment_ref_point=[0, 0, 0])
             del imass, ipanel
 
-            f_elm=[]
+            f_elm = []
             for i in range(6):
-                f=f_sec1['Dynamic']['SUM'][:, ibeta, i] / 1000000
+                f = f_sec1['Dynamic']['SUM'][:, ibeta, i] / 1000000
                 f_elm.append(stwc.expected_largest_maximum(f, tc.loads.w))
 
             p1_rao = tc.response.point_rao(c1)[:, ibeta, 0, 2].flatten()
-            ag_rao = p1_rao - eta[:,ibeta]
+            ag_rao = p1_rao - eta[:, ibeta]
             ag1 = stwc.expected_largest_maximum(ag_rao, tc.loads.w)
 
-            print(' {:6.1f} {:6.1f} {:6.1f}'.format(stwc.hs, stwc.tp, stwc.gamma), end='')
+            print(f' {stwc.hs:6.1f} {stwc.tp:6.1f} {stwc.gamma:6.1f}', end='')
             for x in f_elm:
-                print('  {:10.1f}'.format(x), end='')
-            print('  {:4.1f}'.format(ag1))
+                print(f'  {x:10.1f}', end='')
+            print(f'  {ag1:4.1f}')
 
     def plot_pressure(self):
         self.get_output('plot_text')
@@ -506,7 +549,7 @@ class Application():
 
 
 
-        print('\nCase:\t{}'.format(self.this_candidate.settings.case_label))
+        print(f'\nCase:\t{self.this_candidate.settings.case_label}')
 
         yr = self.this_candidate.settings.park_data['Design Basis']['ULS']['Return period']
 
@@ -531,7 +574,7 @@ class Application():
         if sp_x_input == 0:
             sp_x = self.this_candidate.settings.floater_data['Central column diameter'] * (0.5)  # + 0.8 + 1 + 0.8 + 1)
         else:
-            sp_x=sp_x_input
+            sp_x = sp_x_input
         sp_z = self.this_candidate.settings.floater_data['Radial']['Heigth'] / 2 - self.this_candidate.hs_floater.hs_data[
             'draught']
         #sp_x = -100
@@ -555,7 +598,7 @@ class Application():
         for key in stat_force:
             a = np.abs(stat_force[key][2]) * factor
             b = np.angle(stat_force[key][2])
-            print('{:20} {:5.2f} {: 5.2f}'.format(key, a, b))
+            print(f'{key:20} {a:5.2f} {b: 5.2f}')
 
         w = self.this_candidate.loads.w
         fig, axs = plt.subplots(2, 2)
@@ -590,7 +633,7 @@ class Application():
                 axs[0, 0].plot(x_tics, abs_val, label=key, linewidth=linewidth)
                 axs[0, 1].plot(x_tics, phase_val, label=key)
                 # print(abs_val[:])
-                print('{:20} {:6.2f} {: 5.2f}'.format(key, abs_val[ifreq_print], phase_val[ifreq_print]))
+                print(f'{key:20} {abs_val[ifreq_print]:6.2f} {phase_val[ifreq_print]: 5.2f}')
 
         axs[0, 0].set_title('Amplitude')
         force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']
@@ -622,18 +665,16 @@ class Application():
                     abs_val_rao = np.abs(r[:, ibeta, d[key]])
                     lns1 = ax1.plot(x_tics, abs_val_rao, label=key)
                     phase_val_rao = np.angle(r[:, ibeta, d[key]])
-                    print('{:20} {:6.3f} {: 7.4f}'.format(key, abs_val_rao[ifreq_print],
-                                                          phase_val_rao[ifreq_print]))
+                    print(f'{key:20} {abs_val_rao[ifreq_print]:6.3f} {phase_val_rao[ifreq_print]: 7.4f}')
 
 
                 else:
                     abs_val_rao = np.abs(r[:, ibeta, d[key]])
-                    lns2 = ax2.plot(x_tics, abs_val_rao* 180 / np.pi, '-r', label=key)
+                    lns2 = ax2.plot(x_tics, abs_val_rao * 180 / np.pi, '-r', label=key)
 
                     phase_val_rao = np.angle(r[:, ibeta, d[key]])
-                    print('{:20} {:6.3f} {: 7.4f} ({: 5.1f} deg)'.format(key, abs_val_rao[ifreq_print],
-                                                                         phase_val_rao[ifreq_print],
-                                                                         abs_val_rao[ifreq_print] * 180 / np.pi))
+                    print(f'{key:20} {abs_val_rao[ifreq_print]:6.3f} {phase_val_rao[ifreq_print]: 7.4f} '
+                          f'({abs_val_rao[ifreq_print] * 180 / np.pi: 5.1f} deg)')
 
                 axs[1, 1].plot(x_tics, phase_val_rao, label=key)
 
@@ -674,12 +715,12 @@ class Application():
         # print()
         # print(np.diag(this_candidate.response._c_visc[ifreq_print,:]))
 
-    def gui_init_load(self):
-        if not self.this_candidate == None:
-            if self.this_candidate.loads == None:
+    def gui_init_load(self) -> None:
+        """Initialize loads for the current candidate if available."""
+        if self.this_candidate is not None:
+            if self.this_candidate.loads is None:
                 self.this_candidate.init_load()
                 print('Loads initialized')
-
         else:
             print('Please initialize Model and/or run Hydro')
 

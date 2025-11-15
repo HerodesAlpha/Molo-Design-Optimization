@@ -1,22 +1,52 @@
+"""
+Report generation module for creating LaTeX design reports.
+
+This module generates comprehensive design reports with plots, tables,
+and analysis results in PDF format.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-
-# matplotlib.use('Agg')  # Not to use X server. For TravisCI.
-import matplotlib.pyplot as plt  # noqa
-from datetime import datetime
-import numpy as np
-from pylatex import Document, PageStyle, Head, Foot, MiniPage, \
-    StandAloneGraphic, MultiColumn, Tabu, LongTabu, LargeText, MediumText, \
-    LineBreak, NewPage, Tabularx, TextColor, simple_page_number, Command, \
-    Figure, NoEscape, Section, LongTable
-from pylatex.utils import bold, NoEscape
-
-from pathlib import Path
 import os
+from datetime import datetime
+from pathlib import Path
+
+import matplotlib.pyplot as plt  # noqa
+import numpy as np
+from pylatex import (
+    Command,
+    Document,
+    Figure,
+    Foot,
+    Head,
+    LargeText,
+    LineBreak,
+    LongTable,
+    LongTabu,
+    MediumText,
+    MiniPage,
+    MultiColumn,
+    NewPage,
+    NoEscape,
+    PageStyle,
+    Section,
+    StandAloneGraphic,
+    Tabu,
+    Tabularx,
+    TextColor,
+    simple_page_number,
+)
+from pylatex.utils import NoEscape, bold
+
 
 class DesignReport(Document):
+    """
+    LaTeX document generator for design reports.
+    
+    Creates comprehensive PDF reports with analysis results, plots, and tables.
+    """
 
     def __init__(self,settings):
         super().__init__()
@@ -29,8 +59,10 @@ class DesignReport(Document):
 
                 "includeheadfoot": True
         }
-        self._doc = Document(settings._fio._case_dir.joinpath('report_{}'.format(settings._molo_model)),
-                             geometry_options=geometry_options)
+        self._doc = Document(
+            settings._fio._case_dir.joinpath(f'report_{settings._molo_model}'),
+            geometry_options=geometry_options
+        )
 
         # Generating first page style
         header = PageStyle("header")

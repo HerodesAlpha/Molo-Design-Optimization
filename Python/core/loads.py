@@ -1,23 +1,38 @@
+"""
+Loads module for calculating sea and inertia loads from hydrodynamic analysis.
+
+This module processes NEMOH results to compute pressures, forces, added mass,
+and radiation damping for the floating structure.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-import h5py
-from pylab import *
 import pickle
-from core import force
-from core import nemoh
+import warnings
+from typing import Dict, Optional
+
+import h5py
+import numpy as np
+
 import core.tool_box as tb
+from core import force, nemoh
 from core.common import PhysicalQuantities
 from core.meshmagick.mesh import Mesh
 from pyNemoh_root.pyNemoh.structure import BaseStructure
-import warnings
 
 
-class Sea_and_Inertia_Loads(PhysicalQuantities, object):
-    # TODO: Get added mass at zero and infinite frequency
-    # TODO: Correct radiation pressure due to artificial distance between upper and lower face of lower flange.
-    def __init__(self, settings):
+class Sea_and_Inertia_Loads(PhysicalQuantities):
+    """
+    Class for calculating sea and inertia loads from hydrodynamic analysis.
+    
+    TODO: Get added mass at zero and infinite frequency
+    TODO: Correct radiation pressure due to artificial distance between 
+          upper and lower face of lower flange.
+    """
+    
+    def __init__(self, settings) -> None:
         super().__init__()
         h5_bs = BaseStructure()
         self._settings = settings
@@ -44,7 +59,7 @@ class Sea_and_Inertia_Loads(PhysicalQuantities, object):
                 self._nemoh_mesh_faces = pickle.load(f)
 
             # Reshape vertices and faces to full model
-            if settings.use_symmmetri == True:
+            if settings.use_symmmetri is True:
                 a = self._nemoh_mesh_vertices
                 b = a.copy()
                 b[:, 1] = -b[:, 1]  # Create new set of nodes mirrored about xz

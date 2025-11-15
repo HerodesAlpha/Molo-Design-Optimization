@@ -1,23 +1,39 @@
+"""
+Common utilities and base classes for MOLO Design Optimization.
+
+This module provides physical constants, file I/O management, and settings
+classes used throughout the application.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
 import json
-from pathlib import Path
-import getpass
-import sys
-from core.report import DesignReport
-import numpy as np
 import os
+import sys
+from pathlib import Path
+from typing import Optional
+
+import numpy as np
+
+from core.report import DesignReport
 
 
-class PhysicalQuantities():
-    # This is the only place allowed to put physical quantities
-    def __init__(self):
-        self._rho_sw = 1025  # Density of sea water
-        self._gravity = -9.81  # Gravity acceleration in global coordinate system
-        self._rho_st = 7850  # Density of steel
-        self._emod_st = 2.1e+11  # E-modulus of steel
+class PhysicalQuantities:
+    """
+    Physical constants used throughout the analysis.
+    
+    This is the only place allowed to define physical quantities to ensure
+    consistency across the codebase.
+    """
+    
+    def __init__(self) -> None:
+        """Initialize physical constants."""
+        self._rho_sw = 1025.0  # Density of sea water [kg/m³]
+        self._gravity = -9.81  # Gravity acceleration in global coordinate system [m/s²]
+        self._rho_st = 7850.0  # Density of steel [kg/m³]
+        self._emod_st = 2.1e11  # E-modulus of steel [Pa]
 
     @property
     def rho_sw(self):
@@ -36,8 +52,26 @@ class PhysicalQuantities():
         return self._emod_st
 
 
-class FileIOClass(object):
-    def __init__(self, analyses_root, park_label, wtg_label, case_label_type,nrc, rcd,gf,rh,templates_dir=None):
+class FileIOClass:
+    """
+    Handles file I/O operations and directory structure for MOLO analysis.
+    
+    Manages paths for NEMOH, Gmsh, stability, and structural analysis directories,
+    and locates external executables like Gmsh.
+    """
+    
+    def __init__(
+        self,
+        analyses_root: Path,
+        park_label: str,
+        wtg_label: str,
+        case_label_type: Optional[str],
+        nrc: int,
+        rcd: float,
+        gf: float,
+        rh: float,
+        templates_dir: Optional[Path] = None
+    ) -> None:
 
         self._analyses_root = analyses_root
         self._park_label = park_label
@@ -45,7 +79,7 @@ class FileIOClass(object):
 
         self.case_parent_dir = analyses_root.joinpath(park_label).joinpath(wtg_label)
 
-        if templates_dir==None:
+        if templates_dir is None:
             # Try to find templates relative to the script location
             script_dir = Path(__file__).parent.parent
             possible_templates = script_dir.joinpath('templates')
@@ -53,15 +87,15 @@ class FileIOClass(object):
                 self._templates_dir = possible_templates
             else:
                 # Fallback to current working directory
-                self._templates_dir=Path(os.getcwd()).joinpath('templates')
+                self._templates_dir = Path(os.getcwd()).joinpath('templates')
         else:
-            self._templates_dir=templates_dir
+            self._templates_dir = templates_dir
 
 
         #self._molo_model =
         #self._molo_label = '{}-{}'.format(mt, self._molo_model)
 
-        if case_label_type == None:
+        if case_label_type is None:
             i = 0
             while 1:
                 i += 1
@@ -69,7 +103,7 @@ class FileIOClass(object):
                     break
             self._case_label = 'case{:04d}'.format(i)
         elif case_label_type == 'molo_model':
-            self._case_label = '{:0}C{:03.0f}-G{:02.0f}H{:03.0f}'.format(nrc, rcd * 10, gf * 10, rh * 10)
+            self._case_label = f'{nrc:0}C{rcd * 10:03.0f}-G{gf * 10:02.0f}H{rh * 10:03.0f}'
         else:
             self._case_label = case_label_type
 
@@ -143,15 +177,20 @@ class FileIOClass(object):
 
 
 
-    def create_dir(self):
-        exist_ok_bool = True
-        self._nemoh_root.mkdir(parents=True, exist_ok=exist_ok_bool)
-        self._nemoh_results_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
-        self._nemoh_mesh_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
-        self._gmsh_root.mkdir(parents=True, exist_ok=exist_ok_bool)
-        self._data_io_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
-        self._stability_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
-        self._structural_dir.mkdir(parents=True, exist_ok=exist_ok_bool)
+    def create_dir(self) -> None:
+        """Create all necessary directories for the analysis."""
+        exist_ok = True
+        directories = [
+            self._nemoh_root,
+            self._nemoh_results_dir,
+            self._nemoh_mesh_dir,
+            self._gmsh_root,
+            self._data_io_dir,
+            self._stability_dir,
+            self._structural_dir
+        ]
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=exist_ok)
 
     @property
     def case_dir(self):
@@ -240,7 +279,7 @@ class SettingsClass(PhysicalQuantities, object):
         self._job_data['analysis']['simulations']['default']['environment']['fluid_depth'] = self._rho_sw
         self._job_data['analysis']['simulations']['default']['environment']['gravity'] = np.abs(self._gravity)
 
-        self._radiaton_damping_factor = 1
+        self._radiation_damping_factor = 1  # Fixed typo: radiaton -> radiation
 
 
 

@@ -1,15 +1,26 @@
-from pathlib import Path
-import numpy as np
-from optimization.design_engine import Candidate, Parameter_Space
+"""
+Auto sizer script for automated design optimization.
+
+This script performs parameter sweep optimization across multiple
+design variables (diameter, ballast, height, gap) and generates
+results in CSV and Excel formats.
+"""
+
 import sys
 import warnings
-import core.tool_box as tb
-import pandas
 from contextlib import redirect_stdout
+from pathlib import Path
+
+import numpy as np
+import pandas
+
+import core.tool_box as tb
+from optimization.design_engine import Candidate, Parameter_Space
 
 
-
-class BreakIt(Exception): pass
+class BreakIt(Exception):
+    """Custom exception for breaking out of nested loops."""
+    pass
 
 
 if __name__ == '__main__':
@@ -71,7 +82,7 @@ if __name__ == '__main__':
                             state = "Old"
                         with redirect_stdout(fout):
                             this_candidate.init_model(state=state)
-                        print('\nCase:\t{}'.format(this_candidate.settings.case_label))
+                        print(f'\nCase:\t{this_candidate.settings.case_label}')
                         # this_candidate.init_model(state='New')
                         this_candidate.settings.load_cases = {  # 121, np.pi / 15, np.pi
                                 "num_wave_frequencies": 40,  # TODO: Implement adaptive frequency
@@ -89,12 +100,12 @@ if __name__ == '__main__':
                                     r = this_candidate.intact_stability_ratio()
                                 if r >= 1.4:
                                     is_stable = True
-                                    print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
+                                    print(f'This candidate is stable with r = {r * 100:1.0f}%')
                                 else:
                                     is_stable = False
                                     print('This candidate is not stable')
-                            except:
-                                print('Stability check failed ...')
+                            except Exception as e:
+                                print(f'Stability check failed: {e}')
                                 is_stable = False
                         else:
                             print('This candidate has old stability database')
@@ -125,19 +136,13 @@ if __name__ == '__main__':
                                     res = this_candidate.structural_analysis()
 
                                     if print_to_screen:
-                                        print('Max UR is : {:1.2f}'.format(res['Max UR']))
-                                        print('Height of lower flange stiffener : {:1.2f}'.format(
-                                                res['panel_cc']._h_lfst))
-                                        print('Thickness of lower flange : {:1.2f}'.format(res['panel_cc']._t_lfst))
-                                        print('Thickness of lower flange stiffener : {:1.2f}'.format(
-                                                res['panel_cc']._t_lf))
+                                        print(f"Max UR is : {res['Max UR']:1.2f}")
+                                        print(f"Height of lower flange stiffener : {res['panel_cc']._h_lfst:1.2f}")
+                                        print(f"Thickness of lower flange : {res['panel_cc']._t_lfst:1.2f}")
+                                        print(f"Thickness of lower flange stiffener : {res['panel_cc']._t_lf:1.2f}")
 
-                                        print('Setion force: {}'.format(
-                                                np.array2string(res['section force'], precision=2)))
-
-                                        print(
-                                                'Panel force: {}'.format(
-                                                    np.array2string(res['panel force'], precision=2)))
+                                        print(f"Section force: {np.array2string(res['section force'], precision=2)}")
+                                        print(f"Panel force: {np.array2string(res['panel force'], precision=2)}")
                                         # this_candidate.loads.show_pressure(ifreq=20, pressure_index=1, pressure_type='Radiation', axis=2)
 
                                         print('\nEigenvalue sollution WITH added mass')

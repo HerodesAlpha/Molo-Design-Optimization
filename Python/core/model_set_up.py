@@ -1,32 +1,57 @@
+"""
+Model setup module for initializing structural and hydrodynamic models.
+
+This module creates mass models, sets up hydrostatics, and prepares meshes
+for stability and NEMOH analysis.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
 import json
 import os
+import pickle
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
-import pickle
+
 import core.meshmagick.hydrostatics as hs
 import core.meshmagick.mmio as mmio
-from core import model
 import core.tool_box as tb
+from core import model, report
 from core.meshmagick.mesh import Mesh
-from core import report
 
 
-def rem_list(df):
-    # Dirty :-(
+def rem_list(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extract first element from each DataFrame column (legacy function).
+    
+    Args:
+        df: DataFrame to process
+        
+    Returns:
+        Modified DataFrame
+    """
     for item in df:
         try:
             df[item] = df[item][0]
-        except:
+        except (IndexError, KeyError, TypeError):
             pass
     return df
 
 
-def create_mass_models(settings):
+def create_mass_models(settings) -> Tuple:
+    """
+    Create mass models for unit, floater, and WTG components.
+    
+    Args:
+        settings: Settings object with configuration
+        
+    Returns:
+        Tuple of (unit_model, floater_model, wtg_model, floater_data)
+    """
     twr_data = model.TowerDataClass(settings.job_data['wtg'][settings.wtg_model]["Tower"])
     floater_data = model.FloaterDataClass(settings.job_data['floater'])
     rna_data = model.RNADataClass(settings.job_data['wtg'][settings.wtg_model])
@@ -49,9 +74,18 @@ def create_mass_models(settings):
     return unit_model, floater_model, wtg_model, floater_data
 
 
-def init_models(settings):  #
+def init_models(settings) -> Tuple:
+    """
+    Initialize models with mass, hydrostatics, and meshes.
+    
+    Args:
+        settings: Settings object with configuration
+        
+    Returns:
+        Tuple of (unit_model, hs_floater)
+    """
     # Set ballast to zero
-    nc=settings.job_data['floater']['Radial']['Number of columns']
+    nc = settings.job_data['floater']['Radial']['Number of columns']
     settings.job_data['floater']['Ballast filling ratio'] = 0.0
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)
 
@@ -74,13 +108,13 @@ def init_models(settings):  #
     hs_floater.gravity = abs(settings.gravity)
     hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
-    print('\nUn-ballasted mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
+    print(f'\nUn-ballasted mass given to hydro is {hs_floater.mass:5.2f} t')
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
     # TODO: THIS IS TEMP SPEEDUP. FIX IT !!
     # if settings.do_equilibrate:
     #     hs_floater.equilibrate()
     hs_floater.set_displacement(hs_floater.mass)
-    print('Un-ballasted draught is {:1.2f} m'.format(hs_floater.hs_data['draught']))
+    print(f'Un-ballasted draught is {hs_floater.hs_data["draught"]:1.2f} m')
     print(hs_floater.get_hydrostatic_report())
 
     d_rc = floater_data.dia_rc
@@ -90,16 +124,14 @@ def init_models(settings):  #
     a_wp = np.pi * (d_hc ** 2 + nr * nc * d_rc ** 2) / 4
 
     if settings.parameter_space.target_draught:
-        target_draught= settings.parameter_space.target_draught
+        target_draught = settings.parameter_space.target_draught
     else:
-        target_draught= floater_data.hgt / 2
+        target_draught = floater_data.hgt / 2
 
     m_ball = (target_draught - hs_floater.hs_data['draught']) * a_wp * floater_data.rho_bal
 
     fr = (m_ball / (a_wp * floater_data.rho_bal)) / floater_data.hgt
-    print(
-        '\nRequired ballast to {:1.2f} m is {:1.1f} ton\nFilling ratio is {:1.2f}'.format(target_draught, m_ball / 1000,
-                                                                                         fr))
+    print(f'\nRequired ballast to {target_draught:1.2f} m is {m_ball / 1000:1.1f} ton\nFilling ratio is {fr:1.2f}')
     settings.job_data['floater']['Ballast filling ratio'] = fr
 
     print("\nRecreate mass model with target ballast")
@@ -108,14 +140,14 @@ def init_models(settings):  #
     hs_floater.gravity = abs(settings.gravity)
     hs_floater.rho_water = settings.rho_sw
     hs_floater.mass = unit_model.mass / 1000  # Give mass in tons
-    print('\nBallasted mass given to hydro is {:5.2f} t'.format(hs_floater.mass))
+    print(f'\nBallasted mass given to hydro is {hs_floater.mass:5.2f} t')
     hs_floater.gravity_center = -unit_model.inertias.reduction_point
     #hs_floater.equilibrate()
     hs_floater.set_displacement(hs_floater.mass)
 
-    settings.job_data['floater']['Ballast filling ratio'] = fr # TODO: Why have to be set twice, see above. Check setter/getter
+    settings.job_data['floater']['Ballast filling ratio'] = fr  # TODO: Why have to be set twice, see above. Check setter/getter
     settings.draught = hs_floater.hs_data['draught']
-    print('\nRecreate mass model for ballasted draught = {:5.2f}m'.format(settings.draught))
+    print(f'\nRecreate mass model for ballasted draught = {settings.draught:5.2f}m')
     unit_model, floater_model, wtg_model, floater_data = create_mass_models(settings)
 
     #hs_floater.show()
@@ -186,6 +218,6 @@ def init_models(settings):  #
         with open(mesh_dat, 'w') as f:
             f.writelines(lines)
 
-    print('\nNemoh mesh written to {}'.format(settings.mesh_file))
+    print(f'\nNemoh mesh written to {settings.mesh_file}')
 
     return unit_model, hs_floater

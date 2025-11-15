@@ -1,3 +1,13 @@
+"""
+Test bench script for complete analysis workflow.
+
+This script performs a full analysis workflow including:
+- Model creation
+- Stability analysis
+- NEMOH hydrodynamic analysis
+- Postprocessing and structural analysis
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
@@ -6,22 +16,23 @@ import logging
 import multiprocessing
 import pickle
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
-import core.tool_box as tb
-from core import response
-import core.model_set_up as msu
-from core import nemoh
-from core import stability
-from nemoh_frontend import nemoh_frontend as nf
-from core.common import SettingsClass
-from pyNemoh_root.pyNemoh.structure import BaseStructure
-from core.loads import Sea_and_Inertia_Loads
-from core.meshmagick.mesh import Mesh
-import core.meshmagick.hydrostatics as hs
+
 import core.code_check as cc
 import core.environmental_conditions as ec
+import core.meshmagick.hydrostatics as hs
+import core.model_set_up as msu
+import core.tool_box as tb
+from core import nemoh, response, stability
+from core.common import SettingsClass
+from core.loads import Sea_and_Inertia_Loads
+from core.meshmagick.mesh import Mesh
+from nemoh_frontend import nemoh_frontend as nf
+from pyNemoh_root.pyNemoh.structure import BaseStructure
+
 
 if __name__ == '__main__':
     ANALYSES_ROOT = Path(r'C:\MOLO_Optimization')
@@ -41,9 +52,9 @@ if __name__ == '__main__':
             "num_wave_frequencies": 41,
             "min_wave_frequencies": 2 * np.pi / 27,  # (rad/s)
             "max_wave_frequencies": 2 * np.pi / 4,
-            "num_wave_directions" : 2,
-            "min_wave_directions" : 0,  # deg
-            "max_wave_directions" : 90,
+            "num_wave_directions": 2,
+            "min_wave_directions": 0,  # deg
+            "max_wave_directions": 90,
     }
     # TODO: Allow for none equidistant frequencies
     settings.case_label = 'molo_model'
@@ -65,14 +76,16 @@ if __name__ == '__main__':
         print('--------------------------------------------------------------------------------------------')
 
         unit_model, hs_floater = msu.init_models(settings)
-        pickle.dump(unit_model, open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'wb'))
-        pickle.dump(hs_floater, open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb'))
+        with open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'wb') as f:
+            pickle.dump(unit_model, f)
+        with open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'wb') as f:
+            pickle.dump(hs_floater, f)
 
         settings.thin_panels = []
 
         m, k = tb.load_M_and_K(settings.fio.data_io_dir)
 
-        print('\nEigenvalue sollution WITHOUT added mass (given as lambda^0.5)')
+        print('\nEigenvalue solution WITHOUT added mass (given as lambda^0.5)')
         print('\nMass matrix:')
         tb.matprint(m)
         print('\nStiffness matrix:')
@@ -81,8 +94,10 @@ if __name__ == '__main__':
         tb.eigenvalprint(m, k)
 
     else:
-        unit_model = pickle.load(open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb'))
-        hs_floater = pickle.load(open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb'))
+        with open(settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
+            unit_model = pickle.load(f)
+        with open(settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb') as f:
+            hs_floater = pickle.load(f)
 
     if settings.create_model and settings.calc_intact_stability:
         print('\n--------------------------------------------------------------------------------------------')
@@ -140,21 +155,15 @@ if __name__ == '__main__':
 
         stwc1 = ec.Short_Term_Wave_Conditions(hs=hs, tp=tp)
 
-        print('\nExpected largest maximum dynamic normal stress for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs, tp))
+        print(f'\nExpected largest maximum dynamic normal stress for Hs = {hs:4.1f} m and Tp = {tp:4.1f} s')
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.1f} MPa'.format(loads._beta[i] * 180 / np.pi,
-                                                              stwc1.expected_largest_maximum(sig_dyn_tot[:, i],
-                                                                                             loads.w) / 10 ** 6))
-        print('\nStatic stress: {:1.1f} MPa'.format(sig_stat_tot / 10 ** 6))
+            print(f'\tWavedir {loads._beta[i] * 180 / np.pi:5.1f} deg: {stwc1.expected_largest_maximum(sig_dyn_tot[:, i], loads.w) / 10 ** 6:6.1f} MPa')
+        print(f'\nStatic stress: {sig_stat_tot / 10 ** 6:1.1f} MPa')
 
-        print(
-                '\nExpected largest maximum dynamic lateral pressure for Hs = {:4.1f} m and Tp = {:4.1f} s'.format(hs,
-                                                                                                                   tp))
+        print(f'\nExpected largest maximum dynamic lateral pressure for Hs = {hs:4.1f} m and Tp = {tp:4.1f} s')
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.1f} kPa'.format(loads._beta[i] * 180 / np.pi,
-                                                              stwc1.expected_largest_maximum(p_dyn_lat[:, i],
-                                                                                             loads.w) / 10 ** 3))
-        print('\nStatic lateral force: {:1.1f} kPa'.format(p_stat_lat / 10 ** 3))
+            print(f'\tWavedir {loads._beta[i] * 180 / np.pi:5.1f} deg: {stwc1.expected_largest_maximum(p_dyn_lat[:, i], loads.w) / 10 ** 3:6.1f} kPa')
+        print(f'\nStatic lateral force: {p_stat_lat / 10 ** 3:1.1f} kPa')
 
         print('\n\nUtilizations')
         gamma_m = 1.15
@@ -164,12 +173,12 @@ if __name__ == '__main__':
         dpu = panel_cc.dynamic_panel_utilization(sigma_y, bc, f_sec1['Dynamic']['Total'], f_part1['Dynamic']['Total'],
                                                  hs, tp, freq=loads.w, pos_y_side=True)
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.2f}'.format(loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
+            print(f'\tWavedir {loads._beta[i] * 180 / np.pi:5.1f} deg: {dpu[i] * load_factor:6.2f}')
 
         dpu = panel_cc.dynamic_panel_utilization(sigma_y, bc, f_sec1['Dynamic']['Total'], f_part1['Dynamic']['Total'],
                                                  hs, tp, freq=loads.w, pos_y_side=False)
         for i in range(loads._nbeta):
-            print('\tWavedir {:5.1f} deg: {:6.2f}'.format(loads._beta[i] * 180 / np.pi, dpu[i] * load_factor))
+            print(f'\tWavedir {loads._beta[i] * 180 / np.pi:5.1f} deg: {dpu[i] * load_factor:6.2f}')
 
         ifreq = 0
         idir = 0
@@ -194,7 +203,7 @@ if __name__ == '__main__':
         idof = np.array([i for i, x in enumerate(NEMOH_DOF) if x])
 
         if False:
-            print('\nEigenvalue sollution WITH added mass')
+            print('\nEigenvalue solution WITH added mass')
             tb.eigenvalprint(loads.m + loads.ma[ifreq, :, :], loads.k)
 
             print('\n')

@@ -1,49 +1,70 @@
+"""
+Design engine module for optimization and design candidate management.
+
+This module handles parameter space definition, design candidate creation,
+and orchestration of analysis workflows (stability, hydrodynamics, loads, response).
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
+import json
 import logging
 import multiprocessing
+import os
 import pickle
+import time
+from multiprocessing import freeze_support
+from pathlib import Path
+from typing import Optional
+
+import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 from logutils.queue import QueueListener
-import core.tool_box as tb
 
-import core.model_set_up as msu
-from core import stability
-from nemoh_frontend import nemoh_frontend as nf
-from core.common import SettingsClass
-from pyNemoh_root.pyNemoh.structure import BaseStructure
-
-from core.meshmagick.mesh import Mesh
 import core.code_check as cc
 import core.environmental_conditions as ec
-import json
-import os
-from pathlib import Path
-import h5py
-from pyNemoh_root.pyNemoh.structure import BaseStructure
-from core.response import ResponseModel
+import core.model_set_up as msu
+import core.tool_box as tb
+from core import stability
+from core.common import SettingsClass
 from core.loads import Sea_and_Inertia_Loads
-from multiprocessing import freeze_support
-import time
+from core.meshmagick.mesh import Mesh
+from core.response import ResponseModel
+from nemoh_frontend import nemoh_frontend as nf
+from pyNemoh_root.pyNemoh.structure import BaseStructure
 
-class Parameter_Space():
-    def __init__(self, templates_dir):
+
+class Parameter_Space:
+    """
+    Parameter space definition for design optimization.
+    
+    Manages design parameters and template configurations for the optimization process.
+    """
+    def __init__(self, templates_dir: Path) -> None:
+        """
+        Initialize parameter space from template files.
+        
+        Args:
+            templates_dir: Directory containing JSON template files
+        """
         self._json_list = ['park', 'wtg', 'floater', 'analysis', 'design_basis']
-        self._job_data = dict()
+        self._job_data = {}
 
         self._templates_dir = templates_dir
 
         # Collect template data
         for item in self._json_list:
-            with open(self._templates_dir.joinpath('{}_template.json'.format(item)), 'r') as f:
+            template_path = self._templates_dir.joinpath(f'{item}_template.json')
+            with open(template_path, 'r') as f:
                 self._job_data[item] = json.loads(f.read())
 
         # Save updated template to template dir
         for item in self._json_list:
-            with open(self._templates_dir.joinpath('{}_template.json'.format(item)), 'w') as f:
+            template_path = self._templates_dir.joinpath(f'{item}_template.json')
+            with open(template_path, 'w') as f:
                 f.write(json.dumps(self._job_data[item], indent=4, sort_keys=True))
 
     @property
@@ -164,7 +185,13 @@ class Parameter_Space():
 
 
 
-class Candidate():
+class Candidate:
+    """
+    Design candidate for optimization.
+    
+    Represents a single design configuration with associated models,
+    analyses, and results.
+    """
     def __init__(self, parameter_space, fio):
 
         self.settings = SettingsClass(parameter_space, fio)
@@ -206,14 +233,14 @@ class Candidate():
             tb.matprint(self.k)
             print('')
             tb.eigenvalprint(self.m, self.k)
-            print("CREATE MODEL took {:1.2f} seconds ".format(time.time() - start_time))
+            print(f"CREATE MODEL took {time.time() - start_time:1.2f} seconds")
         elif state == 'Old':
             with open(self.settings.fio.data_io_dir.joinpath('unit_model.pkl'), 'rb') as f:
                 self.unit_model = pickle.load(f)
             with open(self.settings.fio.data_io_dir.joinpath('hs_floater.pkl'), 'rb') as f:
                 self.hs_floater = pickle.load(f)
             for item in self.settings._job_data:
-                with open(self.settings.fio.data_io_dir.joinpath('{}.json'.format(item)), 'r') as f:
+                with open(self.settings.fio.data_io_dir.joinpath(f'{item}.json'), 'r') as f:
                     self.settings._job_data[item] = json.loads(f.read())
         else:
             print('init_model state is either New or Old')
@@ -225,7 +252,7 @@ class Candidate():
 
     def init_response(self, short_term_wave_condition):
 
-        if self.response == None:
+        if self.response is None:
             self.response = ResponseModel(self, short_term_wave_condition)
         else:
             self.response = None

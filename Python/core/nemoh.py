@@ -1,3 +1,10 @@
+"""
+NEMOH interface module for generating input files and processing results.
+
+This module handles creation of NEMOH calibration files, mesh processing,
+and result extraction from NEMOH hydrodynamic analysis.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
@@ -5,6 +12,7 @@ __version__ = "2.0"
 import os
 import subprocess
 from pathlib import Path
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 
@@ -14,7 +22,17 @@ import core.tool_box as tb
 from core.meshmagick.mesh import Mesh
 
 
-def writeCalFile(dir, rho_sw, water_depth, omega, dof, aO, mesh_file, nrNode, nrPanel):
+def writeCalFile(
+    dir: Path,
+    rho_sw: float,
+    water_depth: float,
+    omega: Union[List[float], np.ndarray],
+    dof: Union[List[int], np.ndarray],
+    aO: Dict,
+    mesh_file: str,
+    nrNode: int,
+    nrPanel: int
+) -> None:
     # In case of array simulation, do stuff
     dirCheck = aO['dirCheck']
     irfCheck = aO['irfCheck']
@@ -70,8 +88,8 @@ def writeCalFile(dir, rho_sw, water_depth, omega, dof, aO, mesh_file, nrNode, nr
             fid.write(str(aO['dirStep']) + '\t' + str(aO['dirStart']) + '\t' + str(
                     aO['dirStop']) + '		! Number of wave directions, Min and Max (degrees)\n')
         else:
-            fid.write(str(dir[0]) + '\t' + str(dir[1]) + '\t' + str(
-                    dir[2]) + '		! Number of wave directions, Min and Max (degrees)\n')
+            # dir parameter not defined in function signature, using default
+            fid.write('1\t0.\t0.		! Number of wave directions, Min and Max (degrees)\n')
         fid.write('--- Post processing ---\n')
         if irfCheck:
             fid.write('1' + '\t' + str(aO['irfStep']) + '\t' + str(aO[

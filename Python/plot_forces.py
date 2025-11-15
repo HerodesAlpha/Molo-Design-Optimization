@@ -1,15 +1,32 @@
+"""
+Plot forces module for generating force and RAO plots.
+
+This module provides functions to visualize dynamic forces and RAOs
+from hydrodynamic analysis results.
+"""
+
 import pickle
-import numpy as np
+from typing import Any
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 import core.environmental_conditions as ec
 
-def get_axs(object):
+
+def get_axs(obj: Any) -> None:
+    """
+    Generate force and RAO plots for a design candidate.
+    
+    Args:
+        obj: Object with fig and axs attributes to store plots
+    """
     with open("this_candidate.pkl", "rb") as f:
         this_candidate = pickle.load(f)
 
-    this_candidate.settings.do_linearize=True
+    this_candidate.settings.do_linearize = True
     this_candidate.init_load()
-    stwc=ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3)
+    stwc = ec.Short_Term_Wave_Conditions(hs=9.5, tz=7.3)
     this_candidate.init_response(short_term_wave_condition=stwc)
 
 
@@ -23,7 +40,7 @@ def get_axs(object):
     section_normal = [1, 0, 0]
 
     imass, ipanel, idamp = this_candidate.response.get_section_index(section_point, section_normal)
-    this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, idamp, moment_ref_point=[0,0,0])
+    this_candidate.f_sec1 = this_candidate.response.assemble_forces(imass, ipanel, idamp, moment_ref_point=[0, 0, 0])
     del imass, ipanel
 
     ibeta = 0
@@ -34,27 +51,27 @@ def get_axs(object):
     factor = 1 / 1000000
 
     w = this_candidate.loads.w
-    object.fig, object.axs = plt.subplots(2, 2)
+    obj.fig, obj.axs = plt.subplots(2, 2)
     dyn_force = this_candidate.f_sec1['Dynamic']
-    object_axs = object.axs
-    x_tics = 1/(2 * np.pi / w)
+    object_axs = obj.axs
+    x_tics = 1 / (2 * np.pi / w)
     x_label = 'Frequency [Hz]'
 
     ifreq_print = 30
 
-    all_keys=['Froude-Krylof','Diffraction','Mass', 'Added mass','Radiation damping','Viscous damping','Buoyancy','SUM']
-    plot_keys = list( all_keys[i] for i in [0,1,2,3,4,5,6,7] )
+    all_keys = ['Froude-Krylof', 'Diffraction', 'Mass', 'Added mass', 'Radiation damping', 'Viscous damping', 'Buoyancy', 'SUM']
+    plot_keys = [all_keys[i] for i in [0, 1, 2, 3, 4, 5, 6, 7]]
     for key in dyn_force:
         if key in plot_keys:
             if key == 'SUM':
                 linewidth=2
             else:
                 linewidth = 1
-            abs_val=np.abs(dyn_force[key][:, ibeta, idof]) * factor
+            abs_val = np.abs(dyn_force[key][:, ibeta, idof]) * factor
 
             phase_val = np.angle(dyn_force[key][:, ibeta, idof])
-            object_axs[0, 0].plot(x_tics,abs_val, label=key, linewidth=linewidth)
-            object_axs[0, 1].plot(x_tics,phase_val , label=key)
+            object_axs[0, 0].plot(x_tics, abs_val, label=key, linewidth=linewidth)
+            object_axs[0, 1].plot(x_tics, phase_val, label=key)
 
     object_axs[0, 0].set_title('Amplitude')
     force_label = ['Fx [MN]', 'Fy [MN]', 'Fz [MN]', 'Mx [MNm]', 'My [MNm]', 'Mz [MNm]']

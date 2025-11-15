@@ -1,7 +1,15 @@
+"""
+Calculate stability script for evaluating design candidate stability.
+
+This script loads a design candidate and calculates its intact stability ratio.
+"""
+
 import pickle
 from multiprocessing import freeze_support
+
+
 if __name__ == '__main__':
-    #freeze_support()
+    # freeze_support()
 
     print('This is main')
     with open("this_candidate.pkl", "rb") as f:
@@ -12,7 +20,7 @@ if __name__ == '__main__':
     r = this_candidate.intact_stability_ratio()
     if r >= 1.4:
         is_stable = True
-        print('This candidate is stable with r = {:1.0f}%'.format(r * 100))
+        print(f'This candidate is stable with r = {r * 100:1.0f}%')
     else:
         is_stable = False
-        print('This candidate is NOT stable with r = {:1.0f}%'.format(r * 100))
+        print(f'This candidate is NOT stable with r = {r * 100:1.0f}%')

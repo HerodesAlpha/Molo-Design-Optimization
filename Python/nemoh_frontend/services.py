@@ -28,32 +28,28 @@ __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
 import collections
-import uuid
-from nemoh_frontend.settings import *
-import os
-import time
-import subprocess
-from multiprocessing import Process
+import contextlib
+import fnmatch
+import h5py
+import json
 import logging
-import nemoh_frontend.helper as helper
-from pyNemoh_root.pyNemoh import utility
-from pyNemoh_root.pyNemoh import preprocessor
-from pyNemoh_root.pyNemoh import postprocessor
-from pyNemoh_root.pyNemoh import solver
+import os
+import subprocess
+import time
+import uuid
 import warnings
+from multiprocessing import Process
+from typing import Any, Dict, List, Optional, Tuple
+
+import nemoh_frontend.helper as helper
+from nemoh_frontend.settings import LOG_FILE
+from pyNemoh_root.pyNemoh import postprocessor, preprocessor, solver, utility
 
 try:
     from capturer import CaptureOutput
 except ImportError:
     # failed to import experimental pty support
-    import contextlib
-
     pass
-
-import fnmatch
-import h5py
-import json
-import contextlib
 
 #
 # This class represents parameters used in the meshing process.
@@ -100,47 +96,52 @@ _LOG_FILE_NAME = 'log.txt'
 
 
 class ServiceError(Exception):
-    '''
-    This exception indicates a service error.
-    It will be raised by methods of this module.
-    '''
+    """
+    Exception indicating a service error.
+    
+    This exception will be raised by methods of this module when
+    service operations fail.
+    """
     pass
 
 
-def _set_log_level(log_level):
+def _set_log_level(log_level: Any) -> str:
     """
-    helper method to change level of logs depending of log_level
+    Helper method to change level of logs depending on log_level.
 
-    :param log_level: integer or string (10 for DEBUG, 20 for INFO)
+    Args:
+        log_level: Integer or string (10 for DEBUG, 20 for INFO)
 
-    :return: A message indicating success or not
+    Returns:
+        A message indicating success or not
     """
     # setting logging level:
     if log_level and str(log_level) in ["10", "20"]:
         # Setting the root logger to that level
         level = int(log_level)
-        logging.getLogger(__name__).info("Setting logging level to " +
-                                         logging.getLevelName(level))
+        logging.getLogger(__name__).info(f"Setting logging level to {logging.getLevelName(level)}")
         logging.getLogger().setLevel(level)
-        out = "Logging successfully set to level " + logging.getLevelName(level)
+        out = f"Logging successfully set to level {logging.getLevelName(level)}"
         logging.getLogger(__name__).info(out)
         return out
 
     else:
-        # nofifying user and setting up loggers to debug by default
+        # notifying user and setting up loggers to debug by default
         logger = logging.getLogger(__name__)
-        out = ("Logging level unknown! Should be 10 (DEBUG) or 20 (INFO). Keeping current level of " +
-               logging.getLevelName(logging.getLogger().getEffectiveLevel()))
+        current_level = logging.getLogger().getEffectiveLevel()
+        out = (f"Logging level unknown! Should be 10 (DEBUG) or 20 (INFO). "
+               f"Keeping current level of {logging.getLevelName(current_level)}")
         logger.warning(out)
 
         return out
 
 
-def _clear_log():
+def _clear_log() -> int:
     """
-    clearing log on server
-    :param None
-    :return A message indicating success or not
+    Clear log files on server.
+
+    Returns:
+        Number of log files cleared
     """
     num = 1
     MAX_NUM = 10000
@@ -153,8 +154,6 @@ def _clear_log():
             num += 1
         else:
             return num - 1
-
-    # return num-1
 
 
 def apply_configuration(params):
@@ -182,8 +181,7 @@ def apply_configuration(params):
             output += "\n" + out
             logging.getLogger(__name__).info(out)
 
-        output += ("\n\n" + "The simulation and running time logs are saved in " +
-                   LOG_FILE)
+        output += f"\n\nThe simulation and running time logs are saved in {LOG_FILE}"
 
         helper.log_exit(logger, signature, [output])
 

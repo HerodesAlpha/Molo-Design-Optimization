@@ -61,36 +61,42 @@ Complex number identity
 """
 
 
-def cih(k, z, h):
+def cih(k: float, z: float, h: float) -> float:
     """
-    Computes COSH(k*(z+h))/COSH(kh)
-    Args:
-        k: float, number
-        z: float, number
-        h: float, number
-    """
+    Compute COSH(k*(z+h))/COSH(kh).
 
-    if 0 < k*h <= 20:
-        result = np.cosh(k*(z+h))/np.cosh(k*h)
+    Args:
+        k: Wave number
+        z: Vertical coordinate
+        h: Water depth
+
+    Returns:
+        Computed value
+    """
+    if 0 < k * h <= 20:
+        result = np.cosh(k * (z + h)) / np.cosh(k * h)
     else:
-        result = np.exp(k*z)
+        result = np.exp(k * z)
 
     return result
 
 
-def sih(k, z, h):
+def sih(k: float, z: float, h: float) -> float:
     """
-    Computes SINH(k*(z+h))/COSH(kh)
-    Args:
-        k: float, number
-        z: float, number
-        h: float, number
-    """
+    Compute SINH(k*(z+h))/COSH(kh).
 
-    if 0 < k*h <= 20:
-        result = np.sinh(k*(z+h))/np.cosh(k*h)
+    Args:
+        k: Wave number
+        z: Vertical coordinate
+        h: Water depth
+
+    Returns:
+        Computed value
+    """
+    if 0 < k * h <= 20:
+        result = np.sinh(k * (z + h)) / np.cosh(k * h)
     else:
-        result = np.exp(k*z)
+        result = np.exp(k * z)
 
     return result
 
@@ -167,9 +173,9 @@ def validate_string(s, name=''):
         s: string, the string to validate
         name: it's name
     """
-    assert (s is not None), name + ' settings should not be None'
-    assert (isinstance(s, str)), name + ' settings should be a string'
-    assert (s != ''), name + ' settings should be not be empty'
+    assert s is not None, f'{name} settings should not be None'
+    assert isinstance(s, str), f'{name} settings should be a string'
+    assert s != '', f'{name} settings should not be empty'
 
 
 def validate_file(inp, name=''):
@@ -180,7 +186,7 @@ def validate_file(inp, name=''):
         name: it's name
     """
     validate_string(inp, name)
-    assert (os.path.exists(inp)), name + ' settings with value ' + inp + ' should exist.'
+    assert os.path.exists(inp), f'{name} settings with value {inp} should exist.'
 
 
 
@@ -214,7 +220,7 @@ def compute_wave_number(w, environment):
         n_ite = 0
         # Weird this will never happen. is the n_ite = 0 statement correct?
         if n_ite >= n_item_x:
-            raise ValueError('Unable to find the wavenumber after ' + str(n_ite) + ' iterations')
+            raise ValueError(f'Unable to find the wavenumber after {n_ite} iterations')
 
         xc = 0.5*(xd+xg)
 
@@ -227,7 +233,7 @@ def compute_wave_number(w, environment):
             n_ite += 1
 
         if n_ite >= n_item_x:
-            raise ValueError('Unable to find the wavenumber after ' + str(n_ite) + ' iterations')
+            raise ValueError(f'Unable to find the wavenumber after {n_ite} iterations')
 
         wave_number = xc/environment.depth
 
@@ -769,11 +775,11 @@ def log_entrance(logger, signature, parasMap):
     :param signature: the method signature
     :param parasMap: the passed parameters
     """
-    logger.debug('[Entering method ' + signature + ']')
+    logger.debug(f'[Entering method {signature}]')
     if parasMap is not None and len(list(parasMap.items())) > 0:
         paraStr = '[Input parameters['
         for (k,v) in list(parasMap.items()):
-            paraStr += (str(k) + ':' + str(v) + ', ')
+            paraStr += f'{k}:{v}, '
         paraStr += ']]'
         logger.debug(paraStr)
 
@@ -786,9 +792,9 @@ def log_exit(logger, signature, parasList):
     :param signature: the method signature
     :param parasList: the objects to return
     """
-    logger.debug('[Exiting method ' + signature + ']')
+    logger.debug(f'[Exiting method {signature}]')
     if parasList is not None and len(parasList) > 0:
-        logger.debug('[Output parameter ' + str(parasList) + ']')
+        logger.debug(f'[Output parameter {parasList}]')
 
 
 def log_exception(logger, signature, e):
@@ -800,7 +806,7 @@ def log_exception(logger, signature, e):
     :param e: the error
     """
     # This will log the traceback.
-    logger.error('[Error in method ' + signature + ': Details ' + str(e) + ']', exc_info=True)
+    logger.error(f'[Error in method {signature}: Details {e}]', exc_info=True)
     return e
 
 
@@ -842,14 +848,14 @@ def check_str(val, name, allow_none=False, allow_empty=False):
 
     if val is None:
         if not allow_none:
-            raise ValueError(name + ' of value ' + str(val) + ' should not be None.')
+            raise ValueError(f'{name} of value {val} should not be None.')
     else:
 
         if not isinstance(val, str) and not isinstance(val, str):
-            raise TypeError(name + ' of value ' + str(val) + ' should be a string.' + ' but is of type ' + type(val).__name__)
+            raise TypeError(f'{name} of value {val} should be a string, but is of type {type(val).__name__}')
 
         elif len(val.strip()) == 0 and not allow_empty:
-            raise ValueError(name + ' of value ' + str(val) + ' should not empty string.')
+            raise ValueError(f'{name} of value {val} should not be empty string.')
 
 
 def check_type_value(val, name, expected_type, allow_none=False, print_value=True, none_msg=''):
@@ -868,12 +874,12 @@ def check_type_value(val, name, expected_type, allow_none=False, print_value=Tru
     message = name
 
     if print_value:
-        message += ' of value ' + str(val)
+        message += f' of value {val}'
 
     if val is None and not allow_none:
-        raise ValueError(message + ' should not be None.' + none_msg)
+        raise ValueError(f'{message} should not be None.{none_msg}')
     if not isinstance(val, expected_type):
-        raise TypeError(message  + ' should be of type ' + str(expected_type) + '.' + ' but is of type ' + type(val).__name__)
+        raise TypeError(f'{message} should be of type {expected_type}, but is of type {type(val).__name__}')
 
     return val
 
@@ -890,7 +896,7 @@ def check_group_type(val, name='The hdf5 group', allow_none=False, print_value=T
     :raise TypeError: if val is not of expected type
     :raise ValueError: if val is None while not allow None
     """
-    none_msg = name + ' was not found in the hdf5 file at its location ' + location
+    none_msg = f'{name} was not found in the hdf5 file at its location {location}'
     return check_type_value(val, name, h5py._hl.group.Group,
                      allow_none=allow_none, print_value=print_value, none_msg=none_msg)
 
@@ -906,7 +912,7 @@ def check_dataset_type(val, name='The hdf5 dataset', allow_none=False, print_val
     :raise TypeError: if val is not of expected type
     :raise ValueError: if val is None while not allow None
     """
-    none_msg = name + ' was not found in the hdf5 file at its location ' + location
+    none_msg = f'{name} was not found in the hdf5 file at its location {location}'
     return check_type_value(val, name, h5py._hl.dataset.Dataset,
                      allow_none=allow_none, print_value=print_value, none_msg=none_msg)
 
@@ -1010,8 +1016,7 @@ def check_array_ndim(arr, name, expected_ndim=2):
     # We just need to check that the number of dimensions if equal to expected_ndim
     ndim = len(arr.shape)
     check_value(is_valid=(ndim == expected_ndim), error_msg=
-                'The number of dimension of ' + name
-                + ' is ' + str(ndim) + ' but is expected to be ' + str(expected_ndim))
+                f'The number of dimensions of {name} is {ndim} but is expected to be {expected_ndim}')
 
     return arr
 
@@ -1040,10 +1045,10 @@ def check_array_dim(logger, arr, name, expected_dim, dim_idx):
         dim_msg = 'The second dimension of '
 
     check_value(is_valid=(dim >= expected_dim), error_msg=
-                dim_msg + name + ' is ' + str(dim) + ' but is expected to be ' + str(expected_dim))
+                f'{dim_msg}{name} is {dim} but is expected to be {expected_dim}')
     # If it is greater than expected_dim we warn the user
     if dim > expected_dim:
-        logger.warn(dim_msg + name + 'is ' + str(dim) + ' but is expected to be ' + str(expected_dim))
+        logger.warn(f'{dim_msg}{name} is {dim} but is expected to be {expected_dim}')
 
     return arr
 
@@ -1075,7 +1080,7 @@ def check_path_exists(val, name):
     """
     check_str(val, name)
     if not os.path.exists(val):
-        raise ValueError(name + ' of value ' + val + '" does not exist.')
+        raise ValueError(f'{name} of value "{val}" does not exist.')
 
 
 def check_is_directory(val, name):
@@ -1088,7 +1093,7 @@ def check_is_directory(val, name):
     """
     check_path_exists(val, name)
     if not os.path.isdir(val):
-        raise ValueError(name + ' of value ' + val + '" is not a legal directory.')
+        raise ValueError(f'{name} of value "{val}" is not a legal directory.')
 
 
 def check_is_file(val, name):
@@ -1102,7 +1107,7 @@ def check_is_file(val, name):
     
     check_path_exists(val, name)
     if not os.path.isfile(val):
-        raise ValueError(name + ' of value: ' + val + '" is not a legal file.')
+        raise ValueError(f'{name} of value: "{val}" is not a legal file.')
 
 
 def setup_logging(
@@ -1128,13 +1133,13 @@ def setup_logging(
     if value:
         path = value
     if os.path.exists(path):
-        print(('Found logging configuration file at ' + default_conf_path + '\n'))
+        print(f'Found logging configuration file at {default_conf_path}\n')
         with open(path, 'rt') as f:
             config = json.load(f)
 
             if logging_path and 'handlers' in config:
                 logging_path = os.path.abspath(logging_path)
-                print(('Writing log at ' + logging_path + '\n'))
+                print(f'Writing log at {logging_path}\n')
                 mkdir_p(os.path.abspath(os.path.dirname(logging_path)))
                 for key, value in config['handlers'].items():
                     if 'filename' in value:
@@ -1143,8 +1148,8 @@ def setup_logging(
 
         logging.config.dictConfig(config)
     else:
-        print(('Could not find logging configuration at '+ default_conf_path + '\n'))
-        print(('Using default logging option on console' + '\n'))
+        print(f'Could not find logging configuration at {default_conf_path}\n')
+        print('Using default logging option on console\n')
         logging.basicConfig(level=default_level)
 
     logging.captureWarnings(capture=True)
@@ -1158,7 +1163,7 @@ def log_and_print(logger, message):
     :param message:  the message to log
     :return: None
     """
-    print((message + '\n'))
+    print(f'{message}\n')
     logger.info(message)
 
 

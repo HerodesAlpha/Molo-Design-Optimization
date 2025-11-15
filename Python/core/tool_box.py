@@ -1,40 +1,64 @@
+"""
+Toolbox module with utility functions for numerical operations, matrix calculations,
+and string parsing.
+
+This module provides:
+- NumericStringParser: Parse and evaluate mathematical expressions from strings
+- TotalMassMatrixClass: Handle mass and inertia matrix calculations
+- Various utility functions for transformations and calculations
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
+import math
+import operator
 import os
 import pickle
 import subprocess
+import warnings
 from copy import deepcopy
-from math import cos, sin
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
-from numpy import pi, sin, cos
-import warnings
-import scipy
+from numpy import pi
+from pyparsing import (
+    CaselessLiteral,
+    Combine,
+    Forward,
+    Group,
+    Literal,
+    Optional as PyOptional,
+    Word,
+    ZeroOrMore,
+    alphas,
+    nums,
+    oneOf,
+)
 
-
-
-from pyparsing import (Literal, CaselessLiteral, Word, Combine, Group, Optional,
-                       ZeroOrMore, Forward, nums, alphas, oneOf)
-import math
-import operator
-
-class NumericStringParser(object):
-    '''
-    Most of this code comes from the fourFn.py pyparsing example
-
-    '''
-
-    def pushFirst(self, strg, loc, toks):
+class NumericStringParser:
+    """
+    Parser for evaluating mathematical expressions from strings.
+    
+    Most of this code comes from the fourFn.py pyparsing example.
+    Supports basic arithmetic operations, trigonometric functions, and constants.
+    """
+    
+    def pushFirst(self, strg: str, loc: int, toks: List) -> None:
+        """Append first token to expression stack."""
         self.exprStack.append(toks[0])
 
-    def pushUMinus(self, strg, loc, toks):
+    def pushUMinus(self, strg: str, loc: int, toks: List) -> None:
+        """Handle unary minus operator."""
         if toks and toks[0] == '-':
             self.exprStack.append('unary -')
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
+        Initialize the parser with grammar definitions.
+        
+        Grammar:
         expop   :: '^'
         multop  :: '*' | '/'
         addop   :: '+' | '-'
@@ -47,8 +71,8 @@ class NumericStringParser(object):
         point = Literal(".")
         e = CaselessLiteral("E")
         fnumber = Combine(Word("+-" + nums, nums) +
-                          Optional(point + Optional(Word(nums))) +
-                          Optional(e + Word("+-" + nums, nums)))
+                          PyOptional(point + PyOptional(Word(nums))) +
+                          PyOptional(e + Word("+-" + nums, nums)))
         ident = Word(alphas, alphas + nums + "_$")
         plus = Literal("+")
         minus = Literal("-")
@@ -59,25 +83,19 @@ class NumericStringParser(object):
         addop = plus | minus
         multop = mult | div
         expop = Literal("^")
-        pi = CaselessLiteral("PI")
+        pi_lit = CaselessLiteral("PI")
         expr = Forward()
-        atom = ((Optional(oneOf("- +")) +
-                 (ident + lpar + expr + rpar | pi | e | fnumber).setParseAction(self.pushFirst))
-                | Optional(oneOf("- +")) + Group(lpar + expr + rpar)
+        atom = ((PyOptional(oneOf("- +")) +
+                 (ident + lpar + expr + rpar | pi_lit | e | fnumber).setParseAction(self.pushFirst))
+                | PyOptional(oneOf("- +")) + Group(lpar + expr + rpar)
                 ).setParseAction(self.pushUMinus)
-        # by defining exponentiation as "atom [ ^ factor ]..." instead of
+        # By defining exponentiation as "atom [ ^ factor ]..." instead of
         # "atom [ ^ atom ]...", we get right-to-left exponents, instead of left-to-right
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
         factor = Forward()
-        factor << atom + \
-            ZeroOrMore((expop + factor).setParseAction(self.pushFirst))
-        term = factor + \
-            ZeroOrMore((multop + factor).setParseAction(self.pushFirst))
-        expr << term + \
-            ZeroOrMore((addop + term).setParseAction(self.pushFirst))
-        # addop_term = ( addop + term ).setParseAction( self.pushFirst )
-        # general_term = term + ZeroOrMore( addop_term ) | OneOrMore( addop_term)
-        # expr <<  general_term
+        factor << atom + ZeroOrMore((expop + factor).setParseAction(self.pushFirst))
+        term = factor + ZeroOrMore((multop + factor).setParseAction(self.pushFirst))
+        expr << term + ZeroOrMore((addop + term).setParseAction(self.pushFirst))
         self.bnf = expr
         # map operator symbols to corresponding arithmetic operations
         epsilon = 1e-12
@@ -93,9 +111,18 @@ class NumericStringParser(object):
                    "abs": abs,
                    "trunc": lambda a: int(a),
                    "round": round,
-                   "sgn": lambda a: abs(a) > epsilon and cmp(a, 0) or 0}
+                   "sgn": lambda a: 1 if a > epsilon else (-1 if a < -epsilon else 0)}
 
-    def evaluateStack(self, s):
+    def evaluateStack(self, s: List) -> float:
+        """
+        Evaluate the expression stack recursively.
+        
+        Args:
+            s: Expression stack (modified in place)
+            
+        Returns:
+            Evaluated numeric result
+        """
         op = s.pop()
         if op == 'unary -':
             return -self.evaluateStack(s)
@@ -104,30 +131,47 @@ class NumericStringParser(object):
             op1 = self.evaluateStack(s)
             return self.opn[op](op1, op2)
         elif op == "PI":
-            return math.pi  # 3.1415926535
+            return math.pi
         elif op == "E":
-            return math.e  # 2.718281828
+            return math.e
         elif op in self.fn:
             return self.fn[op](self.evaluateStack(s))
         elif op[0].isalpha():
-            return 0
+            return 0.0
         else:
             return float(op)
 
-    def eval(self, num_string, parseAll=True):
+    def eval(self, num_string: str, parseAll: bool = True) -> float:
+        """
+        Parse and evaluate a numeric string expression.
+        
+        Args:
+            num_string: String containing mathematical expression
+            parseAll: If True, require entire string to be parsed
+            
+        Returns:
+            Evaluated numeric result
+        """
         self.exprStack = []
-        results = self.bnf.parseString(num_string, parseAll)
+        self.bnf.parseString(num_string, parseAll)
         val = self.evaluateStack(self.exprStack[:])
         return val
 
-class TotalMassMatrixClass(object):
-    # TODO: Define parts in global instead of local coordinate system. Set CoG instead of reduction point.
-    # Both reduction point and CoG relative to waterline.
-    def __init__(self):
-        self._cog = np.zeros((3), dtype='float')
-        self._point = np.zeros((3), dtype='float')
-        self._mass_matrix_local = np.zeros((6, 6), dtype='float')
-        self._mass_matrix_global = np.zeros((6, 6), dtype='float')
+class TotalMassMatrixClass:
+    """
+    Class for managing mass and inertia matrices.
+    
+    TODO: Define parts in global instead of local coordinate system. 
+    Set CoG instead of reduction point. Both reduction point and CoG 
+    relative to waterline.
+    """
+    
+    def __init__(self) -> None:
+        """Initialize mass matrix with zero values."""
+        self._cog = np.zeros(3, dtype=np.float64)
+        self._point = np.zeros(3, dtype=np.float64)
+        self._mass_matrix_local = np.zeros((6, 6), dtype=np.float64)
+        self._mass_matrix_global = np.zeros((6, 6), dtype=np.float64)
 
     @property
     def cog(self):
@@ -286,12 +330,34 @@ def rectangular_prism(tmm, a, b, h, density=1.):
     tmm.iyy = tmm.mass * (a ** 2 + h ** 2) / 12.
     tmm.izz = tmm.mass * (a ** 2 + b ** 2) / 12.
 
-def trig(angle):
-    # r = radians(angle)
-    r = angle
-    return cos(r), sin(r)
+def trig(angle: float) -> Tuple[float, float]:
+    """
+    Calculate cosine and sine of an angle.
+    
+    Args:
+        angle: Angle in radians
+        
+    Returns:
+        Tuple of (cosine, sine)
+    """
+    return math.cos(angle), math.sin(angle)
 
-def transformation_matrix(rotation, translation=None, scale=None):
+def transformation_matrix(
+    rotation: Union[List[float], np.ndarray],
+    translation: Optional[Union[List[float], np.ndarray]] = None,
+    scale: Optional[Union[List[float], np.ndarray]] = None
+) -> np.ndarray:
+    """
+    Create a 4x4 transformation matrix from rotation, translation, and scale.
+    
+    Args:
+        rotation: Rotation angles [rx, ry, rz] in radians
+        translation: Translation vector [tx, ty, tz], defaults to [0, 0, 0]
+        scale: Scale factors [sx, sy, sz], defaults to [1, 1, 1]
+        
+    Returns:
+        4x4 transformation matrix
+    """
     if translation is None:
         translation = [0, 0, 0]
     if scale is None:
@@ -466,7 +532,7 @@ def msh_file(settings, mesh_type=None):
 
 def save_M_and_K(settings, M, MMK):
     # From meshmagic 3x3 to 6x6
-    K = np.zeros((6, 6), dtype='float')
+    K = np.zeros((6, 6), dtype=np.float64)
     K[2, 2] = MMK[0, 0]
     K[2, 3] = MMK[0, 1]
     K[3, 2] = MMK[0, 1]
@@ -523,8 +589,17 @@ def R2P(x):
     return abs(x), np.angle(x)
 
 
-class PanelData(object):
-    def __init__(self, vertices, faces):
+class PanelData:
+    """Class for managing panel data including vertices, faces, areas, and normals."""
+    
+    def __init__(self, vertices: np.ndarray, faces: np.ndarray) -> None:
+        """
+        Initialize panel data from vertices and faces.
+        
+        Args:
+            vertices: Array of vertex coordinates
+            faces: Array of face connectivities
+        """
         self._ppoints = vertices
         self._ppanels = faces
         self._npoints = len(vertices)

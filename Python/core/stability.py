@@ -1,24 +1,31 @@
+"""
+Stability analysis module for calculating intact stability of floating structures.
+
+This module computes righting moment curves, GZ curves, and stability ratios
+using meshmagick hydrostatics solver.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-# Use meshmagic eq. solver until somthing faster can be implemented
-import core.meshmagick.hydrostatics as hs
-import numpy as np
-from core.meshmagick.MMviewer import MMViewer
-import vtk
-import imageio.v2 as imageio
 import os
-import matplotlib.pyplot as plt
-from pylatex import Section, Figure, NoEscape, NewPage
-import h5py
-import multiprocessing
-from multiprocessing import Process
-from joblib import Parallel, delayed
-import multiprocessing as mp
-from multiprocessing import freeze_support
-from itertools import repeat
 from copy import deepcopy
+from itertools import repeat
+from typing import Optional, Tuple
+
+import h5py
+import imageio.v2 as imageio
+import matplotlib.pyplot as plt
+import multiprocessing as mp
+import numpy as np
+import vtk
+from joblib import Parallel, delayed
+from multiprocessing import Process, freeze_support
+from pylatex import Figure, NewPage, NoEscape, Section
+
+import core.meshmagick.hydrostatics as hs
+from core.meshmagick.MMviewer import MMViewer
 
 # print("Number of cpu's : ", multiprocessing.cpu_count())
 

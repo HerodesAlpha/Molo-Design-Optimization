@@ -1,32 +1,81 @@
+"""
+Response module for calculating dynamic response of floating structures.
+
+This module computes RAO (Response Amplitude Operator), wave forces, and
+dynamic equilibrium for floating offshore structures under wave loading.
+"""
+
 __author__ = "Eivind Sonju"
 __copyright__ = "Copyright (C) 2017-2019 Verbun AS. All rights reserved."
 __version__ = "2.0"
 
-import numpy as np
-import scipy
-import core.nemoh
 import pickle
+from typing import List, Optional, Tuple, Union
+
+import numpy as np
+
+import core.nemoh
 import core.tool_box as tb
 
-nax = np.newaxis
+# NumPy axis alias for readability
+NAX = np.newaxis
 
 
-class Viscous_Damper(object):
-    def __init__(self, coordinate, rho, cd, d, l):
+class Viscous_Damper:
+    """
+    Viscous damper model for calculating damping forces.
+    
+    Models linearized viscous damping based on Morison's equation.
+    """
+    
+    def __init__(
+        self,
+        coordinate: Union[List[float], np.ndarray],
+        rho: float,
+        cd: float,
+        d: float,
+        l: float
+    ) -> None:
+        """
+        Initialize viscous damper.
+        
+        Args:
+            coordinate: Position of the damper [x, y, z, rx, ry, rz]
+            rho: Fluid density
+            cd: Drag coefficient
+            d: Characteristic diameter
+            l: Characteristic length
+        """
         # def __init__(self, pos, rho, cd, d, l, w, sea_spectrum, rao):
 
-        self.coordinate = coordinate
+        self.coordinate = np.asarray(coordinate, dtype=np.float64)
         self.cd = cd
         self.d = d
         self.l = l
-        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l,0,0,0])  # x,y,z,rx,ry,rz
+        # Damping coefficients for each DOF [x, y, z, rx, ry, rz]
+        self.alpha = np.asarray([0, 0, 0.5 * rho * cd * d * l, 0, 0, 0], dtype=np.float64)
 
-    # self.x = np.squeeze((self.a[nax, nax, :, :] @ rao[:, :, :, nax]), axis=3) * sea_spectrum[:, nax, nax]
-    # self.eq = 8 / 3 * self.alpha[nax, nax, :] * w[:, nax, nax] * self.x[:, :, :] / np.pi
+    # self.x = np.squeeze((self.a[NAX, NAX, :, :] @ rao[:, :, :, NAX]), axis=3) * sea_spectrum[:, NAX, NAX]
+    # self.eq = 8 / 3 * self.alpha[NAX, NAX, :] * w[:, NAX, NAX] * self.x[:, :, :] / np.pi
 
 
-class ResponseModel(object):
-    def __init__(self, candidate, Short_Term_Wave_Conditions):
+class ResponseModel:
+    """
+    Response model for calculating dynamic response of floating structures.
+    
+    Computes RAO, wave forces, and dynamic equilibrium under wave loading
+    including static forces (gravity, buoyancy) and dynamic forces (wave excitation,
+    added mass, radiation damping, viscous damping).
+    """
+    
+    def __init__(self, candidate, Short_Term_Wave_Conditions) -> None:
+        """
+        Initialize response model.
+        
+        Args:
+            candidate: Design candidate with loads and settings
+            Short_Term_Wave_Conditions: Wave condition parameters
+        """
 
         self._stwc = Short_Term_Wave_Conditions
 
@@ -77,7 +126,7 @@ class ResponseModel(object):
         self._point_mass_centers = np.asarray([-part._inertias.reduction_point for part in self._part_list])
         self._panel_pressure_centers = self._loads._pd.ppanel_centers
 
-        self._projected_panel_area = self._loads._an[nax, nax, :, :]
+        self._projected_panel_area = self._loads._an[NAX, NAX, :, :]
 
         # *****************************************************************************
         #                               S T A T I C
@@ -85,8 +134,8 @@ class ResponseModel(object):
         # w = self._loads.w
         self.w2 = self._loads.w ** 2
         # Gravity
-        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, nax] * np.asarray(
-                [0, 0, self._settings.gravity])[nax, :]  # Use m33
+        self._point_mass_gravity_force = self._point_mass[:, 2, 2][:, NAX] * np.asarray(
+            [0, 0, self._settings.gravity])[NAX, :]  # Use m33
 
         # Hydro static / Buoyancy
         self._panel_pressure_buoyancy_force = self._loads._force['Buoyancy']
@@ -133,15 +182,15 @@ class ResponseModel(object):
         am = self._loads._added_mass
         rd = self._loads._radiation_damping
         # The RAO for each DOF is multiplied with each RAO dependent panel force (x,y,z)
-        self._panel_added_mass_force_all_dof = -am[:, nax, :, :, :] * self._rao[:, :, :, nax,
-                                                                      nax] * self.w2[:, nax,
-                                                                             nax, nax,
-                                                                             nax]
-        self._panel_radiation_damping_force_all_dof = rd[:, nax, :, :, :] * self._rao[:, :, :, nax,
-                                                                            nax] * self._loads.w[:,
-                                                                                   nax,
-                                                                                   nax, nax,
-                                                                                   nax] * 1j
+        self._panel_added_mass_force_all_dof = -am[:, NAX, :, :, :] * self._rao[:, :, :, NAX,
+                                                                      NAX] * self.w2[:, NAX,
+                                                                             NAX, NAX,
+                                                                             NAX]
+        self._panel_radiation_damping_force_all_dof = rd[:, NAX, :, :, :] * self._rao[:, :, :, NAX,
+                                                                            NAX] * self._loads.w[:,
+                                                                                   NAX,
+                                                                                   NAX, NAX,
+                                                                                   NAX] * 1j
 
         self._panel_added_mass_force = np.sum(self._panel_added_mass_force_all_dof, axis=2)
         self._panel_radiation_damping_force = np.sum(self._panel_radiation_damping_force_all_dof, axis=2)
@@ -154,21 +203,21 @@ class ResponseModel(object):
         # Append a 1 to the 3 dof vector to correspond with 4x4 tra_mat
         self._ppc = np.append(self._panel_pressure_centers, np.ones((self._loads.pd.npanels, 1)), 1)
         # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
-        self._ppc = self._ppc[nax, nax, :, :, nax]
+        self._ppc = self._ppc[NAX, NAX, :, :, NAX]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...
-        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_tra_mat[:, :, nax, :, :], self._ppc), axis=4)[:, :,
+        self._panel_pos[:, :, :, :] = np.squeeze(np.matmul(self._rao_tra_mat[:, :, NAX, :, :], self._ppc), axis=4)[:, :,
                                       :, 0:3]
-        self._panel_pos -= self._loads.pd.ppanel_centers[nax, nax, :, :]  # Subtract mean position
+        self._panel_pos -= self._loads.pd.ppanel_centers[NAX, NAX, :, :]  # Subtract mean position
         self._panel_diff_buoyancy_pressure = (self._loads.rho_sw * abs(self._loads.gravity)) * self._panel_pos[:, :, :,
                                                                                                2]  # Change in pressure
         self._panel_diff_buoyancy_force = (-self._panel_diff_buoyancy_pressure[:, :, :,
-                                            nax] * self._projected_panel_area)
+                                            NAX] * self._projected_panel_area)
 
         # --------------------------------------------------------------------------------------------------------------
         # Mass
         # --------------------------------------------------------------------------------------------------------------
         self._point_mass_dynamic_inertia_force = np.squeeze(
-                self._point_mass[nax, nax, :, :, :] @ self._rao[:, :, nax, :, nax],
+                self._point_mass[NAX, NAX, :, :, :] @ self._rao[:, :, NAX, :, NAX],
                 axis=4)
 
     def update_rao_tra_mat(self):
@@ -262,7 +311,7 @@ class ResponseModel(object):
         if 1 in index:  # At least one item is on the considered side of the section surface
             if forces.ndim == 4:  # Dynamic [freq, dir, panel, f]
                 section_forces = forces[:, :, index, :]
-                section_moments = np.cross(vec[nax, nax, index, :],
+                section_moments = np.cross(vec[NAX, NAX, index, :],
                                            section_forces)  # Calculate moment about section
                 # Concatenate along 4th dimension contaning [fx, fy, fz] and [mx, mz, mz]
                 # Then sum along 3rd dimension holding the panels or point mass indices
@@ -299,7 +348,7 @@ class ResponseModel(object):
         # f_inertia = self.sum_forces(imass, self._point_mass_dynamic_inertia_force, self._point_mass_centers,
         #                             moment_ref_point)
         f_inertia = np.sum(self._point_mass_dynamic_inertia_force[:, :, imass, :], axis=2)
-        f_inertia *= -self.w2[:, nax, nax, ]
+        f_inertia *= -self.w2[:, NAX, NAX, ]
 
         f_dz_s = self.sum_forces(ipanel, self._panel_diff_buoyancy_force, self._panel_pressure_centers,
                                  moment_ref_point)
@@ -312,7 +361,7 @@ class ResponseModel(object):
         if self._settings.do_linearize:
             f_viscous_damping = self.sum_forces(idamp, self._strip_viscous_damping_force, self._viscous_damper_centers,
                                                 moment_ref_point)
-            f_viscous_damping *= self.w[:, nax, nax, ]*1j
+            f_viscous_damping *= self.w[:, NAX, NAX, ]*1j
         else:
             f_viscous_damping=f_radiation_damping*0
 
@@ -422,19 +471,19 @@ class ResponseModel(object):
 
             # Gen dynamic position of dampers and calc damping coefficient
 
-            pos = np.squeeze(np.matmul(rao_tra_mat_wp[:, nax, :, :], c_4[nax, :, :, nax]), axis=3)
+            pos = np.squeeze(np.matmul(rao_tra_mat_wp[:, NAX, :, :], c_4[NAX, :, :, NAX]), axis=3)
             x = np.zeros([self.nbeta, alphas.shape[0],ndof], dtype=complex)
-            x[:, :, 0:3] = (pos[:, :, 0:3] - c[nax, :, :]) * amp  # Subtract mean position and multiply with wave amp
+            x[:, :, 0:3] = (pos[:, :, 0:3] - c[NAX, :, :]) * amp  # Subtract mean position and multiply with wave amp
 
 
             f_d_local = 8 / (3 * np.pi) * (alphas * (wp * x) ** 2) * complex(0, 1)  # Linearized damping force
 
-            m_d_global = np.cross(c[nax, :, :], f_d_local[:, :, 0:3])
+            m_d_global = np.cross(c[NAX, :, :], f_d_local[:, :, 0:3])
             f_d_global = np.concatenate((f_d_local[:,:,:3], m_d_global), axis=2)
 
             f_d_global_sum = np.sum(f_d_global, axis=1)
 
-            vel = (rao_wp * amp * wp * complex(0, 1))
+            vel = (rao_wp * amp * wp * 1j)
 
             c_visc_1d = f_d_global_sum / vel
 
@@ -443,8 +492,8 @@ class ResponseModel(object):
                 self._c_visc[ib,:,:] = np.diag(c_visc_1d[ib,:])
                 self._rao[:, ib, :] = self.calc_rao_linear(ib)
 
-            c_visc_local = (f_d_local/ vel[:,nax,:])
-            self._strip_viscous_damping_force = (c_visc_local[nax,:,:,:]*self._rao[:, :,nax,:])[:,:,:,:3]
+            c_visc_local = (f_d_local/ vel[:,NAX,:])
+            self._strip_viscous_damping_force = (c_visc_local[NAX,:,:,:]*self._rao[:, :,NAX,:])[:,:,:,:3]
 
 
     def calc_rao_linear(self, ibeta):
@@ -465,9 +514,9 @@ class ResponseModel(object):
     def point_rao(self,c):
         _c = np.append(c, np.ones((c.shape[0], 1)), 1)
         # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
-        _c = _c[nax, nax, :, :, nax]
+        _c = _c[NAX, NAX, :, :, NAX]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...
-        return np.squeeze(np.matmul(self._rao_tra_mat[:, :, nax, :, :], _c), axis=4)[:, :,
+        return np.squeeze(np.matmul(self._rao_tra_mat[:, :, NAX, :, :], _c), axis=4)[:, :,
                                       :, 0:3]
 
 
