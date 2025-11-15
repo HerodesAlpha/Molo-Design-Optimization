@@ -263,7 +263,7 @@ class Candidate:
         print('\n--------------------\nSTABILITY ANALYSIS\n--------------------')
         res = stability.intact_stability(self.settings, self.hs_floater)
 
-        print("STABILITY ANALYSIS took {:1.2f} seconds ".format(time.time() - start_time))
+        print(f"STABILITY ANALYSIS took {time.time() - start_time:1.2f} seconds")
         return res
 
     def hydrodynamic_analysis(self):
@@ -275,7 +275,7 @@ class Candidate:
         self.ql.start()
         nf.run(self.settings._job_data['analysis'], self.queue)
         self.ql.stop()
-        print("NEMOH ANALYSIS took {:1.2f} seconds ".format(time.time() - start_time))
+        print(f"NEMOH ANALYSIS took {time.time() - start_time:1.2f} seconds")
 
     def structural_analysis(self):
 
@@ -379,7 +379,7 @@ class Candidate:
         db_file = self.settings._fio.nemoh_root.joinpath('db.hdf5')
         if db_file.is_file():
             db_file.unlink()
-            print('\ndb.hdf5 deleted from {}\n'.format(str(self.settings.fio.nemoh_root)))
+            print(f'\ndb.hdf5 deleted from {self.settings.fio.nemoh_root}\n')
 
     def has_stability_db(self):
         f = self.settings.fio.stability_dir.joinpath('stability.hdf5')
@@ -407,7 +407,7 @@ class Candidate:
         unit_model = self.settings.fio.data_io_dir.joinpath('unit_model.pkl')
         hs_floater = self.settings.fio.data_io_dir.joinpath('hs_floater.pkl')
         nemoh_mesh = self.settings.fio.nemoh_dir.joinpath(
-                'MOLO_{}c_nemoh.dat'.format(self.settings.job_data['floater']['Radial']['Number of columns']))
+                f"MOLO_{self.settings.job_data['floater']['Radial']['Number of columns']}c_nemoh.dat")
         if unit_model.exists():
             if hs_floater.exists():
                 if  nemoh_mesh.exists():

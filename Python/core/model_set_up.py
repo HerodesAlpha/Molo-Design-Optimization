@@ -198,7 +198,7 @@ def init_models(settings) -> Tuple:
 
     # nemoh_mesh.show()
 
-    mesh_dat = settings.fio.nemoh_root.joinpath('{}.dat'.format(msh_file.stem))
+    mesh_dat = settings.fio.nemoh_root.joinpath(f'{msh_file.stem}.dat')
     settings.mesh_file = str(mesh_dat)
 
     with open(settings.fio.data_io_dir.joinpath('nemoh_mesh_vertices.pkl'), "wb") as f:

@@ -13,6 +13,7 @@ import pickle
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
+import scipy.linalg
 
 import core.nemoh
 import core.tool_box as tb
@@ -244,14 +245,14 @@ class ResponseModel:
             return mask1(self._point_mass_centers), mask1(self._panel_pressure_centers), None
 
     def get_flange_panel_index(self):
+        """Get indices of flange panels."""
+        from core.common import BreakIt
+        
         def printv(string, do_print=None):
-            if do_print == None:
+            if do_print is None:
                 do_print = False
             if do_print:
                 print(string)
-
-        class BreakIt(Exception):
-            pass
 
         def mask2(coordinates):
             n = coordinates.shape[0]
@@ -276,12 +277,14 @@ class ResponseModel:
                             for icol in range(self._nc):
                                 xc = dxc * (icol + 1)
                                 yc = dyc * (icol + 1)
-                                if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < self._d_rc / 2:
+                                # Use np.hypot for more efficient distance calculation
+                                if np.hypot(xp - xc, yp - yc) < self._d_rc / 2:
                                     found_inside = True
                                     raise BreakIt
                     except BreakIt:
                         pass
-                    if np.sqrt((xp) ** 2 + (yp) ** 2) < self._d_cc / 2:
+                    # Use np.hypot for more efficient distance calculation
+                    if np.hypot(xp, yp) < self._d_cc / 2:
                         found_inside = True
 
                     if not found_inside:
@@ -497,22 +500,45 @@ class ResponseModel:
 
 
     def calc_rao_linear(self, ibeta):
-        out_rao = np.zeros([len(self.w), 6], dtype=complex)
+        """
+        Calculate linear RAO (Response Amplitude Operator).
+        
+        Optimized to avoid redundant np.asarray calls and use vectorized operations.
+        
+        Args:
+            ibeta: Wave direction index
+            
+        Returns:
+            Array of RAO values for each frequency
+        """
+        nw = len(self.w)
+        out_rao = np.zeros([nw, 6], dtype=np.complex128)
         this_c_visc = self._c_visc[ibeta, :, :]
+        
         for i, w in enumerate(self.w):
-            #print('w = {}'.format(w))
             this_ma = self.ma[i, :, :]
-
-            # print(this_c_visc)
             this_c = self.c_rad[i, :, :] + this_c_visc
-            denom = np.asarray(-w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k, dtype=complex)
+            # Direct computation without redundant asarray call
+            denom = -w ** 2 * (self.m + this_ma) + 1j * w * this_c + self.k
             daf = scipy.linalg.inv(denom)
             x = daf @ self.fe[i, ibeta, :]
             out_rao[i, :] = x
         return out_rao
 
-    def point_rao(self,c):
-        _c = np.append(c, np.ones((c.shape[0], 1)), 1)
+    def point_rao(self, c):
+        """
+        Calculate RAO at specific points.
+        
+        Optimized to use np.column_stack instead of np.append for better performance.
+        
+        Args:
+            c: Point coordinates array
+            
+        Returns:
+            RAO values at specified points
+        """
+        # Use column_stack instead of append for better performance
+        _c = np.column_stack([c, np.ones(c.shape[0])])
         # Modify for broadcasting, add artificial dim to use matmul on stack of matrices
         _c = _c[NAX, NAX, :, :, NAX]
         # Perform matmul and remove artificial dim and append 1. This code is fast ...

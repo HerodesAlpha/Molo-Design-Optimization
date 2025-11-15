@@ -82,14 +82,14 @@ def read_mesh(hdf5_data, custom_config):
     """
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.read_mesh(hdf5_data, custom_config)'
+    signature = f'{__name__}.read_mesh(hdf5_data, custom_config)'
     # No need to log the parameter of the method here as it will only be duplicate.
     # This function is never called directly by the user and always call from the preprocess function
     # which already logs the configuration.
     utility.log_entrance(logger, signature,
                         {})
-    n_points=0
-    n_panels=0
+    n_points = 0
+    n_panels = 0
     bodies = list(hdf5_data.get(structure.H5_BODIES).values())
     n_bodies = len(bodies)
 
@@ -103,16 +103,15 @@ def read_mesh(hdf5_data, custom_config):
     for c in range(n_bodies):
         body = bodies[c]
         dset = body.get(structure.H5_BODY_NUM_POINTS)
-        utility.check_dataset_type(dset, name='The number of points for body ' + str(c), location=structure.H5_BODY_NUM_POINTS)
+        utility.check_dataset_type(dset, name=f'The number of points for body {c}', location=structure.H5_BODY_NUM_POINTS)
         n_points += dset[0]
 
         dset = body.get(structure.H5_BODY_NUM_PANELS)
-        utility.check_dataset_type(dset, name='The number of panels for body ' + str(c), location=structure.H5_BODY_NUM_PANELS)
+        utility.check_dataset_type(dset, name=f'The number of panels for body {c}', location=structure.H5_BODY_NUM_PANELS)
         n_panels += dset[0]
 
     mesh = TMesh(n_points=n_points, n_panels=n_panels, n_bodies=n_bodies)
-    logger.info('Found ' + str(n_points) + ' points and '
-                + str(n_panels) + ' panels with ' + str(n_bodies) + ' bodies for the mesh')
+    logger.info(f'Found {n_points} points and {n_panels} panels with {n_bodies} bodies for the mesh')
 
     n_points = 0
     n_panels = 0
@@ -126,14 +125,14 @@ def read_mesh(hdf5_data, custom_config):
         n = body.get(structure.H5_BODY_NUM_PANELS)[0]
 
         mesh_arr = body.get(structure.H5_BODY_MESH)
-        utility.check_dataset_type(mesh_arr, name='The mesh body ' + str(c), location=structure.H5_BODY_MESH)
-        utility.check_array_shape(logger, mesh_arr, name='the mesh array for body number ' + str(c), expected_shape = (m+n+1, 4))
+        utility.check_dataset_type(mesh_arr, name=f'The mesh body {c}', location=structure.H5_BODY_MESH)
+        utility.check_array_shape(logger, mesh_arr, name=f'the mesh array for body number {c}', expected_shape=(m+n+1, 4))
 
         ns = mesh_arr[0, 1]
 
         if c > 0 and (ns != mesh.i_sym):
-            raise ValueError('There is an inconsistency in the mesh files regarding the xOz symmetries:'
-                'The symmetry detected in the body of the first mesh is different from the one on body ' + str(c))
+            raise ValueError(f'There is an inconsistency in the mesh files regarding the xOz symmetries: '
+                             f'The symmetry detected in the body of the first mesh is different from the one on body {c}')
         else:
             mesh.i_sym = int(ns)
 
@@ -204,7 +203,7 @@ def read_mesh(hdf5_data, custom_config):
         mesh.a[i]= a1+a2
 
         if mesh.a[i] < utility.EPS:
-            raise ValueError('Error: surface of panel ' + str(i) + ' is too small (' + str(mesh.a[i]) + ')')
+            raise ValueError(f'Error: surface of panel {i} is too small ({mesh.a[i]})')
 
         mesh.xm[:, i] = (1./3)*(mesh.x[:, mesh.p[0, i]] + mesh.x[:, mesh.p[1, i]] + mesh.x[:, mesh.p[3, i]])*a1/mesh.a[i]
 
@@ -275,7 +274,7 @@ def write_mesh_l12(mesh, hdf5_data):
 
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.write_mesh_l12(mesh, hdf5_data)'
+    signature = f'{__name__}.write_mesh_l12(mesh, hdf5_data)'
     # No need to log the hdf5_data parameter of the method here as it will only be duplicate.
     # This function is never called directly by the user and always call from the preprocess function
     # which already logs the configuration.
@@ -311,7 +310,7 @@ def write_mesh_l10(mesh, hdf5_data):
 
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.write_mesh_l10(mesh, hdf5_data)'
+    signature = f'{__name__}.write_mesh_l10(mesh, hdf5_data)'
     # No need to log the hdf5_data parameter of the method here as it will only be duplicate.
     # This function is never called directly by the user and always call from the preprocess function
     # which already logs the configuration.
@@ -353,13 +352,13 @@ def write_mesh_tec(mesh, mesh_tec_file):
     """
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.write_mesh_tec(mesh, mesh_tec_file)'
+    signature = f'{__name__}.write_mesh_tec(mesh, mesh_tec_file)'
     utility.log_entrance(logger, signature,
                         {"mesh" : str(mesh),
                         "mesh_tec_file": mesh_tec_file})
 
     utility.mkdir_p(os.path.abspath(os.path.dirname(mesh_tec_file)))
-    logger.info('Converting the mesh file in a tecplot format at ' + str(mesh_tec_file))
+    logger.info(f'Converting the mesh file in a tecplot format at {mesh_tec_file}')
     with open(mesh_tec_file, 'w') as inp:
         inp.write('VARIABLES="X" "Y" "Z" "NX" "NY" "NZ" "A"\n')
         inp.write('ZONE N=\t' + str(mesh.n_points) + '\t, E=\t' + str(mesh.n_panels) + '\t, F=FEPOINT,ET=QUADRILATERAL\n')
@@ -396,7 +395,7 @@ def write_fk_force_tec(int_case, fk_force, w, beta, filename):
     """
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.write_fk_force_tec(int_case, fk_force, w, beta, filename)'
+    signature = f'{__name__}.write_fk_force_tec(int_case, fk_force, w, beta, filename)'
     utility.log_entrance(logger, signature,
                         {"int_case" : str(int_case),
                         "filename": filename})
@@ -405,7 +404,7 @@ def write_fk_force_tec(int_case, fk_force, w, beta, filename):
     n_integration = len(int_case)
     n_beta = len(beta)
     n_w = len(w)
-    logger.info('Converting the froude krylov forces in a tecplot format at ' + str(filename))
+    logger.info(f'Converting the froude krylov forces in a tecplot format at {filename}')
     with open(filename, 'w') as inp:
         inp.write('VARIABLES="w (rad/s)"\n')
         for k in range(n_integration):
@@ -484,7 +483,7 @@ def compute_nds(mesh, c, i_case, direction, axis):
     elif i_case == 3:
         raise NotImplementedError('Force case 3 is not implemented yet')
     else:
-        raise RuntimeError('The radiation case of index ' + str(i_case) + ' is unknown')
+        raise RuntimeError(f'The radiation case of index {i_case} is unknown')
 
     return nds
 
@@ -550,7 +549,7 @@ def compute_radiation_condition(mesh, c, i_case,  direction, axis):
     elif i_case == 3:
         raise NotImplementedError('Force case 3 is not implemented yet')
     else:
-        raise RuntimeError('The radiation case of index ' + str(i_case) + ' is unknown')
+        raise RuntimeError(f'The radiation case of index {i_case} is unknown')
 
     return n_vel
 
@@ -658,7 +657,7 @@ def run(hdf5_data, custom_config):
     print('XXX preprocessor:660: {}'.format(hdf5_data.get('input/calculations/bodies/body1/generalised_forces')[1][0]))
     # Getting the logger here and not globally following recommendation from http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.run(hdf5_data, custom_config)'
+    signature = f'{__name__}.run(hdf5_data, custom_config)'
     # No need to log the parameter of the method here as it will only be duplicate.
     # This function is never called directly by the user and always call from the preprocess function
     # which already logs the configuration.
@@ -671,7 +670,7 @@ def run(hdf5_data, custom_config):
     bodies = hdf5_data.get(structure.H5_BODIES)
     utility.check_group_type(bodies, name='The bodies group', location=structure.H5_BODIES)
 
-    logger.info("Processing the bodies group: " + str(bodies))
+    logger.info(f"Processing the bodies group: {bodies}")
     bodies = list(bodies.values())
     for body in bodies:
         utility.check_group_type(body, name='The sub-body group', location=structure.H5_BODIES)
@@ -683,7 +682,7 @@ def run(hdf5_data, custom_config):
         utility.check_dataset_type(dset, name='The generalised forces', location=structure.H5_GENERALISED_FORCES)
         n_integration += dset.shape[0]
 
-    logger.info("Solving " +  str(n_radiation) + " problems  with " + str(n_integration) + " forces")
+    logger.info(f"Solving {n_radiation} problems with {n_integration} forces")
 
     logger.info("Processing wave frequencies information")
 
@@ -705,7 +704,7 @@ def run(hdf5_data, custom_config):
             w[j] = w_min+(w_max-w_min)*j/(n_w-1)
     else:
         w[0] = w_min
-    logger.info(' Using ' + str(n_w) + ' equally spaced wave frequencies from ' + str(w[0]) + ' to ' + str(w[n_w-1]))
+    logger.info(f' Using {n_w} equally spaced wave frequencies from {w[0]} to {w[n_w-1]}')
 
 
     logger.info("Processing wave directions information")
@@ -728,7 +727,7 @@ def run(hdf5_data, custom_config):
             beta[j] = (beta_min+(beta_max-beta_min)*j/(n_beta-1))*math.pi/180.
     else:
         beta[0] = beta_min * math.pi/180.
-    logger.info(' Using ' + str(n_beta) + str(' equally spaced wave directions from  ') + str(beta[0]) + ' to ' + str(beta[n_beta-1]))
+    logger.info(f' Using {n_beta} equally spaced wave directions from {beta[0]} to {beta[n_beta-1]}')
 
 
     dset = hdf5_data.get(structure.H5_SHOW_PRESSURE)
@@ -1210,7 +1209,7 @@ def preprocess(custom_config):
     Args:
         custom_config, dict The custom configuration dictionary
     """
-    signature = __name__ + '.preprocess(custom_config)'
+    signature = f'{__name__}.preprocess(custom_config)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logging.getLogger(__name__), signature,
                         {'custom_config': custom_config})

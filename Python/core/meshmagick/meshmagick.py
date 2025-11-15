@@ -37,7 +37,7 @@ from .mesh_clipper import MeshClipper
 __year__ = datetime.now().year
 
 __author__ = "Francois Rongere"
-__copyright__ = "Copyright 2014-%u, Ecole Centrale de Nantes" % __year__
+__copyright__ = f"Copyright 2014-{__year__}, Ecole Centrale de Nantes"
 __credits__ = "Francois Rongere"
 __licence__ = "GPLv3"
 __version__ = "1.0.6"
@@ -400,7 +400,7 @@ parser = argparse.ArgumentParser(
 
 
                 """,
-    epilog='--  Copyright 2014-%u  -  Francois Rongere  /  Ecole Centrale de Nantes  --' % __year__,
+    epilog=f'--  Copyright 2014-{__year__}  -  Francois Rongere  /  Ecole Centrale de Nantes  --',
     formatter_class=argparse.RawDescriptionHelpFormatter)
 
 # TODO: ajouter option pour voir l'ensemble des formats de fichier geres par meshmagick avec une explication du logiciel utilise
@@ -711,7 +711,7 @@ parser.add_argument('--show', action='store_true',
                     help="""Shows the input mesh in an interactive window""")
 
 parser.add_argument('--version', action='version',
-                    version='meshmagick - version %s\n%s' % (__version__, __copyright__),
+                    version=f'meshmagick - version {__version__}\n{__copyright__}',
                     help="""Shows the version number and exit""")
 
 
@@ -730,7 +730,7 @@ def main():
 
     if verbose:
         print('\n=============================================')
-        print('meshmagick - version %s\n%s' % (__version__, __copyright__))
+        print(f'meshmagick - version {__version__}\n{__copyright__}')
         print('=============================================')
 
     # LOADING DATA FROM FILE
@@ -757,9 +757,9 @@ def main():
         mesh.heal_triangles()
         if verbose:
             mesh.verbose_on()
-            print('%s successfully loaded' % args.infilename)
+            print(f'{args.infilename} successfully loaded')
     else:
-        raise IOError('file %s not found' % args.infilename)
+        raise IOError(f'file {args.infilename} not found')
 
     # Merge duplicate _vertices
     if args.merge_duplicates is not None:
@@ -787,7 +787,7 @@ def main():
                 verb = 'plane has'
             else:
                 verb = 'planes have'
-            print('\n%u %s been defined:' % (nb_planes, verb))
+            print(f'\n{nb_planes} {verb} been defined:')
             # TODO: ajouter un recapitulatif des plans definis
 
         planes = [Plane() for i in range(nb_planes)]
@@ -804,14 +804,13 @@ def main():
                     planes[iplane].normal = np.array(plane_str_list[plane[0]], dtype=np.float64)
                     planes[iplane].c = 0.
                 else:
-                    raise AssertionError('%s key for plane is not known. Choices are [%s].'
-                                         % (plane[0], ', '.join(list(plane_str_list.keys()))))
+                    raise AssertionError(f"{plane[0]} key for plane is not known. Choices are [{', '.join(list(plane_str_list.keys()))}].")
             else:
-                raise AssertionError('Planes should be defined by a normal and a scalar '
-                                     'or by a key to choose among [%s]' % (', '.join(list(plane_str_list.keys()))))
+                raise AssertionError(f"Planes should be defined by a normal and a scalar "
+                                     f"or by a key to choose among [{', '.join(list(plane_str_list.keys()))}]")
         if verbose:
             for plane_id, plane in enumerate(planes):
-                print("\t%u: %s" % (plane_id, plane))
+                print(f"\t{plane_id}: {plane}")
 
     # Mirroring the mesh
     if args.mirror is not None:

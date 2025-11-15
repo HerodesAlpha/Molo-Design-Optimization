@@ -144,7 +144,7 @@ def _get_axis_angle_from_rotation_matrix(rot_matrix):
 
 # Classes
 # TODO: placer cette classe dans un module a part (genre geometry) --> utilise dans meshmagick aussi...
-class Plane(object):
+class Plane:
     """Class to handle plane geometry.
     
     A plane is represented by the equation :math:`\\vec{n}.\\vec{x} = c` where :math:`\\vec{n}` is the plane's normal,
@@ -387,7 +387,7 @@ class _3DPointsArray(np.ndarray):
         return obj
 
 
-class Mesh(object):
+class Mesh:
     """A class to handle unstructured meshes.
 
     Parameters
@@ -1717,8 +1717,8 @@ class Mesh(object):
             print("* Removing unused vertices in the mesh:")
             if nb_used_v < nv:
                 unused_v = np.where(np.logical_not(used_v))[0]
-                vlist_str = '[' + ', '.join(str(iV) for iV in unused_v) + ']'
-                print("\t--> %u unused vertices have been removed" % (nv - nb_used_v))
+                vlist_str = f"[{', '.join(str(iV) for iV in unused_v)}]"
+                print(f"\t--> {nv - nb_used_v} unused vertices have been removed")
             else:
                 print("\t--> No unused vertices")
 
@@ -1847,7 +1847,7 @@ class Mesh(object):
         if self._verbose:
             print('\nTriangulating quadrangles')
             if self.nb_quadrangles != 0:
-                print('\t-->{:d} quadrangles have been split in triangles'.format(self.nb_quadrangles))
+                print(f'\t-->{self.nb_quadrangles:d} quadrangles have been split in triangles')
 
         self.__internals__.clear()
 

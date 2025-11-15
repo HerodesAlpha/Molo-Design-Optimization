@@ -20,6 +20,11 @@ import numpy as np
 from core.report import DesignReport
 
 
+class BreakIt(Exception):
+    """Custom exception for breaking out of nested loops."""
+    pass
+
+
 class PhysicalQuantities:
     """
     Physical constants used throughout the analysis.

@@ -15,12 +15,8 @@ import numpy as np
 import pandas
 
 import core.tool_box as tb
+from core.common import BreakIt
 from optimization.design_engine import Candidate, Parameter_Space
-
-
-class BreakIt(Exception):
-    """Custom exception for breaking out of nested loops."""
-    pass
 
 
 if __name__ == '__main__':

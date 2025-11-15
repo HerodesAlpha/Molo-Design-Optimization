@@ -107,7 +107,7 @@ class Force(object):
         raise NotImplementedError
 
 
-class Hydrostatics(object):
+class Hydrostatics:
     # TODO: refactor this docstring
     """Class to perform hydrostatic computations on meshes.
     

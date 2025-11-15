@@ -79,7 +79,7 @@ def get_irf(hdf5_data, result):
         the irf
     """
 
-    signature = __name__ + '.get_irf(hdf5_data, result)'
+    signature = f'{__name__}.get_irf(hdf5_data, result)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"hdf5_data": str(hdf5_data), 'result': str(result)})
@@ -125,7 +125,7 @@ def compute_irf(result, irf):
     Returns:
         the irf with the froude krylov forces computed.
     """
-    signature = __name__ + '.compute_irf(result, irf)'
+    signature = f'{__name__}.compute_irf(result, irf)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"irf": str(irf), 'result': str(result)})
@@ -171,7 +171,7 @@ def save_irf(irf, filename):
         irf: object, the irf
         filename: string, The path to the file where to save the irf
     """
-    signature = __name__ + '.save_irf(irf, filename)'
+    signature = f'{__name__}.save_irf(irf, filename)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"irf": str(irf),
@@ -202,7 +202,7 @@ def read_results(hdf5_data):
     Returns:
         the hydrodynamic coefficients cases
     """
-    signature = __name__ + '.read_results(hdf5_data)'
+    signature = f'{__name__}.read_results(hdf5_data)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"hdf5_data": str(hdf5_data)})
@@ -270,7 +270,7 @@ def save_radiation_coefficients(result, filename):
         result: object, the hydrodynamic coefficients cases
         filename: The path to the file where to save
     """
-    signature = __name__ + '.save_radiation_coefficients(result, filename)'
+    signature = f'{__name__}.save_radiation_coefficients(result, filename)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"result": str(result),
@@ -307,7 +307,7 @@ def save_diffraction_force(result, filename):
         result: object, the hydrodynamic coefficients cases
         filename: The path to the file where to save
     """
-    signature = __name__ + '.save_diffraction_force(result, filename)'
+    signature = f'{__name__}.save_diffraction_force(result, filename)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"result": str(result),
@@ -343,7 +343,7 @@ def save_excitation_force(result, filename):
         result: object, the hydrodynamic coefficients cases
         filename: The path to the file where to save
     """
-    signature = __name__ + '.save_excitation_force(result, filename)'
+    signature = f'{__name__}.save_excitation_force(result, filename)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"result": str(result),
@@ -400,7 +400,7 @@ def compute_wave_elevation(hdf5_data, environment, iw, ibeta, raos, result):
         A dictionary containing the wave elevation variables
     """
 
-    signature = __name__ + '.compute_wave_elevation(hdf5_data, environment, iw, ibeta, raos, result)'
+    signature = f'{__name__}.compute_wave_elevation(hdf5_data, environment, iw, ibeta, raos, result)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"hdf5_data": str(hdf5_data),
@@ -445,7 +445,7 @@ def compute_wave_elevation(hdf5_data, environment, iw, ibeta, raos, result):
     w = result.w[iw]
     logger.info('Computing the wave number ...')
     kwave = utility.compute_wave_number(w, environment)
-    logger.info('Wave number computed is ' + str(kwave))
+    logger.info(f'Wave number computed is {kwave}')
 
     for i in range(nx):
         for j in range(ny):
@@ -495,7 +495,7 @@ def save_wave_elevation(w, etai, etap, eta, x, y, filename):
         y: 1D array, a wave elevation variable
         filename: string, the path to the file where to save
     """
-    signature = __name__ + '.save_wave_elevation(w, etai, etap, eta, x, y, filename)'
+    signature = f'{__name__}.save_wave_elevation(w, etai, etap, eta, x, y, filename)'
     logger = logging.getLogger(__name__)
     utility.log_entrance(logger, signature,
                          {"w": w,
@@ -544,7 +544,7 @@ def run(hdf5_data, custom_config):
     """
 
     logger = logging.getLogger(__name__)
-    signature = __name__ + '.run(hdf5_data, custom_config)'
+    signature = f'{__name__}.run(hdf5_data, custom_config)'
     # No need to log the parameter of the method here as it will only be duplicate.
     # This function is never called directly by the user and always call from the postprocess function
     # which already logs the configuration.
@@ -555,11 +555,11 @@ def run(hdf5_data, custom_config):
 
     logger.info('Reading environment data ...')
     environment = utility.read_environment(hdf5_data)
-    logger.info('Read environment data' + str(environment))
+    logger.info(f'Read environment data {environment}')
 
     logger.info('Reading simulation results')
     result = read_results(hdf5_data)
-    logger.info('Read solver result ' + str(result))
+    logger.info(f'Read solver result {result}')
 
     logger.info('Post processing initialisation done !')
 
@@ -567,16 +567,14 @@ def run(hdf5_data, custom_config):
     dset = utility.require_dataset(hdf5_data, structure.H5_RESULTS_ADDED_MASS, result.added_mass.shape, dtype='f')
     utility.set_hdf5_attributes(dset, structure.H5_RESULTS_ADDED_MASS_ATTR)
     dset[:, :, :] = result.added_mass
-    logger.info('Saved ' + str(structure.H5_RESULTS_ADDED_MASS_ATTR['description']) +
-                ' at ' + structure.H5_RESULTS_ADDED_MASS + ' with characteristics ' +
-                str(dset))
+    logger.info(f"Saved {structure.H5_RESULTS_ADDED_MASS_ATTR['description']} "
+                f"at {structure.H5_RESULTS_ADDED_MASS} with characteristics {dset}")
 
     dset = utility.require_dataset(hdf5_data, structure.H5_RESULTS_RADIATION_DAMPING, result.radiation_damping.shape, dtype='f')
     utility.set_hdf5_attributes(dset, structure.H5_RESULTS_RADIATION_DAMPING_ATTR)
     dset[:, :, :] = result.radiation_damping
-    logger.info('Saved ' + str(structure.H5_RESULTS_RADIATION_DAMPING_ATTR['description']) +
-                ' at ' + structure.H5_RESULTS_RADIATION_DAMPING + ' with characteristics ' +
-                str(dset))
+    logger.info(f"Saved {structure.H5_RESULTS_RADIATION_DAMPING_ATTR['description']} "
+                f"at {structure.H5_RESULTS_RADIATION_DAMPING} with characteristics {dset}")
 
     excitation_forces = result.diffraction_force + result.froudkrylov_force #TODO: Save diffraction in its one slot
     dset = utility.require_dataset(hdf5_data, structure.H5_RESULTS_EXCITATION_FORCES, excitation_forces.shape, dtype='F')

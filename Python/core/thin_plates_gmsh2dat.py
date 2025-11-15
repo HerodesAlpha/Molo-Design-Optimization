@@ -11,13 +11,9 @@ import json
 import numpy as np
 
 import core.tool_box as tb
+from core.common import BreakIt
 from core.meshmagick import mmio
 from core.meshmagick.mesh import Mesh
-
-
-class BreakIt(Exception):
-    """Custom exception for breaking out of nested loops."""
-    pass
 
 
 def printv(string: str) -> None:
@@ -80,12 +76,14 @@ for i in range(pd.npanels):
                 for icol in range(ncol):
                     xc = dxc * (icol + 1)
                     yc = dyc * (icol + 1)
-                    if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < drc / 2:
+                    # Use np.hypot for more efficient distance calculation
+                    if np.hypot(xp - xc, yp - yc) < drc / 2:
                         found_inside = True
                         raise BreakIt
         except BreakIt:
             pass
-        if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2:
+        # Use np.hypot for more efficient distance calculation
+        if np.hypot(xp, yp) < dcc / 2:
             found_inside = True
 
         if not found_inside:
@@ -113,7 +111,8 @@ for i in range(pd.npanels):
             pass
         if not_found:
             xc = yc = 0  # Check center column
-            if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2 * (1 + vtol):
+            # Use np.hypot for more efficient distance calculation
+            if np.hypot(xp, yp) < dcc / 2 * (1 + vtol):
                 printv('   Found on center column')
                 not_found = False
         if not_found:

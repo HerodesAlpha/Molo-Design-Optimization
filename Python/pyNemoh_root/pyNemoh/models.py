@@ -56,18 +56,18 @@ class TMesh:
         self.n = np.zeros((3, n_panels))
         self.xm = np.zeros((3, n_panels))
         self.p = np.zeros((4, n_panels), dtype=int)
-        self.c_panel = np.zeros(n_panels,dtype=int)
+        self.c_panel = np.zeros(n_panels, dtype=int)
         self.a = np.zeros(n_panels)
         self.last_panel = np.zeros(n_bodies)
         self.cg = np.zeros((3, n_bodies))
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the mesh."""
         sym_msg = 'no symmetry'
         if self.i_sym:
             sym_msg = 'symmetry'
 
-        return ('Mesh of ' + str(self.n_points) + ' points and ' + str(self.n_panels) + ' panels '
-                + ' with ' + sym_msg)
+        return f'Mesh of {self.n_points} points and {self.n_panels} panels with {sym_msg}'
 
 
 class TEnvironment:
@@ -86,14 +86,14 @@ class TEnvironment:
         self.x_eff = 0
         self.y_eff = 0
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the environment."""
         depth_msg = 'infinite water depth'
         if self.depth > 0:
-            depth_msg = 'water depth of ' + str(self.depth)
-        return ('Environment with ' + depth_msg + ', gravity: ' + str(self.g)
-                + ', sea water density: ' + str(self.rho)
-                + ' wave measurements points coordinate: (' + str(self.x_eff)
-                + ', ' + str(self.y_eff) + ')')
+            depth_msg = f'water depth of {self.depth}'
+        return (f'Environment with {depth_msg}, gravity: {self.g}, '
+                f'sea water density: {self.rho} wave measurements points coordinate: '
+                f'({self.x_eff}, {self.y_eff})')
 
 
 class TResult:

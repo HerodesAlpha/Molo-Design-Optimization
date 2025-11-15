@@ -22,6 +22,92 @@ import core.tool_box as tb
 from core.meshmagick.mesh import Mesh
 
 
+def _write_dof_definition(fid, dof: Union[List[int], np.ndarray], is_force: bool = False) -> None:
+    """
+    Write degree of freedom or force definition to file.
+    
+    Args:
+        fid: File handle to write to
+        dof: Array of DOF flags (1 = enabled, 0 = disabled)
+        is_force: If True, write force definitions; if False, write motion definitions
+    """
+    dof_names = ['Surge', 'Sway', 'Heave', 'Roll about waterline', 'Pitch about waterline', 'Yaw about waterline']
+    force_names = ['Force in X direction', 'Force in Y direction', 'Force in Z direction',
+                   'Roll moment about waterline', 'Pitch moment about waterline', 'Yaw moment about waterline']
+    
+    # DOF motion/rotation definitions: [type, x, y, z, rx, ry, rz]
+    dof_defs = [
+        [1, 1., 0., 0., 0., 0., 0.],  # Surge
+        [1, 0., 1., 0., 0., 0., 0.],  # Sway
+        [1, 0., 0., 1., 0., 0., 0.],  # Heave
+        [2, 1., 0., 0., 0., 0., 0.],  # Roll
+        [2, 0., 1., 0., 0., 0., 0.],  # Pitch
+        [2, 0., 0., 1., 0., 0., 0.],  # Yaw
+    ]
+    
+    names = force_names if is_force else dof_names
+    
+    for iDof in range(len(dof)):
+        if dof[iDof] == 1:
+            def_line = dof_defs[iDof]
+            fid.write(f"{def_line[0]} {def_line[1]:.1f} {def_line[2]:.1f} {def_line[3]:.1f} "
+                     f"{def_line[4]:.1f} {def_line[5]:.1f} {def_line[6]:.1f}\t\t! {names[iDof]}\n")
+
+
+def _write_environment_section(fid, rho_sw: float, water_depth: float) -> None:
+    """Write environment section to Nemoh calibration file."""
+    fid.write('--- Environment ---\n')
+    fid.write(f'{rho_sw}				! RHO 			! KG/M**3 	! Fluid specific volume\n')
+    fid.write('9.81				! G			! M/S**2	! Gravity\n')
+    fid.write(f'{water_depth}				! DEPTH			! M		! Water depth\n')
+    fid.write('0.	0.			! XEFF YEFF		! M		! Wave measurement point\n')
+
+
+def _write_body_section(fid, mesh_file: str, nrNode: int, nrPanel: int, 
+                        dof: Union[List[int], np.ndarray]) -> None:
+    """Write floating body section to Nemoh calibration file."""
+    fid.write('--- Description of floating bodies ---\n')
+    fid.write('1				! Number of bodies\n')
+    fid.write('--- Body 1 ---------------------------\n')
+    fid.write(f'{mesh_file}\t			! Name of mesh file\n')
+    fid.write(f'{nrNode}\t{nrPanel}			! Number of points and number of panels\n')
+    fid.write(f'{sum(dof)}				! Number of degrees of freedom\n')
+    _write_dof_definition(fid, dof, is_force=False)
+    fid.write(f'{sum(dof)}				! Number of resulting generalised forces\n')
+    _write_dof_definition(fid, dof, is_force=True)
+    fid.write('0				! Number of lines of additional information\n')
+
+
+def _write_load_cases_section(fid, omega: Union[List[float], np.ndarray], 
+                               aO: Dict, dirCheck: bool) -> None:
+    """Write load cases section to Nemoh calibration file."""
+    fid.write('--- Load cases to be solved ---\n')
+    fid.write(f'{omega[0]}\t{omega[1]}\t{omega[2]}		! Number of wave frequencies, Min, and Max (rad/s)\n')
+    if dirCheck:
+        fid.write(f"{aO['dirStep']}\t{aO['dirStart']}\t{aO['dirStop']}		! Number of wave directions, Min and Max (degrees)\n")
+    else:
+        fid.write('1\t0.\t0.		! Number of wave directions, Min and Max (degrees)\n')
+
+
+def _write_postprocessing_section(fid, aO: Dict, irfCheck: bool, 
+                                  kochCheck: bool, fsCheck: bool) -> None:
+    """Write post-processing section to Nemoh calibration file."""
+    fid.write('--- Post processing ---\n')
+    if irfCheck:
+        fid.write(f"1\t{aO['irfStep']}\t{aO['irfDur']}\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n")
+    else:
+        fid.write('0\t0.01\t20.\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n')
+    fid.write('1				! Show pressure\n')
+    if kochCheck:
+        fid.write(f"{aO['kochStep']}\t{aO['kochStart']}\t{aO['kochStop']}		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n")
+    else:
+        fid.write('0	0.	180.		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n')
+    if fsCheck:
+        fid.write(f"{aO['fsDeltaX']}\t{aO['fsDeltaY']}\t{aO['fsLengthX']}\t{aO['fsLengthY']}	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n")
+    else:
+        fid.write('50	50	100 100	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n')
+
+
 def writeCalFile(
     dir: Path,
     rho_sw: float,
@@ -33,7 +119,20 @@ def writeCalFile(
     nrNode: int,
     nrPanel: int
 ) -> None:
-    # In case of array simulation, do stuff
+    """
+    Write Nemoh calibration file.
+    
+    Args:
+        dir: Working directory (unused, kept for compatibility)
+        rho_sw: Sea water density (kg/m³)
+        water_depth: Water depth (m)
+        omega: Wave frequency parameters [n_freq, min_freq, max_freq]
+        dof: Degrees of freedom array [surge, sway, heave, roll, pitch, yaw]
+        aO: Analysis options dictionary
+        mesh_file: Name of mesh file
+        nrNode: Number of nodes
+        nrPanel: Number of panels
+    """
     dirCheck = aO['dirCheck']
     irfCheck = aO['irfCheck']
     kochCheck = aO['kochCheck']
@@ -41,75 +140,10 @@ def writeCalFile(
 
     # Create the Nemoh calibration file
     with open('Nemoh.cal', 'w') as fid:
-        fid.write('--- Environment ---\n')
-        fid.write(str(rho_sw) + '				! RHO 			! KG/M**3 	! Fluid specific volume\n')
-        fid.write('9.81				! G			! M/S**2	! Gravity\n')
-        fid.write(str(water_depth) + '				! DEPTH			! M		! Water depth\n')
-        fid.write('0.	0.			! XEFF YEFF		! M		! Wave measurement point\n')
-        fid.write('--- Description of floating bodies ---\n')
-        fid.write('{:d}				! Number of bodies\n'.format(1))
-        fid.write('--- Body 1 ---------------------------\n')
-        fid.write('{}\t			! Name of mesh file\n'.format(mesh_file))
-        fid.write(str(nrNode) + '\t' + str(nrPanel) + '			! Number of points and number of panels\n')
-        fid.write('{:d}				! Number of degrees of freedom\n'.format(sum(dof)))
-        for iDof in range(len(dof)):
-            if (iDof == 0 and dof[iDof] == 1):
-                fid.write('1 1. 0.	0. 0. 0. 0.		! Surge\n')
-            elif (iDof == 1 and dof[iDof] == 1):
-                fid.write('1 0. 1.	0. 0. 0. 0.		! Sway\n')
-            elif (iDof == 2 and dof[iDof] == 1):
-                fid.write('1 0. 0. 1. 0. 0. 0.		! Heave\n')
-            elif (iDof == 3 and dof[iDof] == 1):
-                fid.write('2 1. 0. 0. 0. 0. 0.		! Roll about waterline\n')
-            elif (iDof == 4 and dof[iDof] == 1):
-                fid.write('2 0. 1. 0. 0. 0. 0.		! Pitch about waterline\n')
-            elif (iDof == 5 and dof[iDof] == 1):
-                fid.write('2 0. 0. 1. 0. 0. 0.		! Yaw about waterline\n')
-        fid.write('{:d}				! Number of resulting generalised forces\n'.format(sum(dof)))
-        for iDof in range(len(dof)):
-            if (iDof == 0 and dof[iDof] == 1):
-                fid.write('1 1. 0.	0. 0. 0. 0.		! Force in X direction\n')
-            elif (iDof == 1 and dof[iDof] == 1):
-                fid.write('1 0. 1.	0. 0. 0. 0.		! Force in Y direction\n')
-            elif (iDof == 2 and dof[iDof] == 1):
-                fid.write('1 0. 0. 1. 0. 0. 0.		! Force in Z direction\n')
-            elif (iDof == 3 and dof[iDof] == 1):
-                fid.write('2 1. 0. 0. 0. 0. 0.		! Roll moment about waterline\n')
-            elif (iDof == 4 and dof[iDof] == 1):
-                fid.write('2 0. 1. 0. 0. 0. 0.		! Pitch moment about waterline\n')
-            elif (iDof == 5 and dof[iDof] == 1):
-                fid.write('2 0. 0. 1. 0. 0. 0.		! Yaw moment about waterline\n')
-        fid.write('0				! Number of lines of additional information\n')
-
-        fid.write('--- Load cases to be solved ---\n')
-        fid.write(str(omega[0]) + '\t' + str(omega[1]) + '\t' + str(
-                omega[2]) + '		! Number of wave frequencies, Min, and Max (rad/s)\n')
-        if dirCheck:
-            fid.write(str(aO['dirStep']) + '\t' + str(aO['dirStart']) + '\t' + str(
-                    aO['dirStop']) + '		! Number of wave directions, Min and Max (degrees)\n')
-        else:
-            # dir parameter not defined in function signature, using default
-            fid.write('1\t0.\t0.		! Number of wave directions, Min and Max (degrees)\n')
-        fid.write('--- Post processing ---\n')
-        if irfCheck:
-            fid.write('1' + '\t' + str(aO['irfStep']) + '\t' + str(aO[
-                                                                       'irfDur']) + '\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n')
-        else:
-            fid.write(
-                    '0' + '\t0.01\t20.\t\t! IRF 				! IRF calculation (0 for no calculation), time step and duration\n')
-        fid.write('1				! Show pressure\n')
-        if kochCheck:
-            fid.write(str(aO['kochStep']) + '\t' + str(aO['kochStart']) + '\t' + str(aO[
-                                                                                         'kochStop']) + '		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n')
-        else:
-            fid.write(
-                    '0	0.	180.		! Kochin function 		! Number of directions of calculation (0 for no calculations), Min and Max (degrees)\n')
-        if fsCheck:
-            fid.write(str(aO['fsDeltaX']) + '\t' + str(aO['fsDeltaY']) + '\t' + str(aO['fsLengthX']) + '\t' + str(aO[
-                                                                                                                      'fsLengthY']) + '	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n')
-        else:
-            fid.write(
-                    '50	50	100 100	! Free surface elevation 	! Number of points in x direction (0 for no calcutions) and y direction and dimensions of domain in x and y direction	\n')
+        _write_environment_section(fid, rho_sw, water_depth)
+        _write_body_section(fid, mesh_file, nrNode, nrPanel, dof)
+        _write_load_cases_section(fid, omega, aO, dirCheck)
+        _write_postprocessing_section(fid, aO, irfCheck, kochCheck, fsCheck)
 
 
 def runNemoh(fio, hydromodel, mesh_file, dir, rho_sw, water_depth, omega_calc, dof):
@@ -151,7 +185,7 @@ def calcAlphaBeta(wdir, nSel, rho, dof):
         strPat = 'DoF    1'
         irfInd = 2
     elif dof[2] == 1:
-        strPat = 'DoF    {:d}'.format(sum(dof[0::2]))
+        strPat = f'DoF    {sum(dof[0::2])}'
         irfInd = sum(dof[0::2]) * 2
     else:
         strPat = 'DoF    1'
@@ -282,21 +316,32 @@ def calcAlphaBeta(wdir, nSel, rho, dof):
 
 
 def calcM(wdir, rho=1025.0, dof=[0, 0, 1, 0, 0, 0]):
-    pathFile = os.path.join(wdir, 'results', 'KH.dat')
+    """
+    Calculate mass and stiffness matrices from NEMOH results.
+    
+    Args:
+        wdir: Working directory containing NEMOH results
+        rho: Water density (default: 1025.0)
+        dof: Degrees of freedom array (default: [0, 0, 1, 0, 0, 0])
+        
+    Returns:
+        Tuple of (M, c) where M is mass matrix and c is stiffness
+    """
     dof = np.array(dof)
-    with open(pathFile, 'r') as f:
-        khRaw = f.readlines()
-    KH = np.zeros((6, 6))
-    for iL in range(len(khRaw)):
-        KH[iL, :] = np.array([float(a) for a in khRaw[iL].split()])
-    if sum(dof) > 1:
+    
+    # Use np.loadtxt for efficient file reading
+    pathFile = os.path.join(wdir, 'results', 'KH.dat')
+    KH = np.loadtxt(pathFile)
+    
+    if np.sum(dof) > 1:
         c = KH
     else:
-        dof = list(dof)
-        c = np.dot(KH, dof)[dof.index(1)]
+        dof_idx = np.argmax(dof)
+        c = np.dot(KH, dof)[dof_idx]
 
-    M = np.diag([1., 1., 1., 1., 1., 1.])
+    M = np.eye(6, dtype=np.float64)
     pathFile = os.path.join(wdir, 'Nemoh', 'Hydrostatics.dat')
+    # Read file line by line for mixed format file
     with open(pathFile, 'r') as f:
         mRaw = f.readlines()
     mass = rho * float(mRaw[3].split()[2])
@@ -307,17 +352,15 @@ def calcM(wdir, rho=1025.0, dof=[0, 0, 1, 0, 0, 0]):
     M[4, 0] = mass * zG
     M[3, 1] = -mass * zG
 
-    I = np.zeros((3, 3))
+    # Use np.loadtxt for efficient file reading
     pathFile = os.path.join(wdir, 'Nemoh', 'Inertia_hull.dat')
-    with open(pathFile, 'r') as f:
-        mRaw = f.readlines()
-    for iL in range(len(mRaw)):
-        I[iL, :] = np.array([float(a) for a in mRaw[iL].split()])
+    I = np.loadtxt(pathFile)
     M[3::, 3::] *= I
-    if sum(dof) > 1:
-        None
+    if np.sum(dof) > 1:
+        pass
     else:
-        M = np.dot(M, dof)[dof.index(1)]
+        dof_idx = np.argmax(dof)
+        M = np.dot(M, dof)[dof_idx]
     return (M, c)
 
 
@@ -325,19 +368,19 @@ def writeOutputNemoh(wdir, M, Mainf, c, alpha, beta):
     pathFile = os.path.join(wdir, 'Nemoh', 'outNemoh.dat')
     fid = open(pathFile, 'w')
     inString = '{0:e}'
-    fid.write('Mass:\t' + inString.format(M) + '\n')
-    fid.write('Mainf:\t' + inString.format(Mainf) + '\n')
-    fid.write('c:\t' + inString.format(c) + '\n')
+    fid.write(f'Mass:\t{inString.format(M)}\n')
+    fid.write(f'Mainf:\t{inString.format(Mainf)}\n')
+    fid.write(f'c:\t{inString.format(c)}\n')
     fid.write('=========================================================\n')
     fid.write('ALPHA\n')
     fid.write('=========================================================\n')
     for iA in range(0, len(alpha)):
-        fid.write(str(np.real(alpha[iA])) + '\t' + str(np.imag(alpha[iA])) + '\n')
+        fid.write(f'{np.real(alpha[iA])}\t{np.imag(alpha[iA])}\n')
     fid.write('=========================================================\n')
     fid.write('BETA\n')
     fid.write('=========================================================\n')
     for iB in range(0, len(beta)):
-        fid.write(str(np.real(beta[iB])) + '\t' + str(np.imag(beta[iB])) + '\n')
+        fid.write(f'{np.real(beta[iB])}\t{np.imag(beta[iB])}\n')
     fid.close()
 
 
@@ -460,7 +503,7 @@ def get_fk_pressure(fio, ndir, nomega, npanels):
 def get_poten_pressure(fio, npoints, ppanels, problem_number):
     npanels = ppanels.shape[0]
     pressure_cmplx_panels = np.zeros(npanels, dtype=np.complex128)
-    pathFile = fio.nemoh_results.joinpath('pressure.{:5d}.dat'.format(problem_number))
+    pathFile = fio.nemoh_results.joinpath(f'pressure.{problem_number:5d}.dat')
     with open(pathFile, 'r') as f:
         lines = f.readlines()
     # Number of vertices and number of panels
@@ -484,7 +527,7 @@ def mesh(fio, hs_floater, sym=None):
     hydro_mesh.heal_normals()
     hydro_mesh.heal_mesh()
 
-    if sym == None or sym == 0:
+    if sym is None or sym == 0:
         nemoh_mesh = hydro_mesh
     elif sym == 1:
         nemoh_mesh = hydro_mesh.de_symmetrize_xz()
@@ -492,11 +535,10 @@ def mesh(fio, hs_floater, sym=None):
         nemoh_mesh.heal_normals()
         nemoh_mesh.heal_mesh()
     else:
-        print('sym cannot be {}'.format(sym))
-        exit()
+        raise ValueError(f'Invalid symmetry value: {sym}')
 
-    print('Number of faces: {}'.format(nemoh_mesh.nb_faces))
-    print('Number of vertices: {}'.format(nemoh_mesh.nb_vertices))
+    print(f'Number of faces: {nemoh_mesh.nb_faces}')
+    print(f'Number of vertices: {nemoh_mesh.nb_vertices}')
 
     mesh_file = 'mesh.dat'
     mmio.write_MAR(os.path.join(fio.nemoh_root, mesh_file), nemoh_mesh.vertices, nemoh_mesh.faces)
@@ -526,9 +568,9 @@ def p2f(p_cmplx, pd):
     # sec_panel_force = pressure[ppanels[sec_panel_index,:]]
 
 
-class PanelData(object):
+class PanelData:
     def __init__(self, fio, sym=None):
-        _pathFile = fio.nemoh_results.joinpath('pressure.{:5d}.dat'.format(1))
+        _pathFile = fio.nemoh_results.joinpath('pressure.    1.dat')
         with open(_pathFile, 'r') as f:
             _lines = f.readlines()
         # Number of vertices and number of panels
@@ -557,14 +599,13 @@ class PanelData(object):
         self._ppanel_centers = (np.array(([_a1, ] * 3)).T * self._c1 + np.array(([_a2, ] * 3)).T * self._c2)
         self._ppanel_centers /= np.array(([self._ppanel_areas, ] * 3)).T
 
-        if sym == None or sym == 0:
+        if sym is None or sym == 0:
             pass
         elif sym == 1:
             self._ipanel = np.array([i for i, y in enumerate(self._ppanel_centers[:, 1]) if y < 0])
             self._ppanels[self._ipanel, :] = np.fliplr(self._ppanels[self._ipanel, :])
         else:
-            print('sym cannot be {}'.format(sym))
-            exit()
+            raise ValueError(f'Invalid symmetry value: {sym}')
 
         self._ppanel_cross = np.cross(self._ppoints[self._ppanels[:, 2]] - self._ppoints[self._ppanels[:, 0]],
                                       self._ppoints[self._ppanels[:, 3]] - self._ppoints[self._ppanels[:, 1]])

@@ -10,11 +10,7 @@ from scipy.optimize import Bounds, bisect, broyden1, broyden2, minimize, newton_
 from typing import List, Optional, Tuple, Union
 
 import core.environmental_conditions as ec
-
-
-class BreakIt(Exception):
-    """Custom exception for breaking out of nested loops."""
-    pass
+from core.common import BreakIt
 
 
 # Code check of t

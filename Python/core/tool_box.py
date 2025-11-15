@@ -19,6 +19,7 @@ import pickle
 import subprocess
 import warnings
 from copy import deepcopy
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -410,104 +411,127 @@ def rotation_matrix(rotation):
     return np.dot(Rotate_Z_matrix, np.dot(Rotate_Y_matrix, Rotate_X_matrix))
 
 
-def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_cirlce=4,
+def write_gmsh(fio, floater_model, dens_t=1, dens_quarter_circle=4,
                dens_cylinder_height=14):  # TODO: Delete this function
-    with open(r'.\templates\MOLO_{}c.geo.template'.format(floater_model.nc), 'r') as file:
+    """
+    Legacy function for generating GMSH mesh files.
+    
+    Note: This function is deprecated. Use msh_file() instead.
+    
+    Args:
+        fio: FileIOClass instance
+        floater_model: Floater model object
+        dens_t: Mesh density for thickness (default: 1)
+        dens_quarter_circle: Mesh density for quarter circle (default: 4)
+        dens_cylinder_height: Mesh density for cylinder height (default: 14)
+        
+    Returns:
+        Path to generated mesh file
+    """
+    template_path = Path(f'./templates/MOLO_{floater_model.nc}c.geo.template')
+    
+    with open(template_path, 'r') as file:
         filedata = file.read()
 
-    # Replace the target string
-    filedata = filedata.replace('#dia_rc#', '{}'.format(floater_model.dia_rc))
-    filedata = filedata.replace('#dia_hc#', '{}'.format(floater_model.dia_hc))
-    filedata = filedata.replace('#gap#', '{}'.format(floater_model.gap))
-    filedata = filedata.replace('#hgt#', '{}'.format(floater_model.hgt))
-    filedata = filedata.replace('#t_lf#', '{}'.format(floater_model.t_lf))
+    # Replace geometry parameters
+    filedata = filedata.replace('#dia_rc#', f'{floater_model.dia_rc}')
+    filedata = filedata.replace('#dia_hc#', f'{floater_model.dia_hc}')
+    filedata = filedata.replace('#gap#', f'{floater_model.gap}')
+    filedata = filedata.replace('#hgt#', f'{floater_model.hgt}')
+    filedata = filedata.replace('#t_lf#', f'{floater_model.t_lf}')
 
-    # Set mesh density
-    dens2 = dens_t + 1  # Thickness
-    dens5 = dens_quarter_cirlce + 1  #
-    dens9 = 2 * dens_quarter_cirlce + 1  #
-    dens15 = dens_cylinder_height + 1  # Column height
-    filedata = filedata.replace('#dens2#', '{}'.format(dens2))
-    filedata = filedata.replace('#dens5#', '{}'.format(dens5))
-    filedata = filedata.replace('#dens9#', '{}'.format(dens9))
-    filedata = filedata.replace('#dens15#', '{}'.format(dens15))
+    # Replace mesh density parameters using shared function
+    filedata = _replace_mesh_density_parameters(filedata)
 
-    gmsh_geo_file = fio.gmsh_dir.joinpath('MOLO_{}c.geo'.format(floater_model.nc))
-    gmsh_msh_file = fio.gmsh_dir.joinpath('MOLO_{}c.msh'.format(floater_model.nc))
+    gmsh_geo_file = fio.gmsh_dir.joinpath(f'MOLO_{floater_model.nc}c.geo')
+    gmsh_msh_file = fio.gmsh_dir.joinpath(f'MOLO_{floater_model.nc}c.msh')
 
     with open(gmsh_geo_file, 'w') as file:
         file.write(filedata)
-    print('{}'.format(gmsh_geo_file))
-    if not fio.gmsh_exe:
-        raise FileNotFoundError("Gmsh executable not found. Please install Gmsh or configure the path in common.py")
-    try:
-        a = subprocess.check_output(
-                [fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
-                 '{}'.format(gmsh_msh_file)])
-    except:
-        print(a)
-        exit()
-    finally:
-        return gmsh_msh_file
+    print(f'{gmsh_geo_file}')
+    
+    # Use shared GMSH mesh generation function
+    _generate_gmsh_mesh(fio.gmsh_exe, gmsh_geo_file, gmsh_msh_file)
+    return gmsh_msh_file
 
 
-def msh_file(settings, mesh_type=None):
-    if mesh_type == None:
-        print('mesh type is either \'stability\' or \'nemoh\'')
-
-    # str_thin = '_thin' if settings.job_data['analysis']['simulations']['default']['calculation'][
-    #     'use_dipoles_implementation'] else ''
-
-    if settings.mesh_name == None:
-        settings.mesh_name = 'MOLO_{}c'.format(settings.job_data['floater']['Radial']['Number of columns'])
-
-    this_mesh_name = '{}_{}'.format(settings.mesh_name, mesh_type)
-
-    with open(settings.fio.templates_dir.joinpath('{}.geo.template'.format(this_mesh_name)), 'r') as file:
-        filedata = file.read()
-
-    # Replace the target string
-    filedata = filedata.replace('#dia_rc#', '{}'.format(settings.job_data['floater']['Radial']['Column']['Diameter']))
-    filedata = filedata.replace('#dia_hc#', '{}'.format(settings.job_data['floater']['Central column diameter']))
-    filedata = filedata.replace('#gap#', '{}'.format(settings.job_data['floater']['Gap factor']))
-    filedata = filedata.replace('#t_lf#', '{}'.format(
-            settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Thickness']))
-    filedata = filedata.replace('#wlf#', '{}'.format(
-            settings.job_data['floater']['Radial']['Flange']['Lower']['Plate']['Width']))
-    filedata = filedata.replace('#overlength#', '{}'.format(
-            settings.job_data['floater']['Radial']['Flange']['Lower']['Overlength']))
-
+def _replace_template_parameters(filedata: str, settings, mesh_type: Optional[str]) -> str:
+    """
+    Replace template placeholders in GMSH template file.
+    
+    Args:
+        filedata: Template file content
+        settings: Settings object with configuration
+        mesh_type: Type of mesh ('nemoh' or 'stability')
+        
+    Returns:
+        Template content with placeholders replaced
+    """
+    job_data = settings.job_data['floater']
+    
+    # Basic geometry parameters
+    filedata = filedata.replace('#dia_rc#', f"{job_data['Radial']['Column']['Diameter']}")
+    filedata = filedata.replace('#dia_hc#', f"{job_data['Central column diameter']}")
+    filedata = filedata.replace('#gap#', f"{job_data['Gap factor']}")
+    filedata = filedata.replace('#t_lf#', f"{job_data['Radial']['Flange']['Lower']['Plate']['Thickness']}")
+    filedata = filedata.replace('#wlf#', f"{job_data['Radial']['Flange']['Lower']['Plate']['Width']}")
+    filedata = filedata.replace('#overlength#', f"{job_data['Radial']['Flange']['Lower']['Overlength']}")
+    
+    # Mesh type specific parameters
     if mesh_type == 'nemoh':
-        filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Draught']))
-        filedata = filedata.replace('#z0#', '{}'.format(-settings.job_data['floater']['Draught']))
-        filedata = filedata.replace('#vdist#', '{}'.format(settings.job_data['floater']['Thin panel offset']))
+        filedata = filedata.replace('#hgt#', f"{job_data['Draught']}")
+        filedata = filedata.replace('#z0#', f"{-job_data['Draught']}")
+        filedata = filedata.replace('#vdist#', f"{job_data['Thin panel offset']}")
     else:
-        filedata = filedata.replace('#hgt#', '{}'.format(settings.job_data['floater']['Radial']['Heigth']))
+        filedata = filedata.replace('#hgt#', f"{job_data['Radial']['Heigth']}")
+    
+    # Number of elements around cylinder circumference
+    filedata = filedata.replace('#nel#', '16')
+    
+    return filedata
 
-    # Number of elements around cylinder circ
-    filedata = filedata.replace('#nel#', '{}'.format(16))
 
-    # Set mesh density stability (old) templates
+def _replace_mesh_density_parameters(filedata: str) -> str:
+    """
+    Replace mesh density parameters in template.
+    
+    Args:
+        filedata: Template file content
+        
+    Returns:
+        Template content with density parameters replaced
+    """
     dens_t = 1
-    dens_quarter_cirlce = 4
+    dens_quarter_circle = 4
     dens_cylinder_height = 14
+    
     dens2 = dens_t + 1  # Thickness
-    dens5 = dens_quarter_cirlce + 1  #
-    dens9 = 2 * dens_quarter_cirlce + 1  #
+    dens5 = dens_quarter_circle + 1
+    dens9 = 2 * dens_quarter_circle + 1
     dens15 = dens_cylinder_height + 1  # Column height
-    filedata = filedata.replace('#dens2#', '{}'.format(dens2))
-    filedata = filedata.replace('#dens5#', '{}'.format(dens5))
-    filedata = filedata.replace('#dens9#', '{}'.format(dens9))
-    filedata = filedata.replace('#dens15#', '{}'.format(dens15))
+    
+    filedata = filedata.replace('#dens2#', f'{dens2}')
+    filedata = filedata.replace('#dens5#', f'{dens5}')
+    filedata = filedata.replace('#dens9#', f'{dens9}')
+    filedata = filedata.replace('#dens15#', f'{dens15}')
+    
+    return filedata
 
-    # Write gmsh geo file to analysis directory
-    gmsh_geo_file = settings.fio.gmsh_dir.joinpath('{}.geo'.format(this_mesh_name))
-    with open(gmsh_geo_file, 'w') as file:
-        file.write(filedata)
 
-    # Create mesh
-    gmsh_msh_file = settings.fio.gmsh_dir.joinpath('{}.msh'.format(this_mesh_name))
-    if not settings.fio.gmsh_exe:
+def _generate_gmsh_mesh(gmsh_exe: str, gmsh_geo_file: Path, gmsh_msh_file: Path) -> None:
+    """
+    Execute Gmsh to generate mesh file.
+    
+    Args:
+        gmsh_exe: Path to Gmsh executable
+        gmsh_geo_file: Path to GMSH geometry file
+        gmsh_msh_file: Path to output mesh file
+        
+    Raises:
+        FileNotFoundError: If Gmsh executable not found
+        RuntimeError: If mesh generation fails
+    """
+    if not gmsh_exe:
         error_msg = (
             "Gmsh executable not found. Mesh generation requires Gmsh to be installed.\n\n"
             "Please install Gmsh:\n"
@@ -518,16 +542,67 @@ def msh_file(settings, mesh_type=None):
             f"Mesh file needed: {gmsh_msh_file}"
         )
         raise FileNotFoundError(error_msg)
-    a = ''
+    
     try:
-        a = subprocess.check_output(
-                [settings.fio.gmsh_exe, '-2', '{}'.format(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
-                 '{}'.format(gmsh_msh_file)])
-    except:
-        print(a)
-        exit()
-    finally:
-        return gmsh_msh_file
+        subprocess.check_output(
+            [gmsh_exe, '-2', str(gmsh_geo_file), '-save_all', '-format', 'msh2', '-o',
+             str(gmsh_msh_file)],
+            stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Gmsh execution failed with return code {e.returncode}")
+        print(f"Output: {e.output.decode() if e.output else 'No output'}")
+        raise RuntimeError(f"Failed to generate mesh file: {gmsh_msh_file}") from e
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"Gmsh executable not found: {gmsh_exe}") from e
+    except Exception as e:
+        print(f"Unexpected error during Gmsh execution: {e}")
+        raise RuntimeError(f"Failed to generate mesh file: {gmsh_msh_file}") from e
+
+
+def msh_file(settings, mesh_type: Optional[str] = None) -> Path:
+    """
+    Generate GMSH mesh file from template.
+    
+    Args:
+        settings: Settings object with configuration
+        mesh_type: Type of mesh ('stability' or 'nemoh')
+        
+    Returns:
+        Path to generated mesh file
+        
+    Raises:
+        ValueError: If mesh_type is invalid
+        FileNotFoundError: If template file or Gmsh executable not found
+        RuntimeError: If mesh generation fails
+    """
+    if mesh_type is None:
+        raise ValueError("mesh_type must be either 'stability' or 'nemoh'")
+    
+    if settings.mesh_name is None:
+        settings.mesh_name = f"MOLO_{settings.job_data['floater']['Radial']['Number of columns']}c"
+    
+    this_mesh_name = f'{settings.mesh_name}_{mesh_type}'
+    template_path = settings.fio.templates_dir.joinpath(f'{this_mesh_name}.geo.template')
+    
+    # Read template file
+    with open(template_path, 'r') as file:
+        filedata = file.read()
+    
+    # Replace template parameters
+    filedata = _replace_template_parameters(filedata, settings, mesh_type)
+    filedata = _replace_mesh_density_parameters(filedata)
+    
+    # Write GMSH geometry file
+    gmsh_geo_file = settings.fio.gmsh_dir.joinpath(f'{this_mesh_name}.geo')
+    with open(gmsh_geo_file, 'w') as file:
+        file.write(filedata)
+    
+    # Generate mesh
+    gmsh_msh_file = settings.fio.gmsh_dir.joinpath(f'{this_mesh_name}.msh')
+    _generate_gmsh_mesh(settings.fio.gmsh_exe, gmsh_geo_file, gmsh_msh_file)
+    
+    return gmsh_msh_file
 
 
 def save_M_and_K(settings, M, MMK):
@@ -653,12 +728,12 @@ class PanelData:
 
 
 def prepare_dipol_mesh(vertices, faces, settings):
+    """Prepare dipole mesh by identifying thin plate elements."""
+    from core.common import BreakIt
+    
     def printv(string):
         if 0:
             print(string)
-
-    class BreakIt(Exception):
-        pass
 
     vtol = 0.01
     drc = settings.job_data['floater']['Radial column diameter']
@@ -703,12 +778,14 @@ def prepare_dipol_mesh(vertices, faces, settings):
                     for icol in range(ncol):
                         xc = dxc * (icol + 1)
                         yc = dyc * (icol + 1)
-                        if np.sqrt((xp - xc) ** 2 + (yp - yc) ** 2) < drc / 2:
+                        # Use np.hypot for more efficient and numerically stable distance calculation
+                        if np.hypot(xp - xc, yp - yc) < drc / 2:
                             found_inside = True
                             raise BreakIt
             except BreakIt:
                 pass
-            if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2:
+            # Use np.hypot for more efficient distance calculation
+            if np.hypot(xp, yp) < dcc / 2:
                 found_inside = True
 
             if not found_inside:
@@ -738,7 +815,8 @@ def prepare_dipol_mesh(vertices, faces, settings):
                 pass
             if not_found:
                 xc = yc = 0  # Check center column
-                if np.sqrt((xp) ** 2 + (yp) ** 2) < dcc / 2 * (1 + vtol):
+                # Use np.hypot for more efficient distance calculation
+                if np.hypot(xp, yp) < dcc / 2 * (1 + vtol):
                     printv('   Found on center column'.format(i))
                     not_found = False
             if not_found:

@@ -38,9 +38,12 @@ __version__ = "2.0"
 
 import numpy as np
 
-class BaseStructure(object):
+class BaseStructure:
     """
-    Base structure
+    Base structure for HDF5 file organization.
+    
+    This class defines the structure and paths for organizing
+    NEMOH data in HDF5 format.
     """
 
 
@@ -74,42 +77,42 @@ class BaseStructure(object):
         Function to get environment name
         :return the environment name
         """
-        return self.top_level_input_group() + 'environment' + self.separator()
+        return f"{self.top_level_input_group()}environment{self.separator()}"
 
     def floating_bodies(self, include_separator=True):
         """
         Function to get the floating_bodies name
         :return the floating_bodies name
         """
-        return self.top_level_input_group() + 'floating_bodies' + self.get_separator(include_separator)
+        return f"{self.top_level_input_group()}floating_bodies{self.get_separator(include_separator)}"
 
     def load_cases(self):
         """
         Function to get the load_cases name
         :return the load_cases name
         """
-        return self.top_level_input_group() + 'load_cases' + self.separator()
+        return f"{self.top_level_input_group()}load_cases{self.separator()}"
 
     def post_processing(self):
         """
         Function to get the post_processing name
         :return the post_processing name
         """
-        return self.top_level_input_group() + 'postprocessing' + self.separator()
+        return f"{self.top_level_input_group()}postprocessing{self.separator()}"
 
     def calculation(self):
         """
         Function to get the calculation name
         :return the calculation name
         """
-        return self.top_level_input_group() + 'calculation' + self.separator()
+        return f"{self.top_level_input_group()}calculation{self.separator()}"
 
     def meshing(self):
         """
         Function to get the meshing name
         :return the path meshing name
         """
-        return 'meshing' + self.separator()
+        return f'meshing{self.separator()}'
 
 
 
@@ -135,12 +138,12 @@ class BaseStructure(object):
 
         self.POST_PROCESSING_GROUP = self.post_processing()
 
-        self.H5_CALCULATIONS = self.H5_INPUT_GROUP + 'calculations' + self.separator()
+        self.H5_CALCULATIONS = f"{self.H5_INPUT_GROUP}calculations{self.separator()}"
         """
         The hdf5 input calculations group. Contains mostly all the values previously in nemoh.cal file
         """
 
-        self.H5_INPUT_SOLVER = self.H5_INPUT_GROUP + 'solver' + self.separator()
+        self.H5_INPUT_SOLVER = f"{self.H5_INPUT_GROUP}solver{self.separator()}"
         """
         The hdf5 input solver group. Contains all values previously in input.txt
         """
@@ -380,7 +383,7 @@ class BaseStructure(object):
         Group to contain all the bodies
         """
 
-        self.body1 = self.H5_BODIES + 'body1' + self.separator()
+        self.body1 = f"{self.H5_BODIES}body1{self.separator()}"
         self.H5_BODY_BASE = 'body'
         """
         The base group name to use for body inside the self.H5_BODIES group
@@ -406,17 +409,17 @@ class BaseStructure(object):
         #
         #
         #
-        self.H5_OUTPUT = 'output' + self.separator()
+        self.H5_OUTPUT = f'output{self.separator()}'
         """
         The hdf5 intermediate output group
         """
-        self.H5_MESH = self.H5_OUTPUT + 'mesh' + self.separator()
+        self.H5_MESH = f"{self.H5_OUTPUT}mesh{self.separator()}"
         """
         The group for mesh.
         Contains values previously stored in Mesh
         """
 
-        self.H5_L12 = self.H5_MESH + 'l12' + self.separator()
+        self.H5_L12 = f"{self.H5_MESH}l12{self.separator()}"
         """
         The L12 group name
         Contains values previously stored in Mesh/L12.dat
@@ -433,7 +436,7 @@ class BaseStructure(object):
         """
         The parameters for the mesh like the Symmetry about the xOz plane (1 for yes) (i_sym) variable
         """
-        self.H5_L10 = self.H5_MESH + 'l10' + self.separator()
+        self.H5_L10 = f"{self.H5_MESH}l10{self.separator()}"
         """
         The L10 group name
         Contains values previously stored in Mesh/L10.dat
@@ -463,7 +466,7 @@ class BaseStructure(object):
         """
         The integration results
         """
-        self.H5_MESH_FREE_SURFACE = self.H5_MESH + 'free_surface' + self.separator()
+        self.H5_MESH_FREE_SURFACE = f"{self.H5_MESH}free_surface{self.separator()}"
         """
         Free surface group name
         """
@@ -481,7 +484,7 @@ class BaseStructure(object):
         """
 
 
-        self.H5_NORMAL_VELOCITY = self.H5_OUTPUT + 'normal_velocity' + self.separator()
+        self.H5_NORMAL_VELOCITY = f"{self.H5_OUTPUT}normal_velocity{self.separator()}"
         """
         Group name for the normal velocity.
         Contains values previously in NormalVelocities.dat
@@ -535,7 +538,7 @@ class BaseStructure(object):
         The froude krylov forces
         Mostly the value in previous results/FKForces.dat
         """
-        self.H5_RESULTS_CASE = self.H5_RESULTS + 'case' + self.separator()
+        self.H5_RESULTS_CASE = f"{self.H5_RESULTS}case{self.separator()}"
         """
         The result case group
         """

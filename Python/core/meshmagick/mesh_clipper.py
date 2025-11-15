@@ -6,7 +6,7 @@
 from .mesh import *
 
 
-class MeshClipper(object):
+class MeshClipper:
     """A class to perform mesh clipping operations.
 
     Parameters
